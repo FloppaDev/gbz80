@@ -1,3 +1,4 @@
+#[macro_use]
 mod utils;
 
 mod split;
@@ -8,8 +9,6 @@ mod encode;
 use std::fs;
 use std::env;
 use std::process;
-use std::ops::Range;
-use TokenType::*;
   
 // Compilation will follow these steps:
 //
@@ -39,8 +38,6 @@ use TokenType::*;
 //
 // - Validate Nintendo logo and calculate checksums
 
-static mut ERRORS: Vec<String> = vec![];
-
 fn main() {
     // Get source file
     let path = match env::args().nth(1) {
@@ -57,31 +54,11 @@ fn main() {
     let symbols = vec![];
 
     // Parse file and output a token tree
-    let ast = get_ast(&input, &symbols);
-
-    write_logs();
+    let split = split::Split::new(&input, &symbols);
+    let ast = ast::Token::make_ast(split);
 }
 
-/// Print an error message and stop the compilation
-fn abort(e: &str) -> ! {
-    println!("{}", e);
+pub fn abort(e: &str) -> ! {
+    eprintln!("{}", e);
     process::exit(1);
 }
-
-//TODO write to stderr
-/// Log an error but keep compiling
-fn log_error(e: String) {
-    unsafe { ERRORS.push(e) }
-}
-
-fn write_logs() {
-    unsafe {
-        for e in &ERRORS { println!("{}", e); }
-
-        let err_count = ERRORS.len();
-        if err_count > 0 { println!("\nBuild failed with {} errors", err_count); }
-        else { println!("\nBuild completed"); }
-    }
-}
-
-

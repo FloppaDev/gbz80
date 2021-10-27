@@ -13,7 +13,7 @@ pub struct Token {
 
 impl Token {
     /// Root of the tree, it only contains children.
-    pub fn root() -> Self {
+    fn root() -> Self {
         Self {
             line: 0,
             ty: TokenType::UNKNOWN,
@@ -24,7 +24,7 @@ impl Token {
     }
 
     /// Add a new token as a child of self.
-    pub fn push(&mut self, line: usize, ty: TokenType, value: String) -> &mut Token {
+    fn push(&mut self, line: usize, ty: TokenType, value: String) -> &mut Token {
         let parent: *mut _ = self;
         let children = vec![];
         self.children.push(Token {line, ty, parent, children, value});
@@ -33,14 +33,16 @@ impl Token {
     }
 
     /// Move token to self as child
-    pub fn transfer(&mut self, token: Token) {
+    fn transfer(&mut self, token: Token) {
         self.children.push(token);
     }
 
     /// Build the AST from split data
     pub fn make_ast(split: Split) -> Token {
-        let base_tokens = AST::get_base_tokens(&split); 
-        let root = unsafe { AST::make_tree(base_tokens) };
+        let base_tokens = Token::get_base_tokens(&split); 
+        let root = unsafe { Token::make_tree(base_tokens) };
+
+        root
     }
 
     /// Create a root token and adds all the identified tokens as children
@@ -50,7 +52,7 @@ impl Token {
 
         for (i, line) in split.lines.iter().enumerate() {
 
-            for word in line.words {
+            for word in &line.words {
                 let word = &split.input[word.start..word.end];
                 let c = word.chars().nth(0).unwrap();
 
@@ -105,7 +107,7 @@ impl Token {
                         "def" => push1!(DIRECTIVE_DEFINE, String::new()),
                         "include" => push1!(DIRECTIVE_INCLUDE, String::new()),
                         "macro" => push1!(DIRECTIVE_MACRO, String::new()),
-                        _ => log_error(format!("l{}: Unknown directive", i)),
+                        _ => eprintln!("l{}: Unknown directive", i),
                     }
                 }
 

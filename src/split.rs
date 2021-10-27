@@ -1,3 +1,4 @@
+use utils;
 use std::ops::Range;
 
 pub struct Line {
@@ -11,6 +12,13 @@ pub struct Split<'a> {
     pub lines: Vec<Line>,
 }
 
+impl<'a> Split<'a> {
+    pub fn new(input: &'a str, symbols: &'a [String]) -> Split<'a> {
+        Splitter::new(input, symbols).run()
+    }
+}
+
+#[derive(Default)]
 struct Splitter<'a> {
     /// Source file
     pub input: &'a str,
@@ -39,14 +47,14 @@ struct Splitter<'a> {
 }
 
 impl<'a> Splitter<'a> {
-    pub fn new(input: &'a str, symbols: &'a [String]) -> Self {
-        Self { input, symbols, lines: vec![], cur_line: 0, source_line: 1 }
+    fn new(input: &'a str, symbols: &'a [String]) -> Self {
+        Self { input, symbols, source_line: 1, ..Default::default() }
     }
 
-    pub fn run(mut self) -> Split<'a> {
-        for (i, c) in input.chars().enumerate() {
-            if is_new_line(&c) {
-                self.add_word();
+    fn run(mut self) -> Split<'a> {
+        for (i, c) in self.input.chars().enumerate() {
+            if utils::is_new_line(&c) {
+                self.add_word(i);
                 self.cur_line += 1;
                 self.comment = false;
                 self.source_line += 1;
@@ -57,7 +65,7 @@ impl<'a> Splitter<'a> {
                     self.str_literal = !self.str_literal;
                     //TODO escape \" and newline and \;
                     if self.str_literal { 
-                        self.add_word();
+                        self.add_word(i);
                         self.start = i;
                     }else { 
                         self.prepare_line();
@@ -68,14 +76,14 @@ impl<'a> Splitter<'a> {
 
                 if self.str_literal { continue }
 
-                if is_space(&c) {
-                    self.add_word();
+                if utils::is_space(&c) {
+                    self.add_word(i);
                     continue
                 }
 
                 match c {
                     ';' => {
-                        self.add_word();
+                        self.add_word(i);
                         self.comment = true;
                     }
                     '+' | '-' | '(' | ')' => {
@@ -96,7 +104,7 @@ impl<'a> Splitter<'a> {
             }
         }
 
-        Split{ input, lines }
+        Split{ input: self.input, lines: self.lines }
     }
 
     /// Create a new line if necessary
@@ -108,11 +116,11 @@ impl<'a> Splitter<'a> {
     }
 
     /// Add word range to lines
-    fn add_word(&mut self) {
+    fn add_word(&mut self, end: usize) {
         if self.has_word {
-            let word = input.get(start..i).unwrap();
+            let word = self.input.get(self.start..end).unwrap();
 
-            if self.dir_if { self.has_symbol = symbols.contains(&word.to_string()); }
+            if self.dir_if { self.has_symbol = self.symbols.contains(&word.to_string()); }
 
             match word {
                 "#if" => self.dir_if = true,
@@ -127,7 +135,7 @@ impl<'a> Splitter<'a> {
                         || (self.dir_else && !self.has_symbol)
                     { 
                         self.prepare_line();
-                        lines[self.cur_line].1.push(start..i);
+                        self.lines[self.cur_line].words.push(self.start..end);
                         self.has_word = false;
                     }
                 }

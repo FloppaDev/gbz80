@@ -9,7 +9,7 @@ macro_rules! opcodes {(
         )*
     )*
 ) => {
-        use TokenType::{self, *};
+        use ast::TokenType::{self, *};
 
         pub struct Instruction {
             ty: TokenType,
