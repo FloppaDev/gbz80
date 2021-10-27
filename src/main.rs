@@ -6,10 +6,6 @@ mod ast;
 mod opcodes;
 mod encode;
 
-use std::fs;
-use std::env;
-use std::process;
-  
 // Compilation will follow these steps:
 //
 // - Split file into lines, and lines into words.
@@ -40,12 +36,12 @@ use std::process;
 
 fn main() {
     // Get source file
-    let path = match env::args().nth(1) {
+    let path = match std::env::args().nth(1) {
         Some(arg) => arg,
         None => abort("No file specified")
     };
 
-    let input = match fs::read_to_string(path) {
+    let input = match std::fs::read_to_string(path) {
         Ok(file) => file,
         Err(_) => abort("File not found")
     };
@@ -60,5 +56,5 @@ fn main() {
 
 pub fn abort(e: &str) -> ! {
     eprintln!("{}", e);
-    process::exit(1);
+    std::process::exit(1);
 }
