@@ -2,10 +2,10 @@
 
 Assembler build:
 ```
-rustc asm/main.rs -o asm
+rustc src/main.rs -o asm
 ```
 
 Game build:
 ```
-./asm main.asm
+./asm examples/main.asm
 ```
