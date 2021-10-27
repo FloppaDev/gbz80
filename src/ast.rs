@@ -103,11 +103,12 @@ impl Token {
 
                 // Prefixed with '#'
                 if directive {
-                    match word.get(1..).unwrap() {
+                    let d = word.get(1..).unwrap();
+                    match d {
                         "def" => push1!(DIRECTIVE_DEFINE, String::new()),
                         "include" => push1!(DIRECTIVE_INCLUDE, String::new()),
                         "macro" => push1!(DIRECTIVE_MACRO, String::new()),
-                        _ => eprintln!("l{}: Unknown directive", i),
+                        _ => eprintln!("L{}: Unknown directive '{}'", i, d),
                     }
                 }
 
@@ -244,6 +245,12 @@ impl Token {
         }
 
         ast
+    }
+
+    #[cfg(debug)]
+    pub fn debug(&self) {
+        println!("AST data:");
+        println!("    TODO: Token::debug");
     }
 }
 

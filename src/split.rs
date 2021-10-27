@@ -13,6 +13,24 @@ pub struct Split<'a> {
 }
 
 impl<'a> Split<'a> {
+    #[cfg(debug)]
+    pub fn debug(&self) {
+        println!("Split data:");
+        for line in &self.lines {
+            let mut n = line.number.to_string();
+            if n.len() < 6 { n.push_str(&" ".repeat(7-n.len())); }
+            print!("    L{}", n);
+
+            for word in &line.words {
+                print!("{} ", &self.input[word.start..word.end]);
+            }
+            println!();
+        }
+        println!();
+    }
+}
+
+impl<'a> Split<'a> {
     pub fn new(input: &'a str, symbols: &'a [String]) -> Split<'a> {
         Splitter::new(input, symbols).run()
     }
@@ -125,7 +143,7 @@ impl<'a> Splitter<'a> {
             match word {
                 "#if" => self.dir_if = true,
                 "#else" => self.dir_else = true,
-                "endif" => {
+                "#endif" => {
                     self.dir_if = false;
                     self.dir_else = false;
                 }
@@ -136,10 +154,12 @@ impl<'a> Splitter<'a> {
                     { 
                         self.prepare_line();
                         self.lines[self.cur_line].words.push(self.start..end);
-                        self.has_word = false;
                     }
                 }
             }
+
+
+            self.has_word = false;
         }
     }
 

@@ -35,7 +35,6 @@ mod encode;
 // - Validate Nintendo logo and calculate checksums
 
 fn main() {
-    // Get source file
     let path = match std::env::args().nth(1) {
         Some(arg) => arg,
         None => abort("No file specified")
@@ -49,9 +48,11 @@ fn main() {
     //TODO
     let symbols = vec![];
 
-    // Parse file and output a token tree
     let split = split::Split::new(&input, &symbols);
+    #[cfg(debug)] split.debug();
+
     let ast = ast::Token::make_ast(split);
+    #[cfg(debug)] ast.debug();
 }
 
 pub fn abort(e: &str) -> ! {
