@@ -19,10 +19,10 @@ impl<'a> Split<'a> {
         for line in &self.lines {
             let mut n = line.number.to_string();
             if n.len() < 6 { n.push_str(&" ".repeat(7-n.len())); }
-            print!("    L{}", n);
+            print!("    L{}| ", n);
 
             for word in &line.words {
-                print!("{} ", &self.input[word.start..word.end]);
+                print!("{} | ", &self.input[word.start..word.end]);
             }
             println!();
         }

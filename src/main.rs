@@ -35,20 +35,14 @@ mod encode;
 // - Validate Nintendo logo and calculate checksums
 
 fn main() {
-    let path = match std::env::args().nth(1) {
-        Some(arg) => arg,
-        None => abort("No file specified")
-    };
+    let args = clargs();
 
-    let input = match std::fs::read_to_string(path) {
+    let input = match std::fs::read_to_string(args.path) {
         Ok(file) => file,
         Err(_) => abort("File not found")
     };
 
-    //TODO
-    let symbols = vec![];
-
-    let split = split::Split::new(&input, &symbols);
+    let split = split::Split::new(&input, &args.symbols);
     #[cfg(debug)] split.debug();
 
     let ast = ast::Token::make_ast(split);
@@ -58,4 +52,46 @@ fn main() {
 pub fn abort(e: &str) -> ! {
     eprintln!("{}", e);
     std::process::exit(1);
+}
+
+#[derive(Default)]
+struct Args {
+    path: String,
+    symbols: Vec<String>,
+    output: Option<String>,
+}
+
+fn clargs() -> Args {
+    let mut args = Args::default();
+
+    let words = std::env::args().collect::<Vec<_>>();
+    args.path = if words.len() >= 2 { 
+        words[1].to_string() 
+    }else { 
+        abort("No file specified")
+    };
+    if words.len() == 2 { return args }
+
+    enum Ty { Unknown, Define, Output };
+    let mut ty = Ty::Unknown;
+
+    for word in &words[2..] {
+        match word.as_str() {
+            "-D" => ty = Ty::Define,
+            "-o" => ty = Ty::Output,
+            _ => {
+                match ty {
+                    Ty::Define => args.symbols.push(word.to_string()),
+                    Ty::Output => if args.output.is_none() {
+                        args.output = Some(word.to_string());
+                    }else{
+                        abort("Only one output can be specified");
+                    }
+                    Ty::Unknown => abort(&format!("Unknown argument: '{}'", word)),
+                }
+            }
+        }
+    }
+
+    args
 }
