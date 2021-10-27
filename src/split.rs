@@ -6,7 +6,8 @@ pub struct Line {
 }
 
 /// Split input into lines and words.
-pub struct Split {
+pub struct Split<'a> {
+    pub input: &'a str,
     pub lines: Vec<Line>,
 }
 
@@ -17,7 +18,7 @@ struct Splitter<'a> {
     pub symbols: &'a [String],
     
     /// Holds source line number and range for every words
-    pub lines: Vec<(usize, Vec<Range<usize>>)>,
+    pub lines: Vec<Line>,
 
     /// Current index in lines
     pub cur_line: usize,
@@ -37,41 +38,35 @@ struct Splitter<'a> {
     pub start: usize,
 }
 
-impl<'a> Splitter {
+impl<'a> Splitter<'a> {
     pub fn new(input: &'a str, symbols: &'a [String]) -> Self {
-        Self {
-            input,
-            symbols,
-            lines: vec![],
-            cur_line: 0,
-            source_line: 1,
-        }
+        Self { input, symbols, lines: vec![], cur_line: 0, source_line: 1 }
     }
 
-    pub fn run(mut self) -> Split {
+    pub fn run(mut self) -> Split<'a> {
         for (i, c) in input.chars().enumerate() {
             if is_new_line(&c) {
                 self.add_word();
-                cur_line += 1;
-                comment = false;
-                source_line += 1;
+                self.cur_line += 1;
+                self.comment = false;
+                self.source_line += 1;
             }else {
-                if comment { continue }
+                if self.comment { continue }
                 
                 if c == '"' {
-                    str_literal = !str_literal;
+                    self.str_literal = !self.str_literal;
                     //TODO escape \" and newline and \;
-                    if str_literal { 
+                    if self.str_literal { 
                         self.add_word();
-                        start = i;
+                        self.start = i;
                     }else { 
                         self.prepare_line();
-                        lines[cur_line].1.push(start..i+1);
+                        self.lines[self.cur_line].words.push(self.start..i+1);
                         continue
                     }
                 }
 
-                if str_literal { continue }
+                if self.str_literal { continue }
 
                 if is_space(&c) {
                     self.add_word();
@@ -81,27 +76,27 @@ impl<'a> Splitter {
                 match c {
                     ';' => {
                         self.add_word();
-                        comment = true;
+                        self.comment = true;
                     }
                     '+' | '-' | '(' | ')' => {
                         self.prepare_line();
                         // Push the previous word
-                        if has_word {
-                            lines[cur_line].1.push(start..i);
-                            has_word = false;
+                        if self.has_word {
+                            self.lines[self.cur_line].words.push(self.start..i);
+                            self.has_word = false;
                         }
                         // Push the character
-                        lines[cur_line].1.push(i..i+1);
+                        self.lines[self.cur_line].words.push(i..i+1);
                     }
                     _ => {
-                        if !has_word { start = i; }
-                        has_word = true;
+                        if !self.has_word { self.start = i; }
+                        self.has_word = true;
                     }
                 }
             }
         }
 
-        Split{ lines }
+        Split{ input, lines }
     }
 
     /// Create a new line if necessary
@@ -127,7 +122,10 @@ impl<'a> Splitter {
                     self.dir_else = false;
                 }
                 _ => {
-                    if !self.dir_if || (self.dir_if && self.has_symbol) || (self.dir_else && !self.has_symbol) { 
+                    if !self.dir_if
+                        || (self.dir_if && self.has_symbol) 
+                        || (self.dir_else && !self.has_symbol)
+                    { 
                         self.prepare_line();
                         lines[self.cur_line].1.push(start..i);
                         self.has_word = false;
@@ -139,35 +137,3 @@ impl<'a> Splitter {
 
 }
 
-fn is_new_line(c: &char) -> bool {
-    const CHARS: [char; 2] = ['\u{000A}', '\u{000D}'];
-    CHARS.contains(c)
-}
-
-fn is_space(c: &char) -> bool {
-    const CHARS: [char; 29] = [
-        '\u{0009}', '\u{000B}', '\u{000C}', '\u{0020}', '\u{0085}',
-        '\u{00A0}', '\u{1680}', '\u{180E}', '\u{2000}', '\u{2001}', 
-        '\u{2002}', '\u{2003}', '\u{2004}', '\u{2005}', '\u{2006}',
-        '\u{2007}', '\u{2008}', '\u{2009}', '\u{200A}', '\u{200B}',
-        '\u{200C}', '\u{200D}', '\u{2028}', '\u{2029}', '\u{202F}',
-        '\u{205F}', '\u{2060}', '\u{3000}', '\u{FEFF}',
-    ];
-    CHARS.contains(c)
-}
-
-fn is_ident_char(c: &char) -> bool {
-    const CHARS: [char; 10] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-    CHARS.contains(c) || is_ident_first(c)
-}
-
-fn is_ident_first(c: &char) -> bool {
-    const CHARS: [char; 53] = [
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        '_',
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    ];
-    CHARS.contains(c)
-}
