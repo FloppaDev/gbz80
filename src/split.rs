@@ -104,7 +104,7 @@ impl<'a> Splitter<'a> {
                         self.add_word(i);
                         self.comment = true;
                     }
-                    '+' | '-' | '(' | ')' => {
+                    '+' | '-' | '(' | ')' | ':' => {
                         self.prepare_line();
                         // Push the previous word
                         if self.has_word {

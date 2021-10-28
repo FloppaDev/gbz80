@@ -57,7 +57,6 @@ impl Token {
                 let c = word.chars().nth(0).unwrap();
 
                 let mut directive = false;
-                let mut lit_hex = false;
 
                 // Push a one or more tokens for this word
                 macro_rules! pushn { ($tt:ident, $str:expr) => {
@@ -72,7 +71,17 @@ impl Token {
                 // Tokens that can at least partially be identified by
                 // their first character
                 match c {
-                    '&' => lit_hex = true,
+                    '&' => {
+                        //TODO fn
+                        let mut value = mt!();
+                        for word_char in word.get(1..).unwrap().chars() {
+                            // Remove underscores 
+                            if word_char == '0' || word_char == '1' {
+                                value.push(word_char);
+                            }
+                        }
+                        push1!(LIT_HEX, value);
+                    }
                     '#' => directive = true,
                     '%' => {
                         let mut value = mt!();
@@ -84,7 +93,7 @@ impl Token {
                         }
                         push1!(LIT_BIN, value);
                     }
-                    ':' => push1!(LABEL, String::new()),
+                    ':' => push1!(COLON, String::new()),
                     '+' => push1!(PLUS, mt!()),
                     '-' => push1!(MINUS, mt!()),
                     '(' => push1!(AT0, mt!()),
@@ -92,22 +101,6 @@ impl Token {
                     '"' => push1!(LIT_STR, String::new()),
                     '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'|'0' => push1!(LIT_DEC, word.to_string()),
                     _ => { }
-                }
-
-                // TODO same for LIT_DEC
-                // Fence names are optional
-                if lit_hex {
-                    if word.chars().nth(word.len()-1).unwrap() == ':' {
-                        push1!(ANONYMOUS_FENCE, String::new()); 
-                    }
-                    pushn!(LIT_HEX, String::new());
-                    for (j, c) in word[1..word.len()-1].chars().enumerate() {
-                        if c == ':' {
-                            pushn!(FENCE, String::new());
-                            break;
-                        }
-                    }
-                    continue;
                 }
 
                 // Prefixed with '#'
@@ -323,6 +316,7 @@ pub enum TokenType {
             FLAG,
                 FLAG_Z, FLAG_NZ, FLAG_C, FLAG_NC,
 
+            // opcodes.rs only, they are then converted to literals
             B0, B1, B2, B3, B4, B5, B6, B7,
 
     META,
@@ -333,7 +327,7 @@ pub enum TokenType {
             DIRECTIVE_MACRO,
             
         MACRO_IDENTIFIER, MACRO_DEFINITION, MACRO_PARAMETER,
-        FENCE, ANONYMOUS_FENCE, LABEL,
+        FENCE, LABEL, COLON,
 
         UNKNOWN,
 }
