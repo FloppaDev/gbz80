@@ -74,7 +74,16 @@ impl Token {
                 match c {
                     '&' => lit_hex = true,
                     '#' => directive = true,
-                    '%' => push1!(LIT_BIN, String::new()), //TODO 
+                    '%' => {
+                        let mut value = mt!();
+                        for word_char in word.get(1..).unwrap().chars() {
+                            // Remove underscores 1011_1010
+                            if word_char == '0' || word_char == '1' {
+                                value.push(word_char);
+                            }
+                        }
+                        push1!(LIT_BIN, value);
+                    }
                     ':' => push1!(LABEL, String::new()),
                     '+' => push1!(PLUS, mt!()),
                     '-' => push1!(MINUS, mt!()),
@@ -177,36 +186,48 @@ impl Token {
         let mut line = 0;
 
         let mut selected: *mut _ = &mut ast;
-        // Assigned to when next token could be an expression
-        let mut lhs: *mut _ = &mut ast;
         let mut paren = 0 as *mut Token;
 
         for token in self.children {
-            // New line
+            // New line, end instructions and directives.
             if line != token.line {
                 line = token.line;
                 
-                //TODO needs to be recursive
-                match (*selected).ty {
-                    DIRECTIVE|
-                    INSTRUCTION => {
-                        // End on a new line 
-                        selected = (*selected).parent;
+                loop {
+                    match (*selected).ty {
+                        DIRECTIVE|INSTRUCTION|ARGUMENT => selected = (*selected).parent,
+                        _ => break,
                     }
-                    _ => {}
                 }
+            }
+
+            if (*selected).ty == PLUS || (*selected).ty == MINUS {
+                if (*selected).children.len() >= 2 {
+                    // Close binary operation.
+                    selected = (*selected).parent;
+                }
+            }
+
+            if (*selected).ty == ARGUMENT {
+                if token.ty != PLUS && token.ty != MINUS {
+                    // Close the argument.
+                    selected = (*selected).parent;
+                }
+            }
+
+            if (*selected).ty == INSTRUCTION {
+                // Create a new argument.
+                selected = (*selected).push(line, ARGUMENT, mt!());
             }
 
             // TODO macro calls can have registers, literals, addresses, or bits,
             // just like instructions.
             match token.ty {
-                // DIRECTIVE -> DIRECTIVE_DEFINE
                 DIRECTIVE_DEFINE => {
                     selected = (*selected).push(line, DIRECTIVE, mt!());
                     (*selected).push(line, DIRECTIVE_DEFINE, mt!());
                 }
 
-                // INSTRUCTION -> INSTRUCTION_NAME -> ADC
                 ADC|ADD|AND|BIT|CALL|CCF|CP|CPL|DAA|DEC|DI|EI|HALT|INC|JP|JR|LD|LDI|LDD|NOP|
                 OR|POP|PUSH|RES|RET|RL|RLA|RLC|RLD|RR|RRA|RRC|RRCA|RRD|RST|SBC|SCF|SET|SLA|SLL|
                 SRA|SRL|STOP|SUB|SWAP|XOR|RETI|RLCA => {
@@ -215,93 +236,29 @@ impl Token {
                     (*instr_name).push(line, token.ty, mt!());
                 }
 
-                // INSTRUCTION -> ARGUMENT -> REGISTER -> A
-                // or PLUS -> REGISTER -> A
                 A|B|C|D|E|H|L|AF|BC|DE|HL|SP|HIX|HIY|LIX|LIY => {
-                    //TODO push ARGUMENT on AT1
-                    if (*selected).ty == INSTRUCTION {
-                        let arg = (*selected).push(line, ARGUMENT, mt!());
-                        let reg = (*arg).push(line, REGISTER, mt!());
-                        (*reg).push(line, token.ty, mt!());
-                    }else {
-                        lhs = (*selected).push(line, REGISTER, mt!());
-                        (*lhs).push(line, token.ty, mt!());
-                    }
+                    let reg = (*selected).push(line, REGISTER, mt!());
+                    (*reg).push(line, token.ty, mt!());
                 }
 
-                // FLAG -> FLAG_Z
                 FLAG_Z|FLAG_NZ|FLAG_C|FLAG_NC => {
-                    let arg = (*selected).push(line, ARGUMENT, mt!());
-                    let flag = (*arg).push(line, FLAG, mt!());
+                    let flag = (*selected).push(line, FLAG, mt!());
                     (*flag).push(line, token.ty, mt!());
                 }
 
-                // LIT -> LIT_DEC
-                // or INSTRUCTION -> ARGUMENT -> B0
-                LIT_DEC => {
-                    // LIT_DEC can be an argument in an isntruction, either as
-                    // a bit operand (SET B0 B) or as a literal. Or it can be data.
-                    
-                    if (*selected).ty == INSTRUCTION {
-                        // It is an argument.
-                        // Is it a bit operand (SET B0 B) or a literal?
-                        let mut bit_operand = false;
-
-                        unsafe fn bx(selected: *mut Token, token: &Token) -> TokenType {
-                            let children = &(*selected).children;
-                            if children.len() > 0 {
-                                // INSTRUCTION -> INSTRUCTION_NAME -> ty
-                                match children[0].children[0].ty {
-                                    // Is it one of the instructions with a bit operand?
-                                    BIT|RES|RST|SET => {
-                                        // Is it the first argument of the instruction?
-                                        let mut first_arg = true;
-                                        for child in &(*selected).children {
-                                            if child.ty == ARGUMENT { first_arg = false; break; }
-                                        }
-
-                                        if first_arg {
-                                            // Map value to a type.
-                                            return match token.value.as_str() {
-                                                "0"=>B0,"1"=>B1,"2"=>B2,"3"=>B3,"4"=>B4,
-                                                "5"=>B5,"6"=>B6,"7"=>B7, _ => LIT_DEC
-                                            }
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
-
-                            LIT_DEC 
-                        }
-
-                        let bx = bx(selected, &token);
-                        let arg = (*selected).push(line, ARGUMENT, mt!());
-                        if bx == LIT_DEC { (*arg).push(line, bx, token.value); }
-                        else { (*arg).push(line, bx, mt!()); }
-                    }else {
-                        // Not an argument, it's data.
-                        let lit = (*selected).push(line, LIT, mt!());
-                        (*lit).push(line, LIT_DEC, token.value);
-                    }
-                }
-
-                // LIT -> LIT_BIN
-                LIT_BIN|LIT_HEX|LIT_STR => {
-
+                LIT_DEC|LIT_BIN|LIT_HEX|LIT_STR => {
+                    let lit = (*selected).push(line, LIT, mt!());
+                    (*lit).push(line, token.ty, token.value);
                 }
 
                 PLUS|MINUS => {
-                    //TODO
+                    let prev = (*selected).children.pop().unwrap();
+                    selected = (*selected).push(line, token.ty, mt!());
+                    (*selected).transfer(prev);
                 }
 
-                AT0 => {
-
-                }
-
-                AT1 => {
-
-                }
+                AT0 => selected = (*selected).push(line, AT, mt!()),
+                AT1 => selected = (*selected).parent,
 
                 _ => {
                     (*selected).transfer(token);
