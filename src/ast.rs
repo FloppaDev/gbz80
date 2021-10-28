@@ -75,7 +75,8 @@ impl Token {
                         for word_char in word.get(1..).unwrap().chars() {
                             if true {//TODO is_hex()
                                 value.push(word_char);
-                            }else if word_char == ':' {
+                            }
+                            if word_char == ':' {
                                 lit = false;
                                 break;
                             }
