@@ -70,15 +70,17 @@ impl Token {
                 
                 match c {
                     '&' => {
-                        //TODO fn
                         let mut value = mt!();
+                        let mut lit = true;
                         for word_char in word.get(1..).unwrap().chars() {
-                            // Remove underscores 
-                            if word_char == '0' || word_char == '1' {
+                            if true {//TODO is_hex()
                                 value.push(word_char);
+                            }else if word_char == ':' {
+                                lit = false;
+                                break;
                             }
                         }
-                        push1!(LIT_HEX, value);
+                        if lit { push1!(LIT_HEX, value); }
                     }
                     '#' => directive = true,
                     '%' => {
