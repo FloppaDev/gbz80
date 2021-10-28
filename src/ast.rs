@@ -188,9 +188,10 @@ impl Token {
                 
                 //TODO needs to be recursive
                 match (*selected).ty {
-                    DIRECTIVE_DEFINE|DIRECTIVE_INCLUDE|
+                    DIRECTIVE|
                     INSTRUCTION => {
                         // End on a new line 
+                        selected = (*selected).parent;
                     }
                     _ => {}
                 }
@@ -250,7 +251,19 @@ impl Token {
     #[cfg(debug)]
     pub fn debug(&self) {
         println!("AST data:");
-        println!("    TODO: Token::debug");
+
+        fn children(token: &Token, indent: usize) {
+            for child in &token.children {
+                let mut n = token.line.to_string();
+                if n.len() < 6 { n.push_str(&" ".repeat(7-n.len())); }
+                let sep = "|   ".repeat(indent);
+                println!("    L{}{}|{:?}: {}", n, sep, child.ty, child.value);
+                children(child, indent+1);
+            }
+        }
+
+        children(self, 0);
+        println!();
     }
 }
 
