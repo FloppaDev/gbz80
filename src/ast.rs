@@ -68,8 +68,6 @@ impl Token {
                     { root.push(line.number, $tt, $str); continue; }
                 }}
                 
-                // Tokens that can at least partially be identified by
-                // their first character
                 match c {
                     '&' => {
                         //TODO fn
@@ -93,7 +91,6 @@ impl Token {
                         }
                         push1!(LIT_BIN, value);
                     }
-                    ':' => push1!(COLON, String::new()),
                     '+' => push1!(PLUS, mt!()),
                     '-' => push1!(MINUS, mt!()),
                     '(' => push1!(AT0, mt!()),
@@ -112,6 +109,10 @@ impl Token {
                         "macro" => push1!(DIRECTIVE_MACRO, String::new()),
                         _ => eprintln!("L{}: Unknown directive '{}'", i, d),
                     }
+                }
+
+                if word.contains(':') {
+                    push1!(MARKER, word.to_string());
                 }
 
                 if word.chars().last().unwrap() == '.' {
@@ -250,6 +251,10 @@ impl Token {
                     (*selected).transfer(prev);
                 }
 
+                MARKER => {
+                    (*selected).push(line, MARKER, token.value);//TODO remove 
+                }
+
                 AT0 => selected = (*selected).push(line, AT, mt!()),
                 AT1 => selected = (*selected).parent,
 
@@ -327,7 +332,7 @@ pub enum TokenType {
             DIRECTIVE_MACRO,
             
         MACRO_IDENTIFIER, MACRO_DEFINITION, MACRO_PARAMETER,
-        FENCE, LABEL, COLON,
+        MARKER,
 
         UNKNOWN,
 }
