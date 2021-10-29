@@ -98,7 +98,10 @@ impl Token {
                     '-' => push1!(MINUS, mt!()),
                     '(' => push1!(AT0, mt!()),
                     ')' => push1!(AT1, mt!()),
-                    '"' => push1!(LIT_STR, String::new()),
+                    '"' => {
+                        let value = word.get(1..word.len()-1).unwrap().to_string();
+                        push1!(LIT_STR, value);
+                    }
                     '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'|'0' => push1!(LIT_DEC, word.to_string()),
                     _ => { }
                 }
@@ -164,7 +167,7 @@ impl Token {
                         }
                     }
 
-                    if ident { push1!(IDENTIFIER, String::new()); }
+                    if ident { push1!(IDENTIFIER, word.to_string()); }
                     if is_macro { continue; }
                 }
 

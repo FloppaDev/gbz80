@@ -57,7 +57,7 @@ struct Splitter<'a> {
     /// Has a word started
     pub has_word: bool,
     pub has_symbol: bool,
-    pub dir_if: bool,
+    pub dir_if: usize,
     pub dir_else: bool,
 
     /// Next word start index
@@ -138,20 +138,22 @@ impl<'a> Splitter<'a> {
         if self.has_word {
             let word = self.input.get(self.start..end).unwrap();
 
-            if self.dir_if { self.has_symbol = self.symbols.contains(&word.to_string()); }
+            if self.dir_if != 0 { self.has_symbol = self.symbols.contains(&word.to_string()); }
 
             match word {
-                "#if" => self.dir_if = true,
+                "#if" => self.dir_if = self.cur_line,
                 "#else" => self.dir_else = true,
                 "#endif" => {
-                    self.dir_if = false;
+                    self.dir_if = 0;
                     self.dir_else = false;
                 }
                 _ => {
-                    if !self.dir_if
-                        || (self.dir_if && self.has_symbol) 
-                        || (self.dir_else && !self.has_symbol)
-                    { 
+                    let mut push = self.dir_if == 0 || (self.dir_if == 0 && !self.has_symbol);
+                    if self.dir_if != 0 && self.has_symbol && self.dir_if != self.cur_line {
+                        push = true;
+                    }
+
+                    if push { 
                         self.prepare_line();
                         self.lines[self.cur_line].words.push(self.start..end);
                     }
