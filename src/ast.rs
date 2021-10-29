@@ -172,7 +172,7 @@ impl Token {
                 }
 
                 // The word did not match any token type
-                pushn!(UNKNOWN, String::new());
+                pushn!(UNKNOWN, word.to_string());
             }
         }
         
@@ -195,7 +195,9 @@ impl Token {
                 
                 loop {
                     match (*selected).ty {
-                        DIRECTIVE|INSTRUCTION|ARGUMENT => selected = (*selected).parent,
+                        DIRECTIVE|INSTRUCTION|ARGUMENT|PLUS|MINUS => {
+                            selected = (*selected).parent;
+                        }
                         _ => break,
                     }
                 }
@@ -306,9 +308,15 @@ impl Token {
                 let mut n = child.line.to_string();
                 if n.len() < 6 { n.push_str(&" ".repeat(7-n.len())); }
                 let sep = "|   ".repeat(indent);
-                // Color value in red
-                let value = format!("\x1b[0;31m{}\x1b[0m", child.value);
-                println!("    L{}{}|{:?}: {}", n, sep, child.ty, value);
+                // https://en.wikipedia.org/wiki/ANSI_escape_code
+                if child.ty == UNKNOWN { 
+                    // yellow UNKNOWN: value
+                    println!("    L{}{}|\x1b[0;33m{:?}: {}\x1b[0m", n, sep, child.ty, child.value);
+                }else {
+                    // red value
+                    let value = format!("\x1b[0;31m{}\x1b[0m", child.value);
+                    println!("    L{}{}|{:?}: {}", n, sep, child.ty, value);
+                }
                 children(child, indent+1);
             }
         }
@@ -356,12 +364,13 @@ pub enum TokenType {
 
     META,
         DIRECTIVE,
-            DIRECTIVE_DEFINE,
+            DEFINE,
                 IDENTIFIER,
-            DIRECTIVE_INCLUDE,
-            DIRECTIVE_MACRO,
+            INCLUDE,
+            MACRO,
+                MACRO_ARGUMENT
             
-        MACRO_IDENTIFIER, MACRO_DEFINITION, MACRO_PARAMETER,
+        MACRO_CALL,
         MARKER,
 
         UNKNOWN,

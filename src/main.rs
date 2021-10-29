@@ -26,13 +26,17 @@ mod encode;
 //
 // - Tokens are put into more generic containers, forming a tree.
 // This is an AST (Abstract Token Tree)
+// 
+// - Macros are expanded.
 //
 // - Check the tree for syntax errors.
 //
-// - Validate fences
-//      .i.e fence &0104: code before the fence cannot exceed &0104.
+// - Validate markers. 
+//      .i.e marker &0104: code before the marker cannot exceed &0104.
 //
 // - Validate Nintendo logo and calculate checksums
+//
+// - Encode result into the output.
 
 fn main() {
     let args = clargs();

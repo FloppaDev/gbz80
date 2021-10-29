@@ -54,13 +54,12 @@
     ld hl &FF40		;LCDC - LCD Control (R/W)
     res 7 (hl)      	;Turn off the screen
 
-#macro mul.lhs.rhs
-    ;"mul" .lhs .rhs 
-    ;...
+#macro mul lhs rhs
+    ; ... .lhs .rhs 
 #macro
 
-; mul. a 10     mul
-; 10mul.        mul 10 times
+; mul. a 3     mul
+; 10mul. a 3   mul 10 times
 
     mul. a 10
 
@@ -70,3 +69,11 @@
 
     ld a (Start+FOO-10)
     add Font+10
+
+#macro db .b
+    .b
+#macro
+
+2db. 3
+10db. nop
+
