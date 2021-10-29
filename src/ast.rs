@@ -255,7 +255,31 @@ impl Token {
                 }
 
                 MARKER => {
-                    (*selected).push(line, MARKER, token.value);//TODO remove 
+                    let marker = (*selected).push(line, MARKER, mt!());
+
+                    for word in token.value.split(':') {
+                        if word.len() == 0 { continue; }
+                        if word.chars().nth(0).unwrap() == '&' {
+                            let lit = (*marker).push(line, LIT, mt!());
+                            (*lit).push(line, LIT_HEX, word.get(1..).unwrap().to_string());
+                        }else {
+                            // TODO fn
+                            if utils::is_ident_first(&word.chars().nth(0).unwrap()) {
+                                let mut ident = true;
+                                for ch in word.get(1..).unwrap().chars() {
+                                    if !utils::is_ident_char(&ch) {
+                                        ident = false;
+                                        break;
+                                    }
+                                }
+                                if ident {
+                                    (*marker).push(line, IDENTIFIER, word.to_string());
+                                }
+                            }else {
+                                (*marker).push(line, UNKNOWN, mt!());
+                            }
+                        }
+                    }
                 }
 
                 AT0 => selected = (*selected).push(line, AT, mt!()),
