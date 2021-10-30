@@ -98,10 +98,8 @@ impl Token {
                     '-' => push1!(MINUS, mt!()),
                     '(' => push1!(AT0, mt!()),
                     ')' => push1!(AT1, mt!()),
-                    '"' => {
-                        let value = word.get(1..word.len()-1).unwrap().to_string();
-                        push1!(LIT_STR, value);
-                    }
+                    '"' => push1!(LIT_STR, word.get(1..word.len()-1).unwrap().to_string()),
+                    '.' => push1!(MACRO_ARGUMENT, word.get(1..).unwrap().to_string()),
                     '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'|'0' => push1!(LIT_DEC, word.to_string()),
                     _ => { }
                 }
@@ -110,9 +108,9 @@ impl Token {
                 if directive {
                     let d = word.get(1..).unwrap();
                     match d {
-                        "def" => push1!(DIRECTIVE_DEFINE, String::new()),
-                        "include" => push1!(DIRECTIVE_INCLUDE, String::new()),
-                        "macro" => push1!(DIRECTIVE_MACRO, String::new()),
+                        "def" => push1!(DEFINE, String::new()),
+                        "include" => push1!(INCLUDE, String::new()),
+                        "macro" => push1!(MACRO, String::new()),
                         _ => eprintln!("L{}: Unknown directive '{}'", i, d),
                     }
                 }
@@ -122,7 +120,7 @@ impl Token {
                 }
 
                 if word.chars().last().unwrap() == '.' {
-                    push1!(MACRO_IDENTIFIER, String::new()); 
+                    push1!(MACRO_CALL, word.get(0..word.len()-1).unwrap().to_string()); 
                 }
 
                 // Create tokens from names
@@ -148,27 +146,14 @@ impl Token {
                 // Identifiers. they cannot start with a number
                 if utils::is_ident_first(&c) {
                     let mut ident = true;
-                    let mut is_macro = false;
                     for (j, c) in word.get(1..).unwrap().chars().enumerate() {
                         // The other characters a-zA-Z0-9_
                         if !utils::is_ident_char(&c) {
                             ident = false;
-                            // If character is a point, it is a macro declaration,
-                            // possibly with multiple parameters.
-                            let macro_decl = word.split('.').collect::<Vec<_>>();
-                            if macro_decl.len() != 0 {
-                                pushn!(MACRO_IDENTIFIER, String::new());
-                            }
-                            for split in &macro_decl[1..] {
-                                pushn!(MACRO_PARAMETER, String::new());
-                            }
-                            is_macro = true;
                             break;
                         }
                     }
-
                     if ident { push1!(IDENTIFIER, word.to_string()); }
-                    if is_macro { continue; }
                 }
 
                 // The word did not match any token type
@@ -195,8 +180,15 @@ impl Token {
                 
                 loop {
                     match (*selected).ty {
-                        DIRECTIVE|INSTRUCTION|ARGUMENT|PLUS|MINUS => {
+                        INSTRUCTION|ARGUMENT|PLUS|MINUS|MACRO_CALL => {
                             selected = (*selected).parent;
+                        }
+                        DIRECTIVE => {
+                            if (*selected).children[0].ty == MACRO {
+                                selected = (*selected).push(line, MACRO_BODY, mt!());
+                            }else {
+                                selected = (*selected).parent;
+                            }
                         }
                         _ => break,
                     }
@@ -225,10 +217,22 @@ impl Token {
             // TODO macro calls can have registers, literals, addresses, or bits,
             // just like instructions.
             match token.ty {
-                DIRECTIVE_DEFINE => {
+                DEFINE|INCLUDE => {
                     selected = (*selected).push(line, DIRECTIVE, mt!());
-                    (*selected).push(line, DIRECTIVE_DEFINE, mt!());
+                    (*selected).push(line, token.ty, mt!());
                 }
+
+                MACRO => {
+                    if (*selected).ty == MACRO_BODY {
+                        // <- DIRECTIVE <- MACRO_BODY
+                        selected = (*(*selected).parent).parent; 
+                    }else {
+                         selected = (*selected).push(line, DIRECTIVE, mt!());
+                        (*selected).push(line, MACRO, mt!());   
+                    }
+                }
+
+                MACRO_CALL => selected = (*selected).push(line, MACRO_CALL, mt!()),
 
                 ADC|ADD|AND|BIT|CALL|CCF|CP|CPL|DAA|DEC|DI|EI|HALT|INC|JP|JR|LD|LDI|LDD|NOP|
                 OR|POP|PUSH|RES|RET|RL|RLA|RLC|RLD|RR|RRA|RRC|RRCA|RRD|RST|SBC|SCF|SET|SLA|SLL|
@@ -368,7 +372,7 @@ pub enum TokenType {
                 IDENTIFIER,
             INCLUDE,
             MACRO,
-                MACRO_ARGUMENT
+                MACRO_ARGUMENT, MACRO_BODY,
             
         MACRO_CALL,
         MARKER,

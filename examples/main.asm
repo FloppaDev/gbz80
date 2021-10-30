@@ -55,7 +55,8 @@
     res 7 (hl)      	;Turn off the screen
 
 #macro mul lhs rhs
-    ; ... .lhs .rhs 
+    add .lhs .rhs ; bs code
+    nop
 #macro
 
 ; mul. a 3     mul
