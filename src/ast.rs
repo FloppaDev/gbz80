@@ -42,7 +42,11 @@ impl Token {
         let base_tokens = Token::get_base_tokens(&split); 
         unsafe { 
             let int_ast = Token::make_tree(base_tokens);
-            #[cfg(debug)] int_ast.ast.debug();
+            #[cfg(debug)] {
+                utils::debug_title("AST data");
+                int_ast.ast.debug();
+                utils::debug_title("Macros expansion");
+            }
             let ast = int_ast.expand();
             
             return ast;
@@ -241,7 +245,17 @@ impl Token {
                 MACRO_CALL => {
                     selected = (*selected).push(line, MACRO_CALL, token.value.clone());
                     macro_calls.push((&(*selected)) as *const _);
-                    //TODO parse
+                    for (mcc_i, macro_call_c) in (*selected).value.chars().enumerate() {
+                        if !utils::is_num(&macro_call_c) {
+                            if mcc_i > 0 {
+                                //Push lit
+                                //TODO
+                            }
+                            //Push ident
+                            //TODO
+                            break;
+                        }
+                    }
                 }
 
                 ADC|ADD|AND|BIT|CALL|CCF|CP|CPL|DAA|DEC|DI|EI|HALT|INC|JP|JR|LD|LDI|LDD|NOP|
@@ -315,8 +329,6 @@ impl Token {
 
     #[cfg(debug)]
     pub fn debug(&self) {
-        println!("AST data:");
-
         fn children(token: &Token, indent: usize) {
             for child in &token.children {
                 let mut n = child.line.to_string();
@@ -350,7 +362,9 @@ impl IntermediateAST {
     /// Expand macro calls.
     /// unsafe: pointer deref
     pub unsafe fn expand(self) -> Token {
-
+        for macro_call in &self.macro_calls {
+            (**macro_call).debug();
+        }
 
         self.ast
     }

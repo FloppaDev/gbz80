@@ -128,8 +128,12 @@ pub fn is_space(c: &char) -> bool {
 }
 
 pub fn is_ident_char(c: &char) -> bool {
+    is_num(c) || is_ident_first(c)
+}
+
+pub fn is_num(c: &char) -> bool {
     const CHARS: [char; 10] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-    CHARS.contains(c) || is_ident_first(c)
+    CHARS.contains(c)
 }
 
 pub fn is_ident_first(c: &char) -> bool {
@@ -141,4 +145,10 @@ pub fn is_ident_first(c: &char) -> bool {
         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     ];
     CHARS.contains(c)
+}
+
+#[cfg(debug)]
+pub fn debug_title(title: &str) {
+    let decoration = "=".repeat(79);
+    println!("{}\n\t\t\t\t{}\n{}", decoration, title, decoration);
 }
