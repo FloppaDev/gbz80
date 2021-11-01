@@ -76,5 +76,3 @@
 #macro
 
 2db. 3
-10db. nop
-

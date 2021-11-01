@@ -67,6 +67,10 @@ impl Token {
                 macro_rules! push1 { ($tt:ident, $str:expr) => {
                     { root.push(line.number, $tt, $str); continue; }
                 }}
+
+                if word.chars().last().unwrap() == '.' {
+                    push1!(MACRO_CALL, word.get(0..word.len()-1).unwrap().to_string()); 
+                }
                 
                 match c {
                     '&' => {
@@ -117,10 +121,6 @@ impl Token {
 
                 if word.contains(':') {
                     push1!(MARKER, word.to_string());
-                }
-
-                if word.chars().last().unwrap() == '.' {
-                    push1!(MACRO_CALL, word.get(0..word.len()-1).unwrap().to_string()); 
                 }
 
                 // Create tokens from names
@@ -209,13 +209,11 @@ impl Token {
                 }
             }
 
-            if (*selected).ty == INSTRUCTION {
+            if (*selected).ty == INSTRUCTION || (*selected).ty == MACRO_CALL {
                 // Create a new argument.
                 selected = (*selected).push(line, ARGUMENT, mt!());
             }
 
-            // TODO macro calls can have registers, literals, addresses, or bits,
-            // just like instructions.
             match token.ty {
                 DEFINE|INCLUDE => {
                     selected = (*selected).push(line, DIRECTIVE, mt!());
@@ -232,7 +230,9 @@ impl Token {
                     }
                 }
 
-                MACRO_CALL => selected = (*selected).push(line, MACRO_CALL, mt!()),
+                MACRO_CALL => {
+                    selected = (*selected).push(line, MACRO_CALL, token.value.clone());
+                }
 
                 ADC|ADD|AND|BIT|CALL|CCF|CP|CPL|DAA|DEC|DI|EI|HALT|INC|JP|JR|LD|LDI|LDD|NOP|
                 OR|POP|PUSH|RES|RET|RL|RLA|RLC|RLD|RR|RRA|RRC|RRCA|RRD|RST|SBC|SCF|SET|SLA|SLL|

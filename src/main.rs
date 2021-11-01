@@ -5,6 +5,7 @@ mod split;
 mod ast;
 mod opcodes;
 mod encode;
+mod validation;
 
 // Compilation will follow these steps:
 //
@@ -51,6 +52,13 @@ fn main() {
 
     let ast = ast::Token::make_ast(split);
     #[cfg(debug)] ast.debug();
+
+    if !validation::check(ast) {
+        eprintln!("\x1b[0;31mCompilation failed at syntax validation.\x1b[0m");
+        std::process::exit(1);
+    }
+
+
 }
 
 pub fn abort(e: &str) -> ! {
