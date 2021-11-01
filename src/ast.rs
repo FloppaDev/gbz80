@@ -243,16 +243,26 @@ impl Token {
                 }
 
                 MACRO_CALL => {
-                    selected = (*selected).push(line, MACRO_CALL, token.value.clone());
+                    selected = (*selected).push(line, MACRO_CALL, mt!());
                     macro_calls.push((&(*selected)) as *const _);
-                    for (mcc_i, macro_call_c) in (*selected).value.chars().enumerate() {
+
+                    // Separate the repeat count and the identifier.
+                    for (mcc_i, macro_call_c) in token.value.chars().enumerate() {
                         if !utils::is_num(&macro_call_c) {
-                            if mcc_i > 0 {
-                                //Push lit
-                                //TODO
+                            if mcc_i == 0 {
+                                // No repeat count, only an identifier.
+                                (*selected).push(line, IDENTIFIER, token.value.clone());
+                            }else {
+                                // Push LIT, but after the IDENTIFIER so it can be
+                                // at the same index even when there is no repeat count.
+                                let ident = token.value.get(mcc_i..).unwrap().to_string();
+                                (*selected).push(line, IDENTIFIER, ident);
+
+                                let repeat = token.value.get(..mcc_i).unwrap().to_string();
+                                let lit = (*selected).push(line, LIT, mt!());
+                                (*lit).push(line, LIT_DEC, repeat);
                             }
-                            //Push ident
-                            //TODO
+
                             break;
                         }
                     }
@@ -352,6 +362,7 @@ impl Token {
     }
 }
 
+/// Token tree before the macro are expanded.
 struct IntermediateAST {
     pub ast: Token,
     pub macro_defs: Vec<*const Token>,
@@ -359,11 +370,27 @@ struct IntermediateAST {
 }
 
 impl IntermediateAST {
-    /// Expand macro calls.
+    /// Expand macro calls. resulting tokens go in the existing 
+    /// MACRO_CALL tokens, which get their previous children removed.
     /// unsafe: pointer deref
     pub unsafe fn expand(self) -> Token {
         for macro_call in &self.macro_calls {
-            (**macro_call).debug();
+            // Get macro identifier.
+            let ident = &(**macro_call).children[0].value;
+            let mut def = None;
+
+            // Look for the corresponding macro declaration.
+            for macro_def in &self.macro_defs {
+                if &(**macro_def).children[1].value == ident {
+                   def = Some(*macro_def);
+                   break;
+                }
+            }
+            
+            if let Some(def) = def {
+                // Macro declaration found, expansion can continue.
+                //TODO
+            }else { eprintln!("Macro declaration not found."); }
         }
 
         self.ast

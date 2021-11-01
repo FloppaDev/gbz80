@@ -76,3 +76,5 @@
 #macro
 
 2db. 3
+
+mul. a b
