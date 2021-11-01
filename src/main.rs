@@ -48,10 +48,7 @@ fn main() {
     };
 
     let split = split::Split::new(&input, &args.symbols);
-    #[cfg(debug)] split.debug();
-
     let ast = ast::Token::make_ast(split);
-    #[cfg(debug)] ast.debug();
 
     if !validation::check(ast) {
         eprintln!("\x1b[0;31mCompilation failed at syntax validation.\x1b[0m");

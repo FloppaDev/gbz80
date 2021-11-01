@@ -40,9 +40,13 @@ impl Token {
     /// Build the AST from split data
     pub fn make_ast(split: Split) -> Token {
         let base_tokens = Token::get_base_tokens(&split); 
-        let root = unsafe { Token::make_tree(base_tokens) };
-
-        root
+        unsafe { 
+            let int_ast = Token::make_tree(base_tokens);
+            #[cfg(debug)] int_ast.ast.debug();
+            let ast = int_ast.expand();
+            
+            return ast;
+        }
     }
 
     /// Create a root token and adds all the identified tokens as children
@@ -166,8 +170,11 @@ impl Token {
 
     /// Hierarchize tokens
     /// unsafe: pointer deref
-    unsafe fn make_tree(self) -> Token {
+    unsafe fn make_tree(self) -> IntermediateAST {
         let mut ast = Token::root();
+        let mut macro_defs= vec![];
+        let mut macro_calls= vec![];
+
         let mut line = 0;
 
         let mut selected: *mut _ = &mut ast;
@@ -227,11 +234,14 @@ impl Token {
                     }else {
                          selected = (*selected).push(line, DIRECTIVE, mt!());
                         (*selected).push(line, MACRO, mt!());   
+                        macro_defs.push((&(*selected)) as *const _);
                     }
                 }
 
                 MACRO_CALL => {
                     selected = (*selected).push(line, MACRO_CALL, token.value.clone());
+                    macro_calls.push((&(*selected)) as *const _);
+                    //TODO parse
                 }
 
                 ADC|ADD|AND|BIT|CALL|CCF|CP|CPL|DAA|DEC|DI|EI|HALT|INC|JP|JR|LD|LDI|LDD|NOP|
@@ -300,7 +310,7 @@ impl Token {
             }
         }
 
-        ast
+        IntermediateAST { ast, macro_defs, macro_calls }
     }
 
     #[cfg(debug)]
@@ -327,6 +337,22 @@ impl Token {
 
         children(self, 0);
         println!();
+    }
+}
+
+struct IntermediateAST {
+    pub ast: Token,
+    pub macro_defs: Vec<*const Token>,
+    pub macro_calls: Vec<*const Token>,
+}
+
+impl IntermediateAST {
+    /// Expand macro calls.
+    /// unsafe: pointer deref
+    pub unsafe fn expand(self) -> Token {
+
+
+        self.ast
     }
 }
 

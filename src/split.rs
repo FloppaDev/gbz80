@@ -32,7 +32,9 @@ impl<'a> Split<'a> {
 
 impl<'a> Split<'a> {
     pub fn new(input: &'a str, symbols: &'a [String]) -> Split<'a> {
-        Splitter::new(input, symbols).run()
+        let split = Splitter::new(input, symbols).run();
+        #[cfg(debug)] split.debug();
+        split
     }
 }
 
