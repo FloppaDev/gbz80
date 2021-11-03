@@ -11,11 +11,13 @@ macro_rules! opcodes {(
 ) => {
         use ast::TokenType::{self, *};
 
+        #[derive(Debug)]
         pub struct Instruction {
             ty: TokenType,
             ops: Vec<Op>,
         }
 
+        #[derive(Debug)]
         pub struct Op {
             args: Vec<OpToken>,
             bytes: u16,
@@ -23,6 +25,7 @@ macro_rules! opcodes {(
             input: usize
         }
 
+        #[derive(Debug)]
         pub struct OpToken {
             ty: TokenType,
             children: Vec<OpToken>,
@@ -45,7 +48,7 @@ macro_rules! opcodes {(
 
                     $(//A AT0 HL AT1
                         // Moving logic out of $()*
-                        // Otherwise this monstrosity would be generated 500~ times.
+                        // Otherwise this would be generated thousands of times.
                         op_tokens(&mut op, $arg, &mut at, &mut plus); 
                     )*
 

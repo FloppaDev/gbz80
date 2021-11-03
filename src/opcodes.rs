@@ -1,3 +1,6 @@
+// Macro seems to work but throws unused warnings.
+#![allow(unused, unused_mut)]
+
 opcodes!{
     :ADC    0x88   0 A B
             0x89   0 A C
