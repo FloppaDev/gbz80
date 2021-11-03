@@ -50,12 +50,14 @@ fn main() {
     let split = split::Split::new(&input, &args.symbols);
     let ast = ast::Token::make_ast(split);
 
-    if !validation::check(ast) {
+    let instructions = opcodes::get_instructions();
+
+    if !validation::check(&ast, &instructions) {
         eprintln!("\x1b[0;31mCompilation failed at syntax validation.\x1b[0m");
         std::process::exit(1);
     }
 
-
+    encode::build(ast, instructions);
 }
 
 pub fn abort(e: &str) -> ! {
@@ -81,7 +83,7 @@ fn clargs() -> Args {
     };
     if words.len() == 2 { return args }
 
-    enum Ty { Unknown, Define, Output };
+    enum Ty { Unknown, Define, Output }
     let mut ty = Ty::Unknown;
 
     for word in &words[2..] {

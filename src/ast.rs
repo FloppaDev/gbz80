@@ -154,7 +154,7 @@ impl Token {
                 // Identifiers. they cannot start with a number
                 if utils::is_ident_first(&c) {
                     let mut ident = true;
-                    for (j, c) in word.get(1..).unwrap().chars().enumerate() {
+                    for c in word.get(1..).unwrap().chars() {
                         // The other characters a-zA-Z0-9_
                         if !utils::is_ident_char(&c) {
                             ident = false;
@@ -182,7 +182,6 @@ impl Token {
         let mut line = 0;
 
         let mut selected: *mut _ = &mut ast;
-        let mut paren = 0 as *mut Token;
 
         for token in self.children {
             // New line, end instructions and directives.
@@ -433,16 +432,15 @@ pub enum TokenType {
             // opcodes.rs only, they are then converted to literals
             B0, B1, B2, B3, B4, B5, B6, B7,
 
-    META,
-        DIRECTIVE,
-            DEFINE,
-                IDENTIFIER,
-            INCLUDE,
-            MACRO,
-                MACRO_ARGUMENT, MACRO_BODY,
-            
-        MACRO_CALL,
-        MARKER,
+    DIRECTIVE,
+        DEFINE,
+            IDENTIFIER,
+        INCLUDE,
+        MACRO,
+            MACRO_ARGUMENT, MACRO_BODY,
+        
+    MACRO_CALL,
+    MARKER,
 
-        UNKNOWN,
+    UNKNOWN,
 }

@@ -33,7 +33,7 @@ macro_rules! opcodes {(
         /// is convenient for macro_rules, but not convenient for actual use.
         /// Thus, we will put these tokens in containers, pretty much like with
         /// the input asm code.
-        fn get_instructions() -> Vec<Instruction> {
+        pub fn get_instructions() -> Vec<Instruction> {
             let mut instructions = vec![];    
             let mut at = None;
             let mut plus = None;
