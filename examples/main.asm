@@ -54,7 +54,7 @@
     ld hl &FF40		;LCDC - LCD Control (R/W)
     res 7 (hl)      	;Turn off the screen
 
-#macro mul lhs rhs
+#macro mul.lhs.rhs
     add .lhs .rhs ; bs code
     nop
 #macro
@@ -71,7 +71,7 @@
     ld a (Start+FOO-10)
     add Font+10
 
-#macro db .b
+#macro db.b
     .b
 #macro
 

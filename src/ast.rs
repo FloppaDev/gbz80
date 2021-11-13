@@ -77,9 +77,9 @@ impl Token {
                 }}
 
                 if word.chars().last().unwrap() == '.' {
-                    push1!(MACRO_CALL, word.get(0..word.len()-1).unwrap().to_string()); 
+                    push1!(MACRO_CALL, word.get(..word.len()-1).unwrap().to_string());
                 }
-                
+
                 match c {
                     '&' => {
                         let mut value = mt!();
@@ -154,14 +154,23 @@ impl Token {
                 // Identifiers. they cannot start with a number
                 if utils::is_ident_first(&c) {
                     let mut ident = true;
+                    let mut macro_ident = false;
+
                     for c in word.get(1..).unwrap().chars() {
                         // The other characters a-zA-Z0-9_
                         if !utils::is_ident_char(&c) {
                             ident = false;
-                            break;
+                            if c == '.' {
+                                macro_ident = true;
+                                //TODO break out of for, idk if break here would work.
+                            }else {
+                                macro_ident = false; 
+                                //TODO
+                            }
                         }
                     }
-                    if ident { push1!(IDENTIFIER, word.to_string()); }
+                    if macro_ident { push1!(MACRO_IDENTIFIER, word.to_string()); }
+                    else if ident { push1!(IDENTIFIER, word.to_string()); }
                 }
 
                 // The word did not match any token type
@@ -238,6 +247,16 @@ impl Token {
                          selected = (*selected).push(line, DIRECTIVE, mt!());
                         (*selected).push(line, MACRO, mt!());   
                         macro_defs.push((&(*selected)) as *const _);
+                    }
+                }
+
+                MACRO_IDENTIFIER => {
+                    let split = token.value.split('.').collect::<Vec<_>>();
+                    let mut iter = split.iter();
+                    (*selected).push(line, MACRO_IDENTIFIER, iter.next().unwrap().to_string());
+
+                    while let Some(s) = iter.next() {
+                        (*selected).push(line, MACRO_ARGUMENT, s.to_string());
                     }
                 }
 
@@ -385,10 +404,32 @@ impl IntermediateAST {
                    break;
                 }
             }
+
+            let mut arg_values = vec![];
+            for arg in &(**macro_call).children {
+                if (*arg).ty == ARGUMENT {
+                    arg_values.push(&arg.children[0]);
+                }
+            }
             
             if let Some(def) = def {
                 // Macro declaration found, expansion can continue.
-                //TODO
+                let mut arg_names = vec![];
+                for arg in &(*def).children {
+                    if (*arg).ty == MACRO_ARGUMENT {
+                        arg_names.push(&(*arg).value);
+                    }
+                }
+
+                if arg_names.len() != arg_values.len() {
+                    eprintln!(  "Macro call arguments count at line {} does not \
+                                match the count in macro declaration. \
+                                ({} != {})",
+                                (**macro_call).line,
+                                arg_values.len(),
+                                arg_names.len());
+
+                }
             }else { eprintln!("Macro declaration not found."); }
         }
 
@@ -437,7 +478,7 @@ pub enum TokenType {
             IDENTIFIER,
         INCLUDE,
         MACRO,
-            MACRO_ARGUMENT, MACRO_BODY,
+            MACRO_IDENTIFIER, MACRO_ARGUMENT, MACRO_BODY,
         
     MACRO_CALL,
     MARKER,
