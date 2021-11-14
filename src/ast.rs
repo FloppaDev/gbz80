@@ -1,6 +1,7 @@
 use utils;
 use split::Split;
 use self::TokenType::*;
+use opcodes::Instruction;
 
 #[derive(Debug)]
 pub struct Token {
@@ -13,7 +14,7 @@ pub struct Token {
 
 impl Token {
     /// Root of the tree, it only contains children.
-    fn root() -> Self {
+    pub fn root() -> Self {
         Self {
             line: 0,
             ty: TokenType::UNKNOWN,
@@ -24,7 +25,7 @@ impl Token {
     }
 
     /// Add a new token as a child of self.
-    fn push(&mut self, line: usize, ty: TokenType, value: String) -> &mut Token {
+    pub fn push(&mut self, line: usize, ty: TokenType, value: String) -> &mut Token {
         let parent: *mut _ = self;
         let children = vec![];
         self.children.push(Token {line, ty, parent, children, value});
@@ -33,12 +34,12 @@ impl Token {
     }
 
     /// Move token to self as child
-    fn transfer(&mut self, token: Token) {
+    pub fn transfer(&mut self, token: Token) {
         self.children.push(token);
     }
 
     /// Create a copy of the token and its children.
-    fn clone(&self) -> Token {
+    pub fn clone(&self) -> Token {
         let mut children = vec![];
 
         for child in &self.children {
@@ -55,7 +56,7 @@ impl Token {
     }
 
     /// Copy data from token to self.
-    fn copy(&mut self, token: &Token) {
+    pub fn copy(&mut self, token: &Token) {
         let mut children = vec![];
 
         for child in &token.children {
@@ -70,7 +71,7 @@ impl Token {
     }
 
     /// Build the AST from split data
-    pub fn make_ast(split: Split) -> Token {
+    pub fn make_ast(split: Split, instructions: &Vec<Instruction>) -> Token {
         let base_tokens = Token::get_base_tokens(&split); 
         let int_ast = unsafe { Token::make_tree(base_tokens) };
         #[cfg(debug)] {
@@ -78,7 +79,11 @@ impl Token {
             int_ast.ast.debug();
             utils::debug_title("Macros expansion");
         }
-        let ast = int_ast.expand();
+
+        let ast = int_ast
+            .expand()
+            .get_markers()
+            .build();
         
         return ast;
     }
@@ -222,7 +227,6 @@ impl Token {
         let mut selected: *mut _ = &mut ast;
 
         for token in self.children {
-            println!("token: {:?}", token.ty);
             // New line, end instructions and directives.
             if line != token.line {
                 line = token.line;
@@ -424,7 +428,7 @@ impl IntermediateAST {
     /// unsafe: pointer deref
     // TODO fix line numbers in expanded calls.
     // TODO do not put macro_defs in the ast.
-    pub fn expand(mut self) -> Token {
+    pub fn expand(mut self) -> Self {
         fn walk(current: &mut Token, macro_defs: &Vec<Token>) {
             for current_child in &mut current.children {
                 if current_child.ty != MACRO_CALL {
@@ -433,6 +437,9 @@ impl IntermediateAST {
                 }
 
                 let macro_call = current_child;
+                #[cfg(debug)] {
+                    println!("    Expanding macro call '{}':", &macro_call.children[0].value);
+                }
 
                 // Get macro identifier.
                 let ident = &macro_call.children[0].value;
@@ -527,6 +534,10 @@ impl IntermediateAST {
                                 macro_call.transfer(b_child.clone());        
                             }
                         }
+
+                        #[cfg(debug)] {
+                            macro_call.debug();
+                        }
                     }else {
                         eprintln!("Macro declaration at line {} does not have a body", def.line);
                     }
@@ -536,7 +547,19 @@ impl IntermediateAST {
 
         walk(&mut self.ast, &self.macro_defs);
 
-        self.ast.debug();
+        self
+    }
+
+    pub fn get_markers(mut self) -> Self {
+        for child in &self.ast.children {
+
+        }
+
+        self
+    }
+
+    pub fn build(mut self) -> Token {
+        //TODO
         self.ast
     }
 }

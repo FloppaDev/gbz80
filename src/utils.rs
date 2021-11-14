@@ -13,22 +13,22 @@ macro_rules! opcodes {(
 
         #[derive(Debug)]
         pub struct Instruction {
-            ty: TokenType,
-            ops: Vec<Op>,
+            pub ty: TokenType,
+            pub ops: Vec<Op>,
         }
 
         #[derive(Debug)]
         pub struct Op {
-            args: Vec<OpToken>,
-            bytes: u16,
+            pub args: Vec<OpToken>,
+            pub bytes: u16,
             //TODO rename var_size in Token
-            input: usize
+            pub input: usize
         }
 
         #[derive(Debug)]
         pub struct OpToken {
-            ty: TokenType,
-            children: Vec<OpToken>,
+            pub ty: TokenType,
+            pub children: Vec<OpToken>,
         }
 
         /// Get instructions from the opcodes file.

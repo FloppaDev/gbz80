@@ -47,10 +47,10 @@ fn main() {
         Err(_) => abort("File not found")
     };
 
-    let split = split::Split::new(&input, &args.symbols);
-    let ast = ast::Token::make_ast(split);
-
     let instructions = opcodes::get_instructions();
+
+    let split = split::Split::new(&input, &args.symbols);
+    let ast = ast::Token::make_ast(split, &instructions);
 
     if !validation::check(&ast, &instructions) {
         eprintln!("\x1b[0;31mCompilation failed at syntax validation.\x1b[0m");
@@ -60,6 +60,7 @@ fn main() {
     encode::build(ast, instructions);
 }
 
+// TODO make sure that eprintln uses should not be aborts.
 pub fn abort(e: &str) -> ! {
     eprintln!("{}", e);
     std::process::exit(1);
