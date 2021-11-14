@@ -155,3 +155,8 @@ pub fn debug_title(title: &str) {
     let decoration = "=".repeat(79);
     println!("{}\n\t\t\t\t{}\n{}", decoration, title, decoration);
 }
+
+pub fn parse_dec(dec: &str) -> usize {
+    //TODO handle error.
+    str::parse::<usize>(dec).unwrap()
+}

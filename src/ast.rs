@@ -218,7 +218,6 @@ impl Token {
     unsafe fn make_tree(self) -> IntermediateAST {
         let mut ast = Token::root();
         let mut macro_defs= vec![];
-        let mut macro_calls= vec![];
 
         let mut line = 0;
 
@@ -294,7 +293,6 @@ impl Token {
 
                 MACRO_CALL => {
                     selected = (*selected).push(line, MACRO_CALL, mt!());
-                    macro_calls.push((&(*selected)) as *const _);
 
                     // Separate the repeat count and the identifier.
                     for (mcc_i, macro_call_c) in token.value.chars().enumerate() {
@@ -384,7 +382,7 @@ impl Token {
             }
         }
 
-        IntermediateAST { ast, macro_defs, macro_calls }
+        IntermediateAST { ast, macro_defs }
     }
 
     #[cfg(debug)]
@@ -416,96 +414,130 @@ impl Token {
 struct IntermediateAST {
     pub ast: Token,
     pub macro_defs: Vec<*const Token>,
-    pub macro_calls: Vec<*const Token>,
 }
 
 impl IntermediateAST {
     /// Expand macro calls. resulting tokens go in the existing 
     /// MACRO_CALL tokens, which get their previous children removed.
     /// unsafe: pointer deref
-    pub unsafe fn expand(self) -> Token {
-        for macro_call in &self.macro_calls {
-            // Get macro identifier.
-            let ident = &(**macro_call).children[0].value;
-            let mut def = None;
-
-            // Look for the corresponding macro declaration.
-            for macro_def in &self.macro_defs {
-                if &(**macro_def).children[1].value == ident {
-                   def = Some(*macro_def);
-                   break;
+    // TODO fix line numbers in expanded calls.
+    // TODO do not put macro_defs in the ast.
+    pub unsafe fn expand(mut self) -> Token {
+        unsafe fn walk(current: &mut Token, macro_defs: &Vec<*const Token>) {
+            for current_child in &mut current.children {
+                if current_child.ty != MACRO_CALL {
+                    walk(current_child, macro_defs);
+                    continue;
                 }
-            }
 
-            let mut arg_values = vec![];
-            for arg in &(**macro_call).children {
-                if (*arg).ty == ARGUMENT {
-                    arg_values.push(&arg.children[0]);
-                }
-            }
+                let macro_call = current_child;
 
-            if let Some(def) = def {
-                // Macro declaration found, expansion can continue.
-                let mut arg_names = vec![];
-                let mut macro_body = None;
+                // Get macro identifier.
+                let ident = &(*macro_call).children[0].value;
+                let mut def = None;
 
-                for c in &(*def).children {
-                    if (*c).ty == MACRO_ARGUMENT {
-                        arg_names.push(&(*c).value);
-                    }else if (*c).ty == MACRO_BODY{
-                        macro_body = Some(c);
+                // Look for the corresponding macro declaration.
+                for macro_def in macro_defs {
+                    if &(**macro_def).children[1].value == ident {
+                       def = Some(*macro_def);
+                       break;
                     }
                 }
 
-                if arg_names.len() != arg_values.len() {
-                    eprintln!(  "Macro call arguments count at line {} does not \
-                                match the count in macro declaration. \
-                                ({} != {})",
-                                (**macro_call).line,
-                                arg_values.len(),
-                                arg_names.len());
+                let mut arg_values = vec![];
+                let mut repeat: Option<usize> = None;
+
+                for arg in &(*macro_call).children {
+                    if (*arg).ty == ARGUMENT {
+                        arg_values.push(&arg.children[0]);
+                    }else if (*arg).ty == LIT {
+                        let dec = &(*arg).children[0];
+
+                        if dec.ty == LIT_DEC {
+                            repeat = Some(utils::parse_dec(&dec.value));
+                            println!("repeat parsed: {}", repeat.as_ref().unwrap());
+                        }else {
+                            eprintln!(  "Error in macro call line {}, \
+                                        only decimal repeat counts are supported. \
+                                        (type: {:?})",
+                                        arg.line,
+                                        arg.ty);
+                        }
+                    }
                 }
 
-                if let Some(body) = macro_body {
-                    let mut b = body.clone();
+                if let Some(def) = def {
+                    // Macro declaration found, expansion can continue.
+                    let mut arg_names = vec![];
+                    let mut macro_body = None;
 
-                    fn replace_args(token: &mut Token, names: &[&String], args: &[&Token]) {
-                        for child in &mut token.children {
-                            if child.ty == MACRO_ARGUMENT {
-                                let mut replaced = false;
-
-                                for (i, name) in names.iter().enumerate() {
-                                    if &&child.value == name {
-                                        child.copy(args[i]);
-                                        replaced = true;
-                                        break;
-                                    }
-                                }
-
-                                if !replaced {
-                                    eprintln!(  "Unrecognized argument {} in macro call line {}",
-                                                &child.value,
-                                                child.line);
-                                }
-                            }else {
-                                replace_args(child, names, args);
-                            }
+                    for c in &(*def).children {
+                        if (*c).ty == MACRO_ARGUMENT {
+                            arg_names.push(&(*c).value);
+                        }else if (*c).ty == MACRO_BODY{
+                            macro_body = Some(c);
                         }
                     }
 
-                    replace_args(&mut b, &arg_names[..], &arg_values[..]);
-                    println!("==> {:?}", b.ty);
-                    b.debug();
-                    // TODO replace args.
-                    // TODO clear macro_call
-                    // TODO repeat b into macro_call
-                }else {
-                    eprintln!(  "Macro declaration at line {} does not have a body",
-                                (*def).line);
-                }
-            }else { eprintln!("Macro declaration not found."); }
+                    if arg_names.len() != arg_values.len() {
+                        eprintln!(  "Macro call arguments count at line {} does not \
+                                    match the count in macro declaration. \
+                                    ({} != {})",
+                                    (*macro_call).line,
+                                    arg_values.len(),
+                                    arg_names.len());
+                    }
+
+                    if let Some(body) = macro_body {
+                        let mut b = body.clone();
+
+                        // Replace arguments with the values.
+                        fn replace_args(token: &mut Token, names: &[&String], args: &[&Token]) {
+                            for child in &mut token.children {
+                                if child.ty == MACRO_ARGUMENT {
+                                    let mut replaced = false;
+
+                                    for (i, name) in names.iter().enumerate() {
+                                        if &&child.value == name {
+                                            child.copy(args[i]);
+                                            replaced = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if !replaced {
+                                        eprintln!(  "Unrecognized argument {} in macro call line {}",
+                                                    &child.value,
+                                                    child.line);
+                                    }
+                                }else {
+                                    replace_args(child, names, args);
+                                }
+                            }
+                        }
+
+                        replace_args(&mut b, &arg_names[..], &arg_values[..]);
+
+                        (*macro_call).children = vec![];
+
+                        let repeat = if let Some(repeat) = repeat { repeat }else { 1 };
+                        for r in 0..repeat {
+                            for b_child in &b.children {
+                                println!("{:?}", b_child.ty);
+                                (*macro_call).transfer(b_child.clone());        
+                            }
+                        }
+                    }else {
+                        eprintln!(  "Macro declaration at line {} does not have a body",
+                                    (*def).line);
+                    }
+                }else { eprintln!("Macro declaration not found."); }
+            }
         }
 
+        walk(&mut self.ast, &self.macro_defs);
+
+        self.ast.debug();
         self.ast
     }
 }
