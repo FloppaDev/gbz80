@@ -37,6 +37,23 @@ impl Token {
         self.children.push(token);
     }
 
+    /// Create a copy of the token and its children.
+    fn clone(&self) -> Token {
+        let mut children = vec![];
+
+        for child in &self.children {
+            children.push(child.clone());
+        }
+
+        Self {
+            line: self.line,
+            ty: self.ty,
+            parent: self.parent,
+            children: children,
+            value: self.value.clone(),
+        }
+    }
+
     /// Build the AST from split data
     pub fn make_ast(split: Split) -> Token {
         let base_tokens = Token::get_base_tokens(&split); 
@@ -411,13 +428,17 @@ impl IntermediateAST {
                     arg_values.push(&arg.children[0]);
                 }
             }
-            
+
             if let Some(def) = def {
                 // Macro declaration found, expansion can continue.
                 let mut arg_names = vec![];
-                for arg in &(*def).children {
-                    if (*arg).ty == MACRO_ARGUMENT {
-                        arg_names.push(&(*arg).value);
+                let mut macro_body = None;
+
+                for c in &(*def).children {
+                    if (*c).ty == MACRO_ARGUMENT {
+                        arg_names.push(&(*c).value);
+                    }else if (*c).ty == MACRO_BODY{
+                        macro_body = Some(c);
                     }
                 }
 
@@ -428,7 +449,17 @@ impl IntermediateAST {
                                 (**macro_call).line,
                                 arg_values.len(),
                                 arg_names.len());
+                }
 
+                if let Some(body) = macro_body {
+                    let mut b = body.clone();
+                    b.debug();
+                    // TODO replace args.
+                    // TODO clear macro_call
+                    // TODO repeat b into macro_call
+                }else {
+                    eprintln!(  "Macro declaration at line {} does not have a body",
+                                (*def).line);
                 }
             }else { eprintln!("Macro declaration not found."); }
         }
