@@ -72,17 +72,15 @@ impl Token {
     /// Build the AST from split data
     pub fn make_ast(split: Split) -> Token {
         let base_tokens = Token::get_base_tokens(&split); 
-        unsafe { 
-            let int_ast = Token::make_tree(base_tokens);
-            #[cfg(debug)] {
-                utils::debug_title("AST data");
-                int_ast.ast.debug();
-                utils::debug_title("Macros expansion");
-            }
-            let ast = int_ast.expand();
-            
-            return ast;
+        let int_ast = unsafe { Token::make_tree(base_tokens) };
+        #[cfg(debug)] {
+            utils::debug_title("AST data");
+            int_ast.ast.debug();
+            utils::debug_title("Macros expansion");
         }
+        let ast = int_ast.expand();
+        
+        return ast;
     }
 
     /// Create a root token and adds all the identified tokens as children
@@ -224,6 +222,7 @@ impl Token {
         let mut selected: *mut _ = &mut ast;
 
         for token in self.children {
+            println!("token: {:?}", token.ty);
             // New line, end instructions and directives.
             if line != token.line {
                 line = token.line;
@@ -272,12 +271,15 @@ impl Token {
 
                 MACRO => {
                     if (*selected).ty == MACRO_BODY {
-                        // <- DIRECTIVE <- MACRO_BODY
-                        selected = (*(*selected).parent).parent; 
+                        selected = &mut ast as *mut _;
                     }else {
-                         selected = (*selected).push(line, DIRECTIVE, mt!());
-                        (*selected).push(line, MACRO, mt!());   
-                        macro_defs.push((&(*selected)) as *const _);
+                        let mut macro_def = Token::root();
+                        macro_def.line = line;
+                        macro_def.ty = DIRECTIVE;
+                        macro_def.push(line, MACRO, mt!());
+
+                        macro_defs.push(macro_def);
+                        selected = macro_defs.iter_mut().last().unwrap() as *mut _;
                     }
                 }
 
@@ -413,7 +415,7 @@ impl Token {
 /// Token tree before the macro are expanded.
 struct IntermediateAST {
     pub ast: Token,
-    pub macro_defs: Vec<*const Token>,
+    pub macro_defs: Vec<Token>,
 }
 
 impl IntermediateAST {
@@ -422,8 +424,8 @@ impl IntermediateAST {
     /// unsafe: pointer deref
     // TODO fix line numbers in expanded calls.
     // TODO do not put macro_defs in the ast.
-    pub unsafe fn expand(mut self) -> Token {
-        unsafe fn walk(current: &mut Token, macro_defs: &Vec<*const Token>) {
+    pub fn expand(mut self) -> Token {
+        fn walk(current: &mut Token, macro_defs: &Vec<Token>) {
             for current_child in &mut current.children {
                 if current_child.ty != MACRO_CALL {
                     walk(current_child, macro_defs);
@@ -438,8 +440,8 @@ impl IntermediateAST {
 
                 // Look for the corresponding macro declaration.
                 for macro_def in macro_defs {
-                    if &(**macro_def).children[1].value == ident {
-                       def = Some(*macro_def);
+                    if &macro_def.children[1].value == ident {
+                       def = Some(macro_def);
                        break;
                     }
                 }
@@ -470,7 +472,7 @@ impl IntermediateAST {
                     let mut arg_names = vec![];
                     let mut macro_body = None;
 
-                    for c in &(*def).children {
+                    for c in &def.children {
                         if c.ty == MACRO_ARGUMENT {
                             arg_names.push(&c.value);
                         }else if c.ty == MACRO_BODY{
@@ -482,7 +484,7 @@ impl IntermediateAST {
                         eprintln!(  "Macro call arguments count at line {} does not \
                                     match the count in macro declaration. \
                                     ({} != {})",
-                                    (*macro_call).line,
+                                    macro_call.line,
                                     arg_values.len(),
                                     arg_names.len());
                     }
@@ -517,7 +519,7 @@ impl IntermediateAST {
 
                         replace_args(&mut b, &arg_names[..], &arg_values[..]);
 
-                        (*macro_call).children = vec![];
+                        macro_call.children = vec![];
 
                         let repeat = if let Some(repeat) = repeat { repeat }else { 1 };
                         for r in 0..repeat {
@@ -526,7 +528,7 @@ impl IntermediateAST {
                             }
                         }
                     }else {
-                        eprintln!("Macro declaration at line {} does not have a body", (*def).line);
+                        eprintln!("Macro declaration at line {} does not have a body", def.line);
                     }
                 }else { eprintln!("Macro declaration not found."); }
             }
