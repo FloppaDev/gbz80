@@ -54,6 +54,21 @@ impl Token {
         }
     }
 
+    /// Copy data from token to self.
+    fn copy(&mut self, token: &Token) {
+        let mut children = vec![];
+
+        for child in &token.children {
+            children.push(child.clone());
+        }
+
+        self.line = token.line;
+        self.ty = token.ty;
+        self.parent = token.parent;
+        self.children = children;
+        self.value = token.value.clone();
+    }
+
     /// Build the AST from split data
     pub fn make_ast(split: Split) -> Token {
         let base_tokens = Token::get_base_tokens(&split); 
@@ -453,6 +468,33 @@ impl IntermediateAST {
 
                 if let Some(body) = macro_body {
                     let mut b = body.clone();
+
+                    fn replace_args(token: &mut Token, names: &[&String], args: &[&Token]) {
+                        for child in &mut token.children {
+                            if child.ty == MACRO_ARGUMENT {
+                                let mut replaced = false;
+
+                                for (i, name) in names.iter().enumerate() {
+                                    if &&child.value == name {
+                                        child.copy(args[i]);
+                                        replaced = true;
+                                        break;
+                                    }
+                                }
+
+                                if !replaced {
+                                    eprintln!(  "Unrecognized argument {} in macro call line {}",
+                                                &child.value,
+                                                child.line);
+                                }
+                            }else {
+                                replace_args(child, names, args);
+                            }
+                        }
+                    }
+
+                    replace_args(&mut b, &arg_names[..], &arg_values[..]);
+                    println!("==> {:?}", b.ty);
                     b.debug();
                     // TODO replace args.
                     // TODO clear macro_call
