@@ -433,7 +433,7 @@ impl IntermediateAST {
                 let macro_call = current_child;
 
                 // Get macro identifier.
-                let ident = &(*macro_call).children[0].value;
+                let ident = &macro_call.children[0].value;
                 let mut def = None;
 
                 // Look for the corresponding macro declaration.
@@ -447,15 +447,14 @@ impl IntermediateAST {
                 let mut arg_values = vec![];
                 let mut repeat: Option<usize> = None;
 
-                for arg in &(*macro_call).children {
-                    if (*arg).ty == ARGUMENT {
+                for arg in &macro_call.children {
+                    if arg.ty == ARGUMENT {
                         arg_values.push(&arg.children[0]);
-                    }else if (*arg).ty == LIT {
-                        let dec = &(*arg).children[0];
+                    }else if arg.ty == LIT {
+                        let dec = &arg.children[0];
 
                         if dec.ty == LIT_DEC {
                             repeat = Some(utils::parse_dec(&dec.value));
-                            println!("repeat parsed: {}", repeat.as_ref().unwrap());
                         }else {
                             eprintln!(  "Error in macro call line {}, \
                                         only decimal repeat counts are supported. \
@@ -472,9 +471,9 @@ impl IntermediateAST {
                     let mut macro_body = None;
 
                     for c in &(*def).children {
-                        if (*c).ty == MACRO_ARGUMENT {
-                            arg_names.push(&(*c).value);
-                        }else if (*c).ty == MACRO_BODY{
+                        if c.ty == MACRO_ARGUMENT {
+                            arg_names.push(&c.value);
+                        }else if c.ty == MACRO_BODY{
                             macro_body = Some(c);
                         }
                     }
@@ -523,13 +522,11 @@ impl IntermediateAST {
                         let repeat = if let Some(repeat) = repeat { repeat }else { 1 };
                         for r in 0..repeat {
                             for b_child in &b.children {
-                                println!("{:?}", b_child.ty);
-                                (*macro_call).transfer(b_child.clone());        
+                                macro_call.transfer(b_child.clone());        
                             }
                         }
                     }else {
-                        eprintln!(  "Macro declaration at line {} does not have a body",
-                                    (*def).line);
+                        eprintln!("Macro declaration at line {} does not have a body", (*def).line);
                     }
                 }else { eprintln!("Macro declaration not found."); }
             }
