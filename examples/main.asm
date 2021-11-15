@@ -80,9 +80,3 @@
 2db. 3
 
 mul. a b
-&0060: reti :label
-&0060: reti :label ld a b 10 12
-(HL)
-10 + 10
-NZ
-HL

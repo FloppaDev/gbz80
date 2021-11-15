@@ -101,6 +101,8 @@ pub fn instruction_len<'a>(
                     _ => {}
                 }
             }
+
+            //TODO
         }
     }
 

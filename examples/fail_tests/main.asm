@@ -7,6 +7,7 @@ ld a ()
 ld a (hl+NZ)
 ld a (hl+10+10)
 &5255:test xor a :test2
+&5255:test xor a &5300:test2
 
 ; Pass
 add a b

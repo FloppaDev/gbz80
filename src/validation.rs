@@ -33,7 +33,7 @@ pub fn check(root: &Token) -> usize {
                     }else {
                         for arg in &token.children[1..] {
                             match arg.children[0].ty {
-                                REGISTER|LIT|FLAG => {}
+                                REGISTER|LIT|FLAG|IDENTIFIER => {}
 
                                 AT => {
                                     let at = &arg.children[0];
@@ -48,7 +48,7 @@ pub fn check(root: &Token) -> usize {
                                         }
                                         1 => {
                                             match at.children[0].ty {
-                                                REGISTER|LIT => {}
+                                                REGISTER|LIT|IDENTIFIER => {}
                                                 PLUS => {
                                                     let plus = &at.children[0];
                                                     let opd_len = plus.children.len();
@@ -63,7 +63,7 @@ pub fn check(root: &Token) -> usize {
 
                                                     for opd in &plus.children {
                                                         match opd.ty {
-                                                            REGISTER|LIT => {}
+                                                            REGISTER|LIT|IDENTIFIER => {}
                                                             _ => {
                                                                 let e = format!(
                                                                     "Token '{:?}' not expected in adress. (L{})",
