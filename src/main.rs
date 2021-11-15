@@ -32,6 +32,8 @@ mod validation;
 //
 // - Check the tree for syntax errors.
 //
+// - Calculate constants: defines and marker positions.
+//
 // - Validate markers. 
 //      .i.e marker &0104: code before the marker cannot exceed &0104.
 //
@@ -60,13 +62,15 @@ fn main() {
         );
         std::process::exit(1);
     }
-
+    
+    let ops_map = encode::instruction_ops(&int_ast.root, &instructions);
     // TODO Get constants
 
     //encode::build(int_ast.root, instructions);
 }
 
 // TODO make sure that eprintln uses should not be aborts.
+/// Like a panic, without the extra text.
 pub fn abort(e: &str) -> ! {
     eprintln!("{}", e);
     std::process::exit(1);

@@ -301,6 +301,9 @@ opcodes!{
             0x6E   0 L AT0 HL AT1
             0x6F   0 L A
             0x2E   1 L LIT
+            0xED7B 2 SP AT0 LIT AT1
+            0x31   1 SP LIT
+            0xF9   0 SP HL
 
     :LDI    0x2A   0 A AT0 HL AT1
             0x22   0 AT0 HL AT1 A
@@ -401,6 +404,8 @@ opcodes!{
             0xC0   0 FLAG_NZ
             0xC8   0 FLAG_Z
             0xD9   0
+
+    :RETI   0xD9   0 
 
     :RL     0xCB10 0 B
             0xCB11 0 C
