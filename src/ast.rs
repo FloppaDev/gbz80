@@ -71,21 +71,16 @@ impl Token {
     }
 
     /// Build the AST from split data
-    pub fn make_ast(split: Split, instructions: &Vec<Instruction>) -> Token {
+    pub fn make_ast(split: Split, instructions: &Vec<Instruction>) -> IntermediateAST {
         let base_tokens = Token::get_base_tokens(&split); 
         let int_ast = unsafe { Token::make_tree(base_tokens) };
         #[cfg(debug)] {
             utils::debug_title("AST data");
-            int_ast.ast.debug();
+            int_ast.root.debug();
             utils::debug_title("Macros expansion");
         }
 
-        let ast = int_ast
-            .expand()
-            .get_markers()
-            .build();
-        
-        return ast;
+        int_ast.expand()
     }
 
     /// Create a root token and adds all the identified tokens as children
@@ -388,7 +383,7 @@ impl Token {
             }
         }
 
-        IntermediateAST { ast, macro_defs }
+        IntermediateAST { root: ast, macro_defs }
     }
 
     #[cfg(debug)]
@@ -417,8 +412,8 @@ impl Token {
 }
 
 /// Token tree before the macro are expanded.
-struct IntermediateAST {
-    pub ast: Token,
+pub struct IntermediateAST {
+    pub root: Token,
     pub macro_defs: Vec<Token>,
 }
 
@@ -545,13 +540,13 @@ impl IntermediateAST {
             }
         }
 
-        walk(&mut self.ast, &self.macro_defs);
+        walk(&mut self.root, &self.macro_defs);
 
         self
     }
 
     pub fn get_markers(mut self) -> Self {
-        for child in &self.ast.children {
+        for child in &self.root.children {
 
         }
 
@@ -560,7 +555,7 @@ impl IntermediateAST {
 
     pub fn build(mut self) -> Token {
         //TODO
-        self.ast
+        self.root
     }
 }
 

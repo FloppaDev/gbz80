@@ -1,3 +1,4 @@
+; Arithmetic expressions are only allowed in #def directives.
 #def FOO 10
 #def BAR "Hey that's a string"
 #def BAZ &10AB
@@ -64,12 +65,13 @@
 
     mul. a 10
 
+#def X Start + FOO - 10
+
 :Font
     #include "font.bin"
 :FontEnd
-
-    ld a (Start+FOO-10)
-    add Font+10
+    ld a (X)
+    add Font
 
 #macro db.b
     .b
@@ -78,3 +80,9 @@
 2db. 3
 
 mul. a b
+&0060: reti :label
+&0060: reti :label ld a b 10 12
+(HL)
+10 + 10
+NZ
+HL

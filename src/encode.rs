@@ -1,98 +1,110 @@
-use opcodes::Instruction;
+use opcodes::{Instruction, Op};
 use ast::{Token, TokenType::{self, *}};
 use crate::abort;
+use std::collections::HashMap;
 
-fn token_of_type(ty: TokenType) -> Token {
-    let mut token = Token::root();
-    token.ty = ty;
-    token
-}
+//TODO not finnished
+/// Map intructions in source to those in the opcodes module.
+pub fn instruction_len<'a>(
+    ast: &Token,
+    instructions: &Vec<Instruction>
+) -> HashMap<&'a Token, &'a Op> {
+    let mut hashmap = HashMap::new();
 
-pub fn instruction_len(token: &Token, instructions: &Vec<Instruction>) -> usize {
-    let ty = token.children[0].ty;
-    let child_count = token.children.len();
-    let arg_count = if child_count == 1 { 0 }else{ child_count - 1 };
+    for token in &ast.children {
 
-    let mut instruction = None;
+        let ty = token.children[0].ty;
+        let child_count = token.children.len();
+        let arg_count = if child_count == 1 { 0 }else{ child_count - 1 };
 
-    for inst in instructions {
-        if inst.ty == ty {
-            instruction = Some(inst);
-        }
-    }
+        let mut instruction = None;
 
-    if instruction.is_none() {
-        let e = format!("Instruction '{:?}' not found.", ty);
-        abort(&e);
-    }
-
-    let instruction = instruction.unwrap();
-
-    if arg_count == 0 {
-        for op in &instruction.ops {
-            if op.args.len() == 0 {
-                return op.bytes as usize;
+        for inst in instructions {
+            if inst.ty == ty {
+                instruction = Some(inst);
             }
         }
-    }else{
-        let mut args = vec![];
 
-        for (i, arg) in token.children[2..].iter().enumerate() {
-            match arg.children[0].ty {
-                REGISTER => args.push(arg.children[0].clone()),
-                FLAG => args.push(arg.children[0].clone()),
-                LIT => {
-                    if i == 0 {
-                        match ty {
-                            BIT|RES|RST|SET => {
-                                match arg.value.as_str() {
-                                    "0" => args.push(token_of_type(B0)),
-                                    "1" => args.push(token_of_type(B1)),
-                                    "2" => args.push(token_of_type(B2)),
-                                    "3" => args.push(token_of_type(B3)),
-                                    "4" => args.push(token_of_type(B4)),
-                                    "5" => args.push(token_of_type(B5)),
-                                    "6" => args.push(token_of_type(B6)),
-                                    "7" => args.push(token_of_type(B7)),
-                                    _ => {
-                                        let e = format!("Unrecognized bit number {}.", &arg.value);
-                                        abort(&e);
+        if instruction.is_none() {
+            let e = format!("Instruction '{:?}' not found.", ty);
+            abort(&e);
+        }
+
+        let instruction = instruction.unwrap();
+
+        if arg_count == 0 {
+            for op in &instruction.ops {
+                if op.args.len() == 0 {
+
+                }
+            }
+        }else{
+            let mut args = vec![];
+
+            for (i, arg) in token.children[2..].iter().enumerate() {
+                match arg.children[0].ty {
+                    REGISTER => args.push(arg.children[0].children[0].ty),
+                    FLAG => args.push(arg.children[0].children[0].ty),
+                    LIT => {
+                        if i == 0 {
+                            match arg.children[0].children[0].ty {
+                                BIT|RES|RST|SET => {
+                                    match arg.value.as_str() {
+                                        "0" => args.push(B0),
+                                        "1" => args.push(B1),
+                                        "2" => args.push(B2),
+                                        "3" => args.push(B3),
+                                        "4" => args.push(B4),
+                                        "5" => args.push(B5),
+                                        "6" => args.push(B6),
+                                        "7" => args.push(B7),
+                                        _ => {
+                                            let e = format!("Unrecognized bit number {}.", &arg.value);
+                                            abort(&e);
+                                        }
                                     }
                                 }
+                                _ => args.push(LIT),
+                            }
+                        }else {
+                            args.push(LIT);
+                        }
+                    }
+                    IDENTIFIER => args.push(LIT),
+                    AT => {
+                        args.push(AT0);
+
+                        match arg.children[0].ty {
+                            REGISTER => args.push(arg.children[0].children[0].ty),
+                            LIT => args.push(LIT),
+                            PLUS => {
+                                args.push(arg.children[0].children[0].ty);
+                                args.push(PLUS);
+                                args.push(arg.children[0].children[1].ty);
                             }
                             _ => {
-                                args.push(arg.children[0].clone());
+                                let e = format!(    "Token of type {:?} not expected in adress \
+                                                    for instruction {:?}",
+                                                    arg.children[0].ty,
+                                                    ty);
+                                abort(&e);
                             }
                         }
-                    }else {
-                        args.push(arg.children[0].clone());
+
+                        args.push(AT1);
                     }
-                }
-                AT => {
-                    match arg.children[0].ty {
-                        REGISTER => args.push(arg.children[0].children[0].clone()),
-                        LIT => args.push(arg.children[0].clone()),
-                        PLUS|MINUS => {
-                            //TODO
-                        }
-                        _ => {
-                            let e = format!(    "Token of type {:?} not expected in adress \
-                                                for instruction {:?}",
-                                                arg.children[0].ty,
-                                                ty);
-                            abort(&e);
-                        }
+                    PLUS => {
+                        args.push(arg.children[0].children[0].ty);
+                        args.push(PLUS);
+                        args.push(arg.children[0].children[1].ty);
                     }
+                    _ => {}
                 }
-                PLUS|MINUS => {
-                    //TODO
-                }
-                _ => {}
             }
         }
     }
 
-    0
+    hashmap
 }
 
 fn hex_to_byte(hex: &str) -> u8 {

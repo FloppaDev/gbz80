@@ -50,14 +50,20 @@ fn main() {
     let instructions = opcodes::get_instructions();
 
     let split = split::Split::new(&input, &args.symbols);
-    let ast = ast::Token::make_ast(split, &instructions);
+    let int_ast = ast::Token::make_ast(split, &instructions);
 
-    if !validation::check(&ast, &instructions) {
-        eprintln!("\x1b[0;31mCompilation failed at syntax validation.\x1b[0m");
+    let err = validation::check(&int_ast.root);
+    if err != 0 {
+        eprintln!(
+            "\x1b[0;31mCompilation failed at syntax validation with {} errors.\x1b[0m",
+            err
+        );
         std::process::exit(1);
     }
 
-    encode::build(ast, instructions);
+    // TODO Get constants
+
+    //encode::build(int_ast.root, instructions);
 }
 
 // TODO make sure that eprintln uses should not be aborts.

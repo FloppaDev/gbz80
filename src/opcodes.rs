@@ -1,6 +1,50 @@
 // Macro seems to work but throws unused warnings.
 #![allow(unused, unused_mut)]
 
+use ast::TokenType::{self, *};
+
+#[derive(Debug)]
+pub struct Instruction {
+    pub ty: TokenType,
+    pub ops: Vec<Op>,
+}
+
+#[derive(Debug)]
+pub struct Op {
+    pub args: Vec<TokenType>,
+    pub bytes: u16,
+    //TODO rename var_size in Token
+    pub input: usize
+}
+
+macro_rules! opcodes {(
+    $(
+        :$instr:ident $(
+            $opc:literal $in:literal $($arg:ident)*
+        )*
+    )*
+) => {
+        /// Get instructions from the opcodes file.
+        pub fn get_instructions() -> Vec<Instruction> {
+            let mut instructions = vec![];    
+
+            $(//:ADC
+                let mut instr = Instruction { ty: $instr, ops: vec![] };
+                $(//0x8E 0
+                    let mut op = Op { args: vec![], bytes: $opc, input: $in };
+                    $(//A AT0 HL AT1
+                        op.args.push($arg);
+                    )*
+                    instr.ops.push(op);
+                )*
+                instructions.push(instr);
+            )*
+
+            instructions
+        }
+    }
+}
+
 opcodes!{
     :ADC    0x88   0 A B
             0x89   0 A C
@@ -183,8 +227,8 @@ opcodes!{
             0x74   0 AT0 HL AT1 H
             0x75   0 AT0 HL AT1 L
             0x36   1 AT0 HL AT1 LIT
-            0xE2   0 AT0 LIT_HEX PLUS C AT1 A
-            0xE0   1 AT0 LIT_HEX PLUS LIT AT1 A
+            0xE2   0 AT0 LIT PLUS C AT1 A
+            0xE0   1 AT0 LIT PLUS LIT AT1 A
             0xFA   2 A AT0 LIT AT1
             0x0A   0 A AT0 BC AT1
             0x1A   0 A AT0 DE AT1
@@ -197,8 +241,8 @@ opcodes!{
             0x7E   0 A AT0 HL AT1
             0x7F   0 A A
             0x3E   1 A LIT
-            0xF0   1 A AT0 LIT_HEX PLUS LIT AT1
-            0xF2   0 A AT0 LIT_HEX PLUS C AT1
+            0xF0   1 A AT0 LIT PLUS LIT AT1
+            0xF2   0 A AT0 LIT PLUS C AT1
             0x40   0 B B
             0x41   0 B C
             0x42   0 B D
