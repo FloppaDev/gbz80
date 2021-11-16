@@ -15,6 +15,11 @@ pub fn instruction_ops<'a>(
 
     let mut hashmap = HashMap::new();
 
+    // For all instructions:
+    // Format arguments in the same way as in the opcodes module.
+    // Compare the arguments to find the correct Op from opcodes.
+    // Note: When the first argument is A, it is optionnal.
+
     fn walk<'a>(
         root: &Token,
         instructions: &Vec<Instruction>, 
@@ -221,8 +226,13 @@ pub fn get_markers<'a>(
     //  BAR                     ; 1? 2?
     //  &00FF:Marker            ; @256
 
-    // The first thing to do is to determine whcih identifiers are markers/labels because
-    // their size will always be 2 bytes.
+    //  The first thing to do is to determine which identifiers are markers/labels because
+    //      their size will always be 2 bytes.
+    //
+    //  Create a dictionnary of all defines and check for undefined identifiers.
+    //
+    //  ABC depends on BAZ and FOO: try to calculate them before calculating ABC.
+    //      There's a possiblity for circular dependencies.
 
     fn walk<'a>(
         ast: &Token,
@@ -232,7 +242,7 @@ pub fn get_markers<'a>(
     ) {
         for token in &ast.children {
             match token.ty {
-                MACRO_CALL => walk(ast, ops_map, hashmap, offset),
+                MACRO_CALL => walk(token, ops_map, hashmap, offset),
                 INTRUCTION => {
 
                 }
