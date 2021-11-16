@@ -188,6 +188,73 @@ pub fn instruction_ops<'a>(
     hashmap
 }
 
+pub fn get_markers<'a>(
+    ast: &Token,
+    ops_map: &HashMap<&'a Token, &'a Op>,
+) -> HashMap<&'a Token, &'a usize> {
+    let mut hashmap = HashMap::new();
+    let mut offset = 0;
+
+    //  Within expressions, markers and defines are both identifiers.
+    //  The size of an identifier could be 1 or 2 bytes, or anything with strings.
+
+    //  #def FOO 10                         ; size is 1
+    //  #def BAR Label1 + 5                 ; size is the size of the identifier
+    //  #def MOO "uwu~"                     ; size is 4
+    //  #def BAZ Label1 + Label2            ; size is the size of the greatest operand
+    //  #def ABC BAZ + FOO                  ; size of BAZ
+    //  #def NO1 NO2;                       ; /!\ circular dependency
+    //  #def NO2 NO1                        ; /!\ circular dependency
+
+    //  add a                   ; Instruction size: 1 byte
+    //  &01                     ; 1 byte
+    //  &2938                   ; 2 bytes
+    //  MOO                     ; 4 (no \0)
+    //  Label1:                 ; @8
+    //  10                      ; 1
+    //  1000                    ; 2
+    //  FOO                     ; 1 
+    //  "Hello"                 ; 5
+    //  BAR                     ; 1? 2?
+    //  :Label2                 ; @?
+    //  BAR                     ; 1? 2?
+    //  BAR                     ; 1? 2?
+    //  &00FF:Marker            ; @256
+
+    // The first thing to do is to determine whcih identifiers are markers/labels because
+    // their size will always be 2 bytes.
+
+    fn walk<'a>(
+        ast: &Token,
+        ops_map: &HashMap<&'a Token, &'a Op>,
+        mut hashmap: &mut HashMap<&'a Token, &'a usize>,
+        mut offset: &mut usize,
+    ) {
+        for token in &ast.children {
+            match token.ty {
+                MACRO_CALL => walk(ast, ops_map, hashmap, offset),
+                INTRUCTION => {
+
+                }
+                LIT => {
+
+                }
+                IDENTIFIER => {
+                    
+                }
+                MARKER => {
+
+                }
+                _ => {}
+            }
+        }
+    }
+
+    walk(ast, ops_map, &mut hashmap, &mut offset);
+
+    hashmap
+}
+
 fn hex_to_byte(hex: &str) -> u8 {
     let hex = hex.chars().collect::<Vec<_>>();
     (hex[0].to_digit(16).unwrap() * 16 + hex[1].to_digit(16).unwrap()) as u8

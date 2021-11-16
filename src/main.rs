@@ -7,6 +7,8 @@ mod opcodes;
 mod encode;
 mod validation;
 
+//TODO forbid LIT_STR in arithmetics.
+
 // Compilation will follow these steps:
 //
 // - Split file into lines, and lines into words.
@@ -64,6 +66,8 @@ fn main() {
     }
     
     let ops_map = encode::instruction_ops(&int_ast.root, &instructions);
+    let markers = encode::get_markers(&int_ast.root, &ops_map);
+
     // TODO Get constants
 
     //encode::build(int_ast.root, instructions);
