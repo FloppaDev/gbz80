@@ -4,7 +4,7 @@
 use crate::ast::TokenType::{self, *};
 
 #[derive(Debug)]
-pub struct Instruction {
+pub struct InstructionDef {
     pub ty: TokenType,
     pub ops: Vec<Op>,
 }
@@ -25,11 +25,11 @@ macro_rules! opcodes {(
     )*
 ) => {
         /// Get instructions from the opcodes file.
-        pub fn get_instructions() -> Vec<Instruction> {
+        pub fn get_instructions() -> Vec<InstructionDef> {
             let mut instructions = vec![];    
 
             $(//:Adc
-                let mut instr = Instruction { ty: $instr, ops: vec![] };
+                let mut instr = InstructionDef { ty: $instr, ops: vec![] };
                 $(//0x8E 0
                     let mut op = Op { args: vec![], bytes: $opc, input: $in };
                     $(//A At0 Hl At1

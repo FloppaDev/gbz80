@@ -1,7 +1,9 @@
+#![allow(clippy::zero_ptr)]
+
 use crate::utils;
 use crate::split::Split;
 use self::TokenType::*;
-use crate::opcodes::Instruction;
+use crate::opcodes::InstructionDef;
 
 #[derive(Debug)]
 pub struct Token {
@@ -50,7 +52,7 @@ impl Token {
             line: self.line,
             ty: self.ty,
             parent: self.parent,
-            children: children,
+            children,
             value: self.value.clone(),
         }
     }
@@ -71,7 +73,7 @@ impl Token {
     }
 
     /// Build the AST from split data
-    pub fn make_ast(split: Split, instructions: &Vec<Instruction>) -> IntermediateAST {
+    pub fn make_ast(split: Split, instructions: &[InstructionDef]) -> IntermediateAST {
         let base_tokens = Token::get_base_tokens(&split); 
         let int_ast = unsafe { Token::make_tree(base_tokens) };
         #[cfg(feature = "debug")] {
@@ -92,7 +94,7 @@ impl Token {
 
             for word in &line.words {
                 let word = &split.input[word.start..word.end];
-                let c = word.chars().nth(0).unwrap();
+                let c = word.chars().next().unwrap();
 
                 let mut directive = false;
 
@@ -106,7 +108,7 @@ impl Token {
                     { root.push(line.number, $tt, $str); continue; }
                 }}
 
-                if word.chars().last().unwrap() == '.' {
+                if word.ends_with('.') {
                     push1!(MacroCall, word.get(..word.len()-1).unwrap().to_string());
                 }
 
@@ -243,18 +245,14 @@ impl Token {
                 }
             }
 
-            if (*selected).ty == Plus || (*selected).ty == Minus {
-                if (*selected).children.len() >= 2 {
-                    // Close binary operation.
-                    selected = (*selected).parent;
-                }
+            if ((*selected).ty==Plus || (*selected).ty==Minus) && (*selected).children.len() >= 2 {
+                // Close binary operation.
+                selected = (*selected).parent;
             }
 
-            if (*selected).ty == Argument {
-                if token.ty != Plus && token.ty != Minus {
-                    // Close the argument.
-                    selected = (*selected).parent;
-                }
+            if (*selected).ty == Argument && token.ty != Plus && token.ty != Minus {
+                // Close the argument.
+                selected = (*selected).parent;
             }
 
             if (*selected).ty == Instruction || (*selected).ty == MacroCall {
@@ -287,7 +285,7 @@ impl Token {
                     let mut iter = split.iter();
                     (*selected).push(line, MacroIdentifier, iter.next().unwrap().to_string());
 
-                    while let Some(s) = iter.next() {
+                    for s in iter {
                         (*selected).push(line, MacroArgument, s.to_string());
                     }
                 }
@@ -350,13 +348,13 @@ impl Token {
                     let marker = (*selected).push(line, Marker, mt!());
 
                     for word in token.value.split(':') {
-                        if word.len() == 0 { continue; }
-                        if word.chars().nth(0).unwrap() == '&' {
+                        if word.is_empty() { continue; }
+                        if word.starts_with('&') {
                             let lit = (*marker).push(line, Lit, mt!());
                             (*lit).push(line, LitHex, word.get(1..).unwrap().to_string());
                         }else {
                             // TODO fn
-                            if utils::is_ident_first(&word.chars().nth(0).unwrap()) {
+                            if utils::is_ident_first(&word.chars().next().unwrap()) {
                                 let mut ident = true;
                                 for ch in word.get(1..).unwrap().chars() {
                                     if !utils::is_ident_char(&ch) {
@@ -424,7 +422,7 @@ impl IntermediateAST {
     // TODO fix line numbers in expanded calls.
     // TODO do not put macro_defs in the ast.
     pub fn expand(mut self) -> Self {
-        fn walk(current: &mut Token, macro_defs: &Vec<Token>) {
+        fn walk(current: &mut Token, macro_defs: &[Token]) {
             for current_child in &mut current.children {
                 if current_child.ty != MacroCall {
                     walk(current_child, macro_defs);
@@ -524,15 +522,13 @@ impl IntermediateAST {
                         macro_call.children = vec![];
 
                         let repeat = if let Some(repeat) = repeat { repeat }else { 1 };
-                        for r in 0..repeat {
+                        for _ in 0..repeat {
                             for b_child in &b.children {
                                 macro_call.transfer(b_child.clone());        
                             }
                         }
 
-                        #[cfg(feature = "debug")] {
-                            macro_call.debug();
-                        }
+                        #[cfg(feature = "debug")] macro_call.debug();
                     }else {
                         eprintln!("Macro declaration at line {} does not have a body", def.line);
                     }

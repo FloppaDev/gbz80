@@ -1,5 +1,5 @@
 use crate::ast::{TokenType::*, Token};
-use crate::opcodes::Instruction;
+use crate::opcodes::InstructionDef;
 
 fn err (e: &str, ec: &mut usize) {
     eprintln!("{}", e);

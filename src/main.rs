@@ -1,3 +1,10 @@
+//TODO idk?
+// No error when matching undeclared enum variants if using *
+
+//TODO remove.
+// ignore warnings about placeholders
+#![allow(unused_mut, unused_variables, unused_imports, dead_code)]
+
 #[macro_use]
 mod utils;
 

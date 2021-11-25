@@ -1,4 +1,4 @@
-use crate::opcodes::{Instruction, Op};
+use crate::opcodes::{InstructionDef, Op};
 use crate::ast::{Token, TokenType::{self, *}};
 use crate::abort;
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use crate::utils;
 /// Map intructions in source to those in the opcodes module.
 pub fn instruction_ops<'a>(
     ast: &Token,
-    instructions: &Vec<Instruction>
+    instructions: &[InstructionDef],
 ) -> HashMap<&'a Token, &'a Op> {
     #[cfg(feature = "debug")] {
         utils::debug_title("Reading instructions");
@@ -22,7 +22,7 @@ pub fn instruction_ops<'a>(
 
     fn walk<'a>(
         root: &Token,
-        instructions: &Vec<Instruction>, 
+        instructions: &[InstructionDef], 
         mut hashmap: &mut HashMap<&'a Token, &'a Op>
     ) {
         for token in &root.children {
@@ -125,6 +125,7 @@ pub fn instruction_ops<'a>(
 
             'op_loop: for op in &instruction.ops {
                 if arg_count == op.args.len() {
+                    #[allow(clippy::branches_sharing_code)]
                     if arg_count == 0 {
                         instr_op = Some(op);
                         break 'op_loop;
@@ -152,38 +153,39 @@ pub fn instruction_ops<'a>(
                 }
             }
 
-            if let Some(instr_op) = instr_op {
-                    let mut arg_str = String::new();
-                    for instr_op_arg in &instr_op.args {
+            #[cfg(feature = "debug")] {
+                let mut arg_str = String::new();
+
+                if let Some(instr_op) = instr_op {
+                        for instr_op_arg in &instr_op.args {
+                            arg_str.push(' ');
+                            let s = format!("{:?}", instr_op_arg);
+                            arg_str.push_str(&s);
+                        }
+
+                        println!(
+                            "    Instruction found \x1b[31m{:?}{}\x1b[0m",
+                            instruction.ty,
+                            arg_str
+                        );
+                }else {
+                    for arg in &args {
                         arg_str.push(' ');
-                        let s = format!("{:?}", instr_op_arg);
+                        let s = format!("{:?}", arg);
                         arg_str.push_str(&s);
                     }
 
                     println!(
-                        "    Instruction found \x1b[31m{:?}{}\x1b[0m",
+                        "    \x1b[33mInstruction not found (L{}) \x1b[31m{:?}{}\x1b[0m",
+                        token.line,
                         instruction.ty,
                         arg_str
                     );
 
-                    #[cfg(feature = "debug")] token.debug();
-            }else {
-                let mut arg_str = String::new();
-                for arg in &args {
-                    arg_str.push(' ');
-                    let s = format!("{:?}", arg);
-                    arg_str.push_str(&s);
+                    //err TODO
                 }
 
-                println!(
-                    "    \x1b[33mInstruction not found (L{}) \x1b[31m{:?}{}\x1b[0m",
-                    token.line,
-                    instruction.ty,
-                    arg_str
-                );
-
-                #[cfg(feature = "debug")] token.debug();
-                //err TODO
+                token.debug();
             }
         }
     }
@@ -243,7 +245,7 @@ pub fn get_markers<'a>(
         for token in &ast.children {
             match token.ty {
                 MacroCall => walk(token, ops_map, hashmap, offset),
-                Intruction => {
+                Instruction => {
 
                 }
                 Lit => {
@@ -270,6 +272,6 @@ fn hex_to_byte(hex: &str) -> u8 {
     (hex[0].to_digit(16).unwrap() * 16 + hex[1].to_digit(16).unwrap()) as u8
 }
 
-pub fn build(ast: Token, instructions: Vec<Instruction>) -> Vec<u8> {
+pub fn build(ast: Token, instructions: &[InstructionDef]) -> Vec<u8> {
     todo!();
 }

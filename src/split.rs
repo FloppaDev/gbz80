@@ -150,12 +150,10 @@ impl<'a> Splitter<'a> {
                     self.dir_else = false;
                 }
                 _ => {
-                    let mut push = self.dir_if == 0 || (self.dir_if == 0 && !self.has_symbol);
-                    if self.dir_if != 0 && self.has_symbol && self.dir_if != self.cur_line {
-                        push = true;
-                    }
-
-                    if push { 
+                    //TODO test
+                    //if self.dir_if == 0 
+                    //|| (self.dir_if != 0 && self.has_symbol && self.dir_if != self.cur_line) {
+                    if self.dir_if == 0 || self.has_symbol && self.dir_if != self.cur_line {
                         self.prepare_line();
                         self.lines[self.cur_line].words.push(self.start..end);
                     }
