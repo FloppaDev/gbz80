@@ -38,7 +38,7 @@ pub fn is_ident_first(c: &char) -> bool {
     CHARS.contains(c)
 }
 
-#[cfg(debug)]
+#[cfg(feature = "debug")]
 pub fn debug_title(title: &str) {
     let decoration = "=".repeat(79);
     println!("{}\n\t\t\t\t{}\n{}", decoration, title, decoration);

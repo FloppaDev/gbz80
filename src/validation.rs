@@ -1,5 +1,5 @@
-use ast::{TokenType::*, Token};
-use opcodes::Instruction;
+use crate::ast::{TokenType::*, Token};
+use crate::opcodes::Instruction;
 
 fn err (e: &str, ec: &mut usize) {
     eprintln!("{}", e);
@@ -13,7 +13,7 @@ pub fn check(root: &Token) -> usize {
     fn check_children(root: &Token, mut ec: &mut usize) {
         for token in &root.children {
             match token.ty {
-                PLUS|MINUS|AT|FLAG|REGISTER => {
+                Plus|Minus|At|Flag|Register => {
                     let e = format!(
                         "Token '{:?}' not expected at root. (L{})",
                         token.ty,
@@ -22,7 +22,7 @@ pub fn check(root: &Token) -> usize {
                     err(&e, &mut ec);
                 }
 
-                INSTRUCTION => {
+                Instruction => {
                     if token.children.len() > 3 {
                         let e = format!(
                             "Too many arguments in instruction, expected [0; 2], got {}. (L{})",
@@ -33,9 +33,9 @@ pub fn check(root: &Token) -> usize {
                     }else {
                         for arg in &token.children[1..] {
                             match arg.children[0].ty {
-                                REGISTER|LIT|FLAG|IDENTIFIER => {}
+                                Register|Lit|Flag|Identifier => {}
 
-                                AT => {
+                                At => {
                                     let at = &arg.children[0];
                                     let child_count = at.children.len();
                                     match child_count {
@@ -48,8 +48,8 @@ pub fn check(root: &Token) -> usize {
                                         }
                                         1 => {
                                             match at.children[0].ty {
-                                                REGISTER|LIT|IDENTIFIER => {}
-                                                PLUS => {
+                                                Register|Lit|Identifier => {}
+                                                Plus => {
                                                     let plus = &at.children[0];
                                                     let opd_len = plus.children.len();
                                                     if opd_len != 2 {
@@ -63,7 +63,7 @@ pub fn check(root: &Token) -> usize {
 
                                                     for opd in &plus.children {
                                                         match opd.ty {
-                                                            REGISTER|LIT|IDENTIFIER => {}
+                                                            Register|Lit|Identifier => {}
                                                             _ => {
                                                                 let e = format!(
                                                                     "Token '{:?}' not expected in adress. (L{})",
@@ -109,11 +109,11 @@ pub fn check(root: &Token) -> usize {
                     }
                 }
 
-                MACRO_CALL => {
+                MacroCall => {
                     check_children(token, &mut ec);
                 }
 
-                UNKNOWN => {
+                Unknown => {
                     let e = format!(
                         "Unknown token type. (L{})",
                         token.line

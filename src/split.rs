@@ -1,4 +1,4 @@
-use utils;
+use crate::utils;
 use std::ops::Range;
 
 pub struct Line {
@@ -13,7 +13,7 @@ pub struct Split<'a> {
 }
 
 impl<'a> Split<'a> {
-    #[cfg(debug)]
+    #[cfg(feature = "debug")]
     pub fn debug(&self) {
         utils::debug_title("Split data");
         for line in &self.lines {
@@ -33,7 +33,7 @@ impl<'a> Split<'a> {
 impl<'a> Split<'a> {
     pub fn new(input: &'a str, symbols: &'a [String]) -> Split<'a> {
         let split = Splitter::new(input, symbols).run();
-        #[cfg(debug)] split.debug();
+        #[cfg(feature = "debug")] split.debug();
         split
     }
 }

@@ -1,15 +1,15 @@
-use opcodes::{Instruction, Op};
-use ast::{Token, TokenType::{self, *}};
+use crate::opcodes::{Instruction, Op};
+use crate::ast::{Token, TokenType::{self, *}};
 use crate::abort;
 use std::collections::HashMap;
-use utils;
+use crate::utils;
 
 /// Map intructions in source to those in the opcodes module.
 pub fn instruction_ops<'a>(
     ast: &Token,
     instructions: &Vec<Instruction>
 ) -> HashMap<&'a Token, &'a Op> {
-    #[cfg(debug)] {
+    #[cfg(feature = "debug")] {
         utils::debug_title("Reading instructions");
     }
 
@@ -27,8 +27,8 @@ pub fn instruction_ops<'a>(
     ) {
         for token in &root.children {
             match token.ty {
-                INSTRUCTION => {}
-                MACRO_CALL => {
+                Instruction => {}
+                MacroCall => {
                     walk(token, instructions, hashmap);
                     continue;
                 }
@@ -59,12 +59,12 @@ pub fn instruction_ops<'a>(
 
             for (i, arg) in token.children[1..].iter().enumerate() {
                 match arg.children[0].ty {
-                    REGISTER => args.push(arg.children[0].children[0].ty),
-                    FLAG => args.push(arg.children[0].children[0].ty),
-                    LIT => {
+                    Register => args.push(arg.children[0].children[0].ty),
+                    Flag => args.push(arg.children[0].children[0].ty),
+                    Lit => {
                         if i == 0 {
                             match token.children[0].children[0].ty {
-                                BIT|RES|RST|SET => {
+                                Bit|Res|Rst|Set => {
                                     match arg.children[0].children[0].value.as_str() {
                                         "0" => args.push(B0),
                                         "1" => args.push(B1),
@@ -80,23 +80,23 @@ pub fn instruction_ops<'a>(
                                         }
                                     }
                                 }
-                                _ => args.push(LIT),
+                                _ => args.push(Lit),
                             }
                         }else {
-                            args.push(LIT);
+                            args.push(Lit);
                         }
                     }
-                    IDENTIFIER => args.push(LIT),
-                    AT => {
+                    Identifier => args.push(Lit),
+                    At => {
                         let at = &arg.children[0];
-                        args.push(AT0);
+                        args.push(At0);
 
                         match at.children[0].ty {
-                            REGISTER => args.push(at.children[0].children[0].ty),
-                            LIT|IDENTIFIER => args.push(LIT),
-                            PLUS => {
+                            Register => args.push(at.children[0].children[0].ty),
+                            Lit|Identifier => args.push(Lit),
+                            Plus => {
                                 args.push(at.children[0].children[0].ty);
-                                args.push(PLUS);
+                                args.push(Plus);
                                 args.push(at.children[0].children[1].ty);
                             }
                             _ => {
@@ -109,11 +109,11 @@ pub fn instruction_ops<'a>(
                             }
                         }
 
-                        args.push(AT1);
+                        args.push(At1);
                     }
-                    PLUS => {
+                    Plus => {
                         args.push(arg.children[0].children[0].ty);
-                        args.push(PLUS);
+                        args.push(Plus);
                         args.push(arg.children[0].children[1].ty);
                     }
                     _ => {}
@@ -166,7 +166,7 @@ pub fn instruction_ops<'a>(
                         arg_str
                     );
 
-                    token.debug();
+                    #[cfg(feature = "debug")] token.debug();
             }else {
                 let mut arg_str = String::new();
                 for arg in &args {
@@ -182,7 +182,7 @@ pub fn instruction_ops<'a>(
                     arg_str
                 );
 
-                token.debug();
+                #[cfg(feature = "debug")] token.debug();
                 //err TODO
             }
         }
@@ -242,17 +242,17 @@ pub fn get_markers<'a>(
     ) {
         for token in &ast.children {
             match token.ty {
-                MACRO_CALL => walk(token, ops_map, hashmap, offset),
-                INTRUCTION => {
+                MacroCall => walk(token, ops_map, hashmap, offset),
+                Intruction => {
 
                 }
-                LIT => {
+                Lit => {
 
                 }
-                IDENTIFIER => {
+                Identifier => {
                     
                 }
-                MARKER => {
+                Marker => {
 
                 }
                 _ => {}
