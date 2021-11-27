@@ -14,7 +14,7 @@ pub struct Op {
     pub args: Vec<TokenType>,
     pub bytes: u16,
     //TODO rename var_size in Token
-    pub input: usize
+    pub input: usize //TODO? u16
 }
 
 macro_rules! opcodes {(

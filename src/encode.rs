@@ -6,9 +6,9 @@ use crate::utils;
 
 /// Map intructions in source to those in the opcodes module.
 pub fn instruction_ops<'a>(
-    ast: &Token,
-    instructions: &[InstructionDef],
-) -> HashMap<&'a Token, &'a Op> {
+    ast: &'a Token,
+    instructions: &'a[InstructionDef],
+) -> HashMap<usize, &'a Op> {
     #[cfg(feature = "debug")] {
         utils::debug_title("Reading instructions");
     }
@@ -21,9 +21,9 @@ pub fn instruction_ops<'a>(
     // Note: When the first argument is A, it is optionnal.
 
     fn walk<'a>(
-        root: &Token,
-        instructions: &[InstructionDef], 
-        mut hashmap: &mut HashMap<&'a Token, &'a Op>
+        root: &'a Token,
+        instructions: &'a[InstructionDef], 
+        mut hashmap: &mut HashMap<usize, &'a Op>
     ) {
         for token in &root.children {
             match token.ty {
@@ -156,7 +156,7 @@ pub fn instruction_ops<'a>(
             #[cfg(feature = "debug")] {
                 let mut arg_str = String::new();
 
-                if let Some(instr_op) = instr_op {
+                if let Some(instr_op) = &instr_op {
                         for instr_op_arg in &instr_op.args {
                             arg_str.push(' ');
                             let s = format!("{:?}", instr_op_arg);
@@ -187,6 +187,11 @@ pub fn instruction_ops<'a>(
 
                 token.debug();
             }
+
+            if let Some(instr_op) = instr_op {
+                let key = token as *const Token as usize;
+                hashmap.insert(key, instr_op);
+            }
         }
     }
 
@@ -195,10 +200,21 @@ pub fn instruction_ops<'a>(
     hashmap
 }
 
+//? Expressions always evaluate to a double
+pub fn get_defines_sizes<'a>(
+    ast: &'a Token,
+) -> HashMap<usize, usize> {
+    let hashmap = HashMap::new();
+
+
+
+    hashmap
+}
+
 pub fn get_markers<'a>(
-    ast: &Token,
-    ops_map: &HashMap<&'a Token, &'a Op>,
-) -> HashMap<&'a Token, &'a usize> {
+    ast: &'a Token,
+    ops_map: &HashMap<usize, &'a Op>,
+) -> HashMap<usize, usize> {
     let mut hashmap = HashMap::new();
     let mut offset = 0;
 
@@ -237,28 +253,43 @@ pub fn get_markers<'a>(
     //      There's a possiblity for circular dependencies.
 
     fn walk<'a>(
-        ast: &Token,
-        ops_map: &HashMap<&'a Token, &'a Op>,
-        mut hashmap: &mut HashMap<&'a Token, &'a usize>,
+        ast: &'a Token,
+        ops_map: &HashMap<usize, &'a Op>,
+        mut hashmap: &mut HashMap<usize, usize>,
         mut offset: &mut usize,
     ) {
+        let mut size = 0;
+
         for token in &ast.children {
             match token.ty {
                 MacroCall => walk(token, ops_map, hashmap, offset),
                 Instruction => {
-
+                    let op = ops_map.get(&(token as *const Token as usize)).unwrap();
+                    size = op.bytes as usize + op.input;
                 }
                 Lit => {
-
+                    let c = &token.children[0];
+                    size = match c.ty {
+                        LitDec => if c.value.parse::<usize>().unwrap() > 255 { 2 }else{ 1 },
+                        LitHex => if c.value.len() > 2 { 2 }else{ 1 },
+                        LitBin => if c.value.len() > 8 { 2 }else{ 1 },
+                        LitStr => c.value.len(),
+                        // No other type of literal.
+                        _ => panic!(),
+                    };
                 }
                 Identifier => {
-                    
+                    //? Markers are always double.
+                    //? Defines can have any size.
+                    //TODO need hashmap of defines and their sizes  
                 }
                 Marker => {
-
+                    //TODO Write offset to hashmap
                 }
                 _ => {}
             }
+
+            *offset += size;
         }
     }
 
