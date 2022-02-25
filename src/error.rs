@@ -2,7 +2,7 @@
 use crate::{
     lingo::TokenType,
     parse::ParsedToken,
-    token::Token,
+    token::{Token, TokenRef},
 };
 
 /// Provides context for an error in the parsed source file.
@@ -38,6 +38,15 @@ impl<'a> From<&Token<'a>> for ErrCtx<'a> {
 
     fn from(token: &Token<'a>) -> Self {
         let Token{ line_number, line, word, .. } = *token;
+        Self { line_number, line, word }
+    }
+
+}
+
+impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
+
+    fn from(token_ref: &TokenRef<'a>) -> Self {
+        let Token{ line_number, line, word, .. } = *token_ref.token;
         Self { line_number, line, word }
     }
 
@@ -362,6 +371,34 @@ impl<'a> MacroErr<'a> {
 
             ArgNotFound =>
                 "ArgNotFound: Argument not found in declaration",
+        }
+    }
+
+}
+
+#[derive(Debug)]
+pub enum OpErrType {
+    NotFound,
+}
+
+#[derive(Debug)]
+pub struct OpErr<'a> {
+    ty: OpErrType,
+    err_ctx: ErrCtx<'a>,
+}
+
+impl<'a> OpErr<'a> {
+
+    pub const fn new(ty: OpErrType, err_ctx: ErrCtx<'a>) -> Self {
+        Self { ty, err_ctx }
+    }
+
+    pub const fn fmt(&self) -> &'static str {
+        use OpErrType::*;
+
+        match self.ty {
+            NotFound =>
+                "NotFound: Could not find the corresponding opcode",
         }
     }
 

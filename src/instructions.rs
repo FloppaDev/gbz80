@@ -5,9 +5,15 @@
 //
 // Do no edit manually.
 
-use crate::lingo::TokenType::{self, *};
-use crate::token::TokenRef;
+use crate::{
+    lingo::TokenType::{self, *},
+    token::TokenRef,
+    error::{ErrCtx, OpErr},
+};
+
 use Constant::*;
+
+use std::collections::HashMap;
 
 enum Arg {
     /// Address.
@@ -39,18 +45,20 @@ pub struct OpCode {
     len: u8,
 }
 
-fn get_opcode(cb: bool, ops: Vec<(usize, usize, Vec<Arg>)>) -> OpCode {
-    todo!();
-}
+impl OpCode {
 
-pub fn find(instruction: &TokenRef) -> OpCode {
-    assert_eq!(instruction.ty(), Instruction);
+    fn get_opcode(cb: bool, ops: Vec<(usize, usize, Vec<Arg>)>) -> Option<OpCode> {
+        todo!();
+    }
 
-    let instr_ty = instruction.get(0).get(0).ty();
+    pub fn find(instruction: &TokenRef) -> Option<OpCode> {
+        assert_eq!(instruction.ty(), Instruction);
 
-    match instr_ty {
-        Adc => {
-            get_opcode(false, vec![
+        let instr_ty = instruction.get(0).get(0).ty();
+
+        match instr_ty {
+            Adc => {
+            Self::get_opcode(false, vec![
                 (1, 0x88, vec![Arg::Token(A), Arg::Token(B)]),
                 (1, 0x89, vec![Arg::Token(A), Arg::Token(FlagC)]),
                 (1, 0x8A, vec![Arg::Token(A), Arg::Token(D)]),
@@ -64,7 +72,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Add => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x09, vec![Arg::Token(Hl), Arg::Token(Bc)]),
                 (1, 0x19, vec![Arg::Token(Hl), Arg::Token(De)]),
                 (1, 0x29, vec![Arg::Token(Hl), Arg::Token(Hl)]),
@@ -83,7 +91,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         And => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xA0, vec![Arg::Token(B)]),
                 (1, 0xA1, vec![Arg::Token(FlagC)]),
                 (1, 0xA2, vec![Arg::Token(D)]),
@@ -97,7 +105,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Call => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (3, 0xC4, vec![Arg::Token(FlagNz), Arg::Const(Word)]),
                 (3, 0xCC, vec![Arg::Token(FlagZ), Arg::Const(Word)]),
                 (3, 0xCD, vec![Arg::Const(Word)]),
@@ -107,13 +115,13 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Ccf => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x3F, vec![]),
             ])
         }
 
         Cp => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xB8, vec![Arg::Token(B)]),
                 (1, 0xB9, vec![Arg::Token(FlagC)]),
                 (1, 0xBA, vec![Arg::Token(D)]),
@@ -127,19 +135,19 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Cpl => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x2F, vec![]),
             ])
         }
 
         Daa => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x27, vec![]),
             ])
         }
 
         Dec => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x05, vec![Arg::Token(B)]),
                 (1, 0x0B, vec![Arg::Token(Bc)]),
                 (1, 0x0D, vec![Arg::Token(FlagC)]),
@@ -156,25 +164,25 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Di => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xF3, vec![]),
             ])
         }
 
         Ei => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xFB, vec![]),
             ])
         }
 
         Halt => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x76, vec![]),
             ])
         }
 
         Inc => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x03, vec![Arg::Token(Bc)]),
                 (1, 0x04, vec![Arg::Token(B)]),
                 (1, 0x0C, vec![Arg::Token(FlagC)]),
@@ -191,7 +199,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Jp => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (3, 0xC2, vec![Arg::Token(FlagNz), Arg::Const(Word)]),
                 (3, 0xC3, vec![Arg::Const(Word)]),
                 (3, 0xCA, vec![Arg::Token(FlagZ), Arg::Const(Word)]),
@@ -202,7 +210,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Jr => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (2, 0x18, vec![Arg::Const(Byte)]),
                 (2, 0x20, vec![Arg::Token(FlagNz), Arg::Const(Byte)]),
                 (2, 0x28, vec![Arg::Token(FlagZ), Arg::Const(Byte)]),
@@ -212,7 +220,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Ld => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (3, 0x01, vec![Arg::Token(Bc), Arg::Const(Word)]),
                 (1, 0x02, vec![Arg::At(Box::new(Arg::Token(Bc))), Arg::Token(A)]),
                 (2, 0x06, vec![Arg::Token(B), Arg::Const(Byte)]),
@@ -302,40 +310,40 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Ldd => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x32, vec![Arg::At(Box::new(Arg::Token(Hl))), Arg::Token(A)]),
                 (1, 0x3A, vec![Arg::Token(A), Arg::At(Box::new(Arg::Token(Hl)))]),
             ])
         }
 
         Ldh => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (2, 0xE0, vec![Arg::At(Box::new(Arg::Const(Byte))), Arg::Token(A)]),
                 (2, 0xF0, vec![Arg::Token(A), Arg::At(Box::new(Arg::Const(Byte)))]),
             ])
         }
 
         Ldhl => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (2, 0xF8, vec![Arg::Token(Hl), Arg::Token(Sp)]),
             ])
         }
 
         Ldi => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x22, vec![Arg::At(Box::new(Arg::Token(Hl))), Arg::Token(A)]),
                 (1, 0x2A, vec![Arg::Token(A), Arg::At(Box::new(Arg::Token(Hl)))]),
             ])
         }
 
         Nop => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x00, vec![]),
             ])
         }
 
         Or => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xB0, vec![Arg::Token(B)]),
                 (1, 0xB1, vec![Arg::Token(FlagC)]),
                 (1, 0xB2, vec![Arg::Token(D)]),
@@ -349,7 +357,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Pop => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xC1, vec![Arg::Token(Bc)]),
                 (1, 0xD1, vec![Arg::Token(De)]),
                 (1, 0xE1, vec![Arg::Token(Hl)]),
@@ -358,7 +366,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Push => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xC5, vec![Arg::Token(Bc)]),
                 (1, 0xD5, vec![Arg::Token(De)]),
                 (1, 0xE5, vec![Arg::Token(Hl)]),
@@ -367,7 +375,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Ret => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xC0, vec![Arg::Token(FlagNz)]),
                 (1, 0xC8, vec![Arg::Token(FlagZ)]),
                 (1, 0xC9, vec![]),
@@ -377,37 +385,37 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Reti => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xD9, vec![]),
             ])
         }
 
         Rla => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x17, vec![]),
             ])
         }
 
         Rlca => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x07, vec![]),
             ])
         }
 
         Rra => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x1F, vec![]),
             ])
         }
 
         Rrca => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x0F, vec![]),
             ])
         }
 
         Rst => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xC7, vec![Arg::Const(Word)]),
                 (1, 0xCF, vec![Arg::Const(Word)]),
                 (1, 0xD7, vec![Arg::Const(Word)]),
@@ -420,7 +428,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Sbc => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x98, vec![Arg::Token(A), Arg::Token(B)]),
                 (1, 0x99, vec![Arg::Token(A), Arg::Token(FlagC)]),
                 (1, 0x9A, vec![Arg::Token(A), Arg::Token(D)]),
@@ -434,19 +442,19 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Scf => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x37, vec![]),
             ])
         }
 
         Stop => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (2, 0x10, vec![Arg::Const(Byte)]),
             ])
         }
 
         Sub => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0x90, vec![Arg::Token(B)]),
                 (1, 0x91, vec![Arg::Token(FlagC)]),
                 (1, 0x92, vec![Arg::Token(D)]),
@@ -460,7 +468,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Xor => {
-            get_opcode(false, vec![
+            Self::get_opcode(false, vec![
                 (1, 0xA8, vec![Arg::Token(B)]),
                 (1, 0xA9, vec![Arg::Token(FlagC)]),
                 (1, 0xAA, vec![Arg::Token(D)]),
@@ -473,10 +481,10 @@ pub fn find(instruction: &TokenRef) -> OpCode {
             ])
         }
 
-        // CB instructions
+            // CB instructions
 
-        Bit => {
-            get_opcode(true, vec![
+            Bit => {
+            Self::get_opcode(true, vec![
                 (2, 0x40, vec![Arg::Const(Byte), Arg::Token(B)]),
                 (2, 0x41, vec![Arg::Const(Byte), Arg::Token(FlagC)]),
                 (2, 0x42, vec![Arg::Const(Byte), Arg::Token(D)]),
@@ -545,7 +553,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Res => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x80, vec![Arg::Const(Byte), Arg::Token(B)]),
                 (2, 0x81, vec![Arg::Const(Byte), Arg::Token(FlagC)]),
                 (2, 0x82, vec![Arg::Const(Byte), Arg::Token(D)]),
@@ -614,7 +622,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Rl => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x10, vec![Arg::Token(B)]),
                 (2, 0x11, vec![Arg::Token(FlagC)]),
                 (2, 0x12, vec![Arg::Token(D)]),
@@ -627,7 +635,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Rlc => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x00, vec![Arg::Token(B)]),
                 (2, 0x01, vec![Arg::Token(FlagC)]),
                 (2, 0x02, vec![Arg::Token(D)]),
@@ -640,7 +648,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Rr => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x18, vec![Arg::Token(B)]),
                 (2, 0x19, vec![Arg::Token(FlagC)]),
                 (2, 0x1A, vec![Arg::Token(D)]),
@@ -653,7 +661,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Rrc => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x08, vec![Arg::Token(B)]),
                 (2, 0x09, vec![Arg::Token(FlagC)]),
                 (2, 0x0A, vec![Arg::Token(D)]),
@@ -666,7 +674,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Set => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0xC0, vec![Arg::Const(Byte), Arg::Token(B)]),
                 (2, 0xC1, vec![Arg::Const(Byte), Arg::Token(FlagC)]),
                 (2, 0xC2, vec![Arg::Const(Byte), Arg::Token(D)]),
@@ -735,7 +743,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Sla => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x20, vec![Arg::Token(B)]),
                 (2, 0x21, vec![Arg::Token(FlagC)]),
                 (2, 0x22, vec![Arg::Token(D)]),
@@ -748,7 +756,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Sra => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x28, vec![Arg::Token(B)]),
                 (2, 0x29, vec![Arg::Token(FlagC)]),
                 (2, 0x2A, vec![Arg::Token(D)]),
@@ -761,7 +769,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Srl => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x38, vec![Arg::Token(B)]),
                 (2, 0x39, vec![Arg::Token(FlagC)]),
                 (2, 0x3A, vec![Arg::Token(D)]),
@@ -774,7 +782,7 @@ pub fn find(instruction: &TokenRef) -> OpCode {
         }
 
         Swap => {
-            get_opcode(true, vec![
+            Self::get_opcode(true, vec![
                 (2, 0x30, vec![Arg::Token(B)]),
                 (2, 0x31, vec![Arg::Token(FlagC)]),
                 (2, 0x32, vec![Arg::Token(D)]),
@@ -786,6 +794,54 @@ pub fn find(instruction: &TokenRef) -> OpCode {
             ])
         }
 
-        _ => panic!("Op not found"),
+            _ => panic!("Op not found"),
+        }
     }
+
+}
+
+pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
+
+impl<'a> OpMap<'a> {
+
+    pub fn new(ast: &TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
+        let mut map = HashMap::new(); 
+        let mut errors = vec![];
+
+        fn walk<'a>(
+            ast: &TokenRef<'a>,
+            map: &mut HashMap<&'a TokenRef<'a>, OpCode>, 
+            errors: &mut Vec<OpErr<'a>>,
+        ) {
+            for token in ast.children() {
+                match token.ty() {
+                    MacroCall => walk(token, map, errors),
+
+                    Instruction => {
+                        let opcode = OpCode::find(token);
+
+                        if opcode.is_none() {
+                            errors.push(
+                                OpErr::new(OpErrType::NotFound, (&token).into()));
+
+                            continue;
+                        }
+
+                        map.insert(token, opcode.unwrap());
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        walk(ast, &mut map, &mut errors);
+
+        if !errors.is_empty() {
+            Err(errors)
+        }else {
+            Ok(Self(map))
+        }
+    }
+
 }

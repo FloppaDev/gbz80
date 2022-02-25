@@ -32,7 +32,7 @@ use crate::{
     lingo::TokenType::*,
     token::TokenRef,
     data::{Data, Key},
-    opcodes::{Op, OpMap},
+    instructions::{OpCode, OpMap},
 };
 
 use std::collections::HashMap;
@@ -58,7 +58,7 @@ impl<'a> Constants<'a> {
 
         fn walk<'a>(
             ast: &TokenRef<'a>,
-            ops_map: &HashMap<&'a TokenRef<'a>, &'a Op>,
+            ops_map: &OpMap,
             mut hashmap: &mut HashMap<&'a TokenRef<'a>, usize>,
             mut offset: &mut usize,
             data: &Data,

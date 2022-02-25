@@ -48,7 +48,7 @@ for (instr of INSTRUCTIONS) {
         }
 
         let pName  = pascal(instr.name);
-        curOpStr += `${tt}${pName} => {\n${ttt}get_opcode(${instr.cb}, vec![\n`;
+        curOpStr += `${tt}${pName} => {\n${ttt}Self::get_opcode(${instr.cb}, vec![\n`;
 
         name = instr.name;
     }
@@ -106,9 +106,15 @@ opStr += matchBranchEnd;
 cbOpStr += matchBranchEnd;
 
 output += `
-use crate::lingo::TokenType::{self, *};
-use crate::token::TokenRef;
+use crate::{
+    lingo::TokenType::{self, *},
+    token::TokenRef,
+    error::{ErrCtx, OpErr},
+};
+
 use Constant::*;
+
+use std::collections::HashMap;
 
 enum Arg {
     /// Address.
@@ -140,22 +146,72 @@ pub struct OpCode {
     len: u8,
 }
 
-fn get_opcode(cb: bool, ops: Vec<(usize, usize, Vec<Arg>)>) -> OpCode {
-    todo!();
+impl OpCode {
+
+    fn get_opcode(cb: bool, ops: Vec<(usize, usize, Vec<Arg>)>) -> Option<OpCode> {
+        todo!();
+    }
+
+    pub fn find(instruction: &TokenRef) -> Option<OpCode> {
+        assert_eq!(instruction.ty(), Instruction);
+
+        let instr_ty = instruction.get(0).get(0).ty();
+
+        match instr_ty {
+    ${opStr}\
+            // CB instructions
+
+    ${cbOpStr}\
+            _ => panic!("Op not found"),
+        }
+    }
+
 }
 
-pub fn find(instruction: &TokenRef) -> OpCode {
-    assert_eq!(instruction.ty(), Instruction);
+pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
 
-    let instr_ty = instruction.get(0).get(0).ty();
+impl<'a> OpMap<'a> {
 
-    match instr_ty {
-${opStr}\
-        // CB instructions
+    pub fn new(ast: &TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
+        let mut map = HashMap::new(); 
+        let mut errors = vec![];
 
-${cbOpStr}\
-        _ => panic!("Op not found"),
+        fn walk<'a>(
+            ast: &TokenRef<'a>,
+            map: &mut HashMap<&'a TokenRef<'a>, OpCode>, 
+            errors: &mut Vec<OpErr<'a>>,
+        ) {
+            for token in ast.children() {
+                match token.ty() {
+                    MacroCall => walk(token, map, errors),
+
+                    Instruction => {
+                        let opcode = OpCode::find(token);
+
+                        if opcode.is_none() {
+                            errors.push(
+                                OpErr::new(OpErrType::NotFound, (&token).into()));
+
+                            continue;
+                        }
+
+                        map.insert(token, opcode.unwrap());
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        walk(ast, &mut map, &mut errors);
+
+        if !errors.is_empty() {
+            Err(errors)
+        }else {
+            Ok(Self(map))
+        }
     }
+
 }
 `;
 
