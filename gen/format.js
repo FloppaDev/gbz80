@@ -25,7 +25,7 @@ let initCb = false;
 
 let cbOpStr = '';
 let opStr = '';
-let matchBranchEnd = ttt + '])\n' + tt + '}\n\n';
+let matchBranchEnd = ttt + t + '])\n' + ttt + '}\n\n';
 
 for (instr of INSTRUCTIONS) {
     let curOpStr = '';
@@ -48,7 +48,8 @@ for (instr of INSTRUCTIONS) {
         }
 
         let pName  = pascal(instr.name);
-        curOpStr += `${tt}${pName} => {\n${ttt}Self::get_opcode(${instr.cb}, vec![\n`;
+        curOpStr += 
+            `${ttt}${pName} => {\n${ttt}${t}Self::get_opcode(${instr.cb}, vec![\n`;
 
         name = instr.name;
     }
@@ -81,17 +82,21 @@ for (instr of INSTRUCTIONS) {
                 ty = 'Word';
             }
 
-            return at ? `Arg::At(Box::new(Arg::Const(${ty})))` : `Arg::Const(${ty})`;
+            return at 
+                ? `Arg::At(Box::new(Arg::Const(${ty})))` 
+                : `Arg::Const(${ty})`;
         }
 
         if (!isNaN(parseInt(arg))) {
             return 'Arg::Const(Byte)';
         }
 
-        return at ? `Arg::At(Box::new(Arg::Token(${pascal(arg)})))` : `Arg::Token(${pascal(arg)})`;
+        return at 
+            ? `Arg::At(Box::new(Arg::Token(${pascal(arg)})))` 
+            : `Arg::Token(${pascal(arg)})`;
     }).join(', ');
 
-    curOpStr += `${ttt}${t}(${instr.len}, ${instr.code}, vec![${args}]),\n`;
+    curOpStr += `${ttt}${tt}(${instr.len}, ${instr.code}, vec![${args}]),\n`;
 
     if (instr.cb) {
         cbOpStr += curOpStr;
@@ -105,115 +110,18 @@ for (instr of INSTRUCTIONS) {
 opStr += matchBranchEnd;
 cbOpStr += matchBranchEnd;
 
-output += `
-use crate::{
-    lingo::TokenType::{self, *},
-    token::TokenRef,
-    error::{ErrCtx, OpErr},
-};
-
-use Constant::*;
-
-use std::collections::HashMap;
-
-enum Arg {
-    /// Address.
-    At(Box<Arg>),
-
-    /// Identified by a \`TokenType\`.
-    Token(TokenType),
-
-    /// Constant value.
-    Const(Constant),
-}
-
-impl Arg {
-
-    fn cmp(token: Option<&TokenRef>) -> bool {
-        todo!();
-    }
-
-}
-
-pub enum Constant {
-    Byte,
-    Word,
-}
-
-pub struct OpCode {
-    cb: bool,
-    code: u8,
-    len: u8,
-}
-
-impl OpCode {
-
-    fn get_opcode(cb: bool, ops: Vec<(usize, usize, Vec<Arg>)>) -> Option<OpCode> {
-        todo!();
-    }
-
-    pub fn find(instruction: &TokenRef) -> Option<OpCode> {
-        assert_eq!(instruction.ty(), Instruction);
-
-        let instr_ty = instruction.get(0).get(0).ty();
-
-        match instr_ty {
-    ${opStr}\
+let instructions_output = instructions_rs.replace(
+    '// {{{ js }}}',
+    `match instr_ty {
+${opStr}\
             // CB instructions
 
-    ${cbOpStr}\
+${cbOpStr}\
             _ => panic!("Op not found"),
-        }
-    }
+        }`
+);
 
-}
-
-pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
-
-impl<'a> OpMap<'a> {
-
-    pub fn new(ast: &TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
-        let mut map = HashMap::new(); 
-        let mut errors = vec![];
-
-        fn walk<'a>(
-            ast: &TokenRef<'a>,
-            map: &mut HashMap<&'a TokenRef<'a>, OpCode>, 
-            errors: &mut Vec<OpErr<'a>>,
-        ) {
-            for token in ast.children() {
-                match token.ty() {
-                    MacroCall => walk(token, map, errors),
-
-                    Instruction => {
-                        let opcode = OpCode::find(token);
-
-                        if opcode.is_none() {
-                            errors.push(
-                                OpErr::new(OpErrType::NotFound, (&token).into()));
-
-                            continue;
-                        }
-
-                        map.insert(token, opcode.unwrap());
-                    }
-
-                    _ => {}
-                }
-            }
-        }
-
-        walk(ast, &mut map, &mut errors);
-
-        if !errors.is_empty() {
-            Err(errors)
-        }else {
-            Ok(Self(map))
-        }
-    }
-
-}
-`;
+output += instructions_output; 
 
 if (save) {
     const blob = new Blob([output], {type: 'text/plain;charset=utf-8'});
