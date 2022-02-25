@@ -1,14 +1,9 @@
 use crate::ast::{TokenType::*, Token};
 use crate::opcodes::InstructionDef;
 
-fn err (e: &str, ec: &mut usize) {
-    eprintln!("{}", e);
-    *ec += 1;
-}
-
 //TODO cleanup
+//TODO forbid nested macro calls.
 pub fn check(root: &Token) -> usize {
-    let mut ec = 0;
 
     fn check_children(root: &Token, mut ec: &mut usize) {
         for token in &root.children {

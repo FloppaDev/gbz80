@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "gbz80-asm"
+name = "gbz80"
 version = "0.1.0"

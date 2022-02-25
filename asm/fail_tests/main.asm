@@ -16,3 +16,15 @@ ld a (sp+10)
 &0201:test
     xor a
 &0201:test xor a
+
+#if NOPE
+&0201:test
+&0201:test
+&0201:test
+&0201:test
+&0201:test
+&0201:test
+&0201:test
+&0201:test
+&0201:test
+#endif

@@ -17,6 +17,213 @@ pub struct Op {
     pub input: usize //TODO? u16
 }
 
+/// Maps intructions in source to those in the opcodes declaration.
+pub struct OpMap<'a> {
+    map: HashMap<usize, &'a Op>,
+}
+
+impl<'a> OpMap<'a> {
+
+    pub fn new<'a>(
+        ast: &'a Token,
+        instructions: &'a[InstructionDef],
+    ) -> Result<Self, Vec<OpErr>> {
+        let mut errors = vec![];
+        let mut map = HashMap::new();
+
+        Self::collect_instructions(ast, instructions, &mut map, &mut errors);
+
+        return if errors.is_empty() {
+            Ok(Self{ map })
+        }else {
+            Err(errors)
+        };
+    }
+
+    /// Iterates through all base level tokens.
+    /// If a token is a macro call, iterates through its children.
+    fn collect_instructions<'a>(
+        root: &'a Token,
+        instructions: &'a[InstructionDef], 
+        mut hashmap: &mut HashMap<usize, &'a Op>,
+        mut errors: &mut Vec<OpErr>,
+    ) {
+        for token in &root.children {
+            match token.ty {
+                Instruction => {}
+
+                // Macro calls cannot be nested so recursion is not an issue.
+                MacroCall => {
+                    Self::collect_instructions(token, instructions, hashmap, errors);
+                    continue;
+                }
+
+                _ => continue,
+            }
+
+            Self::get_instruction(); 
+        }
+    }
+
+    /// Collects mappings of tokens to instructions.
+    fn get_instruction(
+        token: &'a Token,
+        instructions: &'a[InstructionDef], 
+        mut hashmap: &mut HashMap<usize, &'a Op>,
+        mut errors: &mut Vec<OpErr>,
+    ) {
+        let err_ctx = token.into();
+
+        let ty = token.children[0].children[0].ty;
+        let child_count = token.children.len();
+        let arg_count = child_count - 1;
+
+        let mut instruction = None;
+
+        // Find instruction by type.
+        for inst in instructions {
+            if inst.ty == ty {
+                instruction = Some(inst);
+            }
+        }
+
+        if instruction.is_none() { 
+            errors.push(OpErr::new(OpErrType::NotFound, err_ctx));
+            continue;
+        }
+
+        let instruction = instruction.unwrap();
+
+        let mut args = Self::format_args();
+        let arg_count = args.len();
+
+        if let Some(instr_op) = Self::compare_args() {
+            hashmap.insert(token.index, instr_op);
+        }
+
+        else {
+            //TODO OpErr
+        }
+    }
+
+    /// Format arguments in the same way as in the opcodes module.
+    fn format_args() {
+        for (i, arg) in token.children[1..].iter().enumerate() {
+            let arg_cat = &arg.children[0];
+
+            match arg_cat.ty {
+                Register => args.push(arg_cat.children[0].ty),
+
+                Flag => args.push(arg_cat.children[0].ty),
+
+                Lit => {
+                    // Is it it a bit index?
+                    if matches!(token.children[0].children[0].ty, Bit|Res|Rst|Set) {
+                        match Self::bx_from_str(arg_cat.children[0].value.as_str()) {
+                            Ok(bx) => args.push(bx),
+
+                            Err(e) => ()//TODO
+                        }
+                    }
+
+                    else {
+                        args.push(Lit);
+                    }
+                }
+
+                Identifier => args.push(Lit),
+
+                At => {
+                    args.push(At0);
+                    let at_child = &arg_cat.children[0];
+
+                    match at_child.ty {
+                        Register => args.push(at_child.children[0].ty),
+
+                        Lit|Identifier => args.push(Lit),
+
+                        Plus => {
+                            args.push(at_child.children[0].ty);
+                            args.push(Plus);
+                            args.push(at_child.children[1].ty);
+                        }
+
+                        _ => {
+                            //TODO OpErr
+                            let e = format!(    "Token of type {:?} not expected in adress \
+                                                for instruction {:?}. (L{})",
+                                                arg_cat.children[0].ty,
+                                                ty,
+                                                arg_cat.line);
+                            abort(&e);
+                        }
+                    }
+
+                    args.push(At1);
+                }
+
+                Plus => {
+                    args.push(arg.children[0].children[0].ty);
+                    args.push(Plus);
+                    args.push(arg.children[0].children[1].ty);
+                }
+
+                _ => {}
+            }
+        }
+    }
+
+    /// Convert a number string to bit index (0-7).
+    fn bx_from_str(s: &str) -> Result<TokenType, OpErr> {
+        match s {
+            "0" => Ok(args.push(B0)),
+            "1" => Ok(args.push(B1)),
+            "2" => Ok(args.push(B2)),
+            "3" => Ok(args.push(B3)),
+            "4" => Ok(args.push(B4)),
+            "5" => Ok(args.push(B5)),
+            "6" => Ok(args.push(B6)),
+            "7" => Ok(args.push(B7)),
+            _ => Err(OpErr::new()),
+        }
+    }
+
+    /// Compare the arguments to find the correct `Op` from opcodes.
+    fn compare_args() -> Option<()> {
+        // Iterate through all variations of the instruction.
+        'op_loop: for op in &instruction.ops {
+            if arg_count == op.args.len() {
+                if arg_count == 0 {
+                    return Some(op);
+                }
+
+                else {
+                    // This loop completes if all arguments match.
+                    for (i, arg) in args.iter().enumerate() {
+                        if *arg != op.args[i] {
+                            continue 'op_loop;
+                        }
+                    }
+
+                    return Some(op);
+                }
+            }
+
+            else if arg_count == op.args.len() - 1 && op.args[0] == A {
+                // When the first agument is A, it is optionnal.
+                for (i, arg) in args.iter().enumerate() {
+                    if *arg != op.args[i+1] {
+                        continue 'op_loop;
+                    }
+                }
+
+                return Some(op);
+            }
+        }
+    }
+
+}
+
 macro_rules! opcodes {(
     $(
         :$instr:ident $(

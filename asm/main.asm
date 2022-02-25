@@ -2,7 +2,6 @@
 #def FOO 10
 #def BAR "Hey that's a string"
 #def BAZ &10AB
-#def FONT_SIZE FontEnd - Font
 #def FLAGS %0110_1010
 
 ;Interrupts
@@ -55,7 +54,7 @@
     ld hl &FF40		;LCDC - LCD Control (R/W)
     res 7 (hl)      	;Turn off the screen
 
-#macro mul.lhs.rhs
+#macro mul. .lhs .rhs
     add .lhs .rhs ; bs code
     nop
 #macro
@@ -65,15 +64,13 @@
 
     mul. a 10
 
-#def X Start + FOO - 10
-
 :Font
     #include "font.bin"
 :FontEnd
     ld a (X)
     add Font
 
-#macro db.b
+#macro db. .b
     .b
 #macro
 

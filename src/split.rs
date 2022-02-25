@@ -1,169 +1,289 @@
-use crate::utils;
-use std::ops::Range;
 
-pub struct Line {
-    pub number: usize,
-    pub words: Vec<Range<usize>>,
+use crate::error::{ SplitErr, SplitErrType };
+use crate::text::charset;
+
+#[derive(Copy, Clone)]
+pub struct LineIndex {
+    value: usize,
 }
 
-/// Split input into lines and words.
+pub struct Word<'a> {
+    pub line_index: LineIndex,
+    pub value: &'a str,
+}
+
+/// Splits source file into words and stores original lines along with their numbers.
 pub struct Split<'a> {
-    pub input: &'a str,
-    pub lines: Vec<Line>,
+    /// String slice of a whole line.
+    lines: Vec<&'a str>,
+    /// Maps line indices to line numbers from the source file.
+    line_numbers: Vec<usize>,
+    /// Word slices along with their line index.
+    words: Vec<Word<'a>>,
 }
 
 impl<'a> Split<'a> {
-    #[cfg(feature = "debug")]
-    pub fn debug(&self) {
-        utils::debug_title("Split data");
-        for line in &self.lines {
-            let mut n = line.number.to_string();
-            if n.len() < 6 { n.push_str(&" ".repeat(7-n.len())); }
-            print!("    L{}|", n);
 
-            for word in &line.words {
-                print!("{}|", &self.input[word.start..word.end]);
-            }
-            println!();
-        }
-        println!();
-    }
-}
-
-impl<'a> Split<'a> {
-    pub fn new(input: &'a str, symbols: &'a [String]) -> Split<'a> {
-        let split = Splitter::new(input, symbols).run();
-        #[cfg(feature = "debug")] split.debug();
-        split
-    }
-}
-
-#[derive(Default)]
-struct Splitter<'a> {
-    /// Source file
-    pub input: &'a str,
-    /// Conditional compilation
-    pub symbols: &'a [String],
-    
-    /// Holds source line number and range for every words
-    pub lines: Vec<Line>,
-
-    /// Current index in lines
-    pub cur_line: usize,
-    /// Line of the word in the source file
-    pub source_line: usize,
-
-    pub comment: bool,
-    pub str_literal: bool,
-
-    /// Has a word started
-    pub has_word: bool,
-    pub has_symbol: bool,
-    pub dir_if: usize,
-    pub dir_else: bool,
-
-    /// Next word start index
-    pub start: usize,
-}
-
-impl<'a> Splitter<'a> {
-    fn new(input: &'a str, symbols: &'a [String]) -> Self {
-        Self { input, symbols, source_line: 1, ..Default::default() }
+    pub fn line(&self, index: LineIndex) -> &'a str {
+        self.lines[index.value]
     }
 
-    fn run(mut self) -> Split<'a> {
-        for (i, c) in self.input.chars().enumerate() {
-            if utils::is_new_line(&c) {
-                self.add_word(i);
-                self.cur_line += 1;
-                self.comment = false;
-                self.source_line += 1;
-            }else {
-                if self.comment { continue }
-                
-                if c == '"' {
-                    self.str_literal = !self.str_literal;
-                    //TODO escape \" and newline and \;
-                    if self.str_literal { 
-                        self.add_word(i);
-                        self.start = i;
-                    }else { 
-                        self.prepare_line();
-                        self.lines[self.cur_line].words.push(self.start..i+1);
-                        continue
+    pub fn line_number(&self, index: LineIndex) -> usize {
+        self.line_numbers[index.value]
+    }
+
+    pub fn words(&self) -> &[Word<'a>] {
+        &self.words
+    }
+
+    /// Split source file into lines and words.
+    pub fn new(
+        input: &'a str, 
+        symbols: &[&'a str],
+    ) -> Result<Split<'a>, Vec<SplitErr<'a>>> {
+        let mut errors = vec![];
+
+        let mut str_literal = false; 
+        let mut word_start = 0;
+        let mut has_word = false;
+        let mut dir_line = false;
+
+        let mut splitter = Splitter {
+            input,
+            lines: vec![],
+            line_numbers: vec![],
+            words: vec![],
+            current_line: usize::MAX,
+            push_line: false,
+            line_count: 0,
+            directive: vec![],
+            process: true,
+        };
+
+        for (l_i, line) in input.lines().enumerate() {
+            for (c_i, ch) in line.chars().enumerate() {
+                // String literal.
+                 if ch == '"' {
+                    // Push current word, or the string literal that just ended.
+                    if has_word {
+                        if let Some(word) = line.get(word_start..c_i) {
+                            splitter.push(word, line, l_i);
+                            has_word = false;
+                        }
+
+                        else {
+                            errors.push(SplitErr::new(
+                                SplitErrType::InvalidWord, line, l_i + 1));
+                        }
                     }
-                }
 
-                if self.str_literal { continue }
+                    str_literal = !str_literal;
 
-                if utils::is_space(&c) {
-                    self.add_word(i);
+                    if str_literal {
+                        word_start = c_i; 
+                    }
+
+                    else if let Some(word) = line.get(word_start..c_i) {
+                        splitter.push(word, line, l_i);
+                    }
+
+                    else {
+                        errors.push(SplitErr::new(
+                            SplitErrType::InvalidWord, line, l_i + 1));
+                    }
+
                     continue
                 }
 
-                match c {
-                    ';' => {
-                        self.add_word(i);
-                        self.comment = true;
-                    }
-                    '+' | '-' | '(' | ')' => {
-                        self.prepare_line();
-                        // Push the previous word
-                        if self.has_word {
-                            self.lines[self.cur_line].words.push(self.start..i);
-                            self.has_word = false;
+                if str_literal {
+                    continue
+                }
+
+                if ch == ';' {
+                    break
+                }
+
+                // Has a directive started?
+                if ch == '#' {
+                    // There can only be whitespace before.
+                    if let Some(preceding) = line.get(..c_i) {
+                        if preceding.trim().is_empty() {
+                            dir_line = true;
                         }
-                        // Push the character
-                        self.lines[self.cur_line].words.push(i..i+1);
                     }
-                    _ => {
-                        if !self.has_word { self.start = i; }
-                        self.has_word = true;
+
+                    else {
+                        errors.push(SplitErr::new(
+                            SplitErrType::MisplacedDirective, line, l_i + 1));
+                        break
                     }
+                }
+
+                if splitter.process || dir_line {
+                    // Those are always treated as words '(' ')' '+' '-'
+                    if charset::is_char_expr(ch) {
+                        // Push current word.
+                        if has_word { 
+                            if let Some(word) = line.get(word_start..c_i) {
+                                splitter.push(word, line, l_i);
+                                has_word = false;
+                            }
+
+                            else {
+                                errors.push(SplitErr::new(
+                                    SplitErrType::InvalidWord, line, l_i + 1));
+                            }
+                        }
+
+                        // Push character.
+                        if let Some(word) = line.get(c_i..=c_i) {
+                            splitter.push(word, line, l_i);
+                        }
+
+                        else {
+                            errors.push(SplitErr::new(
+                                SplitErrType::InvalidWord, line, l_i + 1));
+                        }
+                    }
+
+                    else if charset::is_space(ch) {
+                        if has_word { 
+                            if let Some(word) = line.get(word_start..c_i) {
+                                splitter.push(word, line, l_i);
+                                has_word = false;
+                            }
+
+                            else {
+                                errors.push(SplitErr::new(
+                                    SplitErrType::InvalidWord, line, l_i + 1));
+                            }
+                        }
+                    }
+
+                    else if !has_word {
+                        word_start = c_i;
+                        has_word = true;
+                    }
+                }    
+            } 
+
+            // End of the line, push the current word.
+            if has_word { 
+                if let Some(word) = line.get(word_start..) {
+                    splitter.push(word, line, l_i);
+                    has_word = false;
+                }
+
+                else {
+                    errors.push(SplitErr::new(
+                        SplitErrType::InvalidWord, line, l_i + 1));
                 }
             }
-        }
 
-        Split{ input: self.input, lines: self.lines }
-    }
+            // Push the line if any word was pushed.
+            if splitter.push_line {
+                splitter.line_numbers.push(l_i + 1);
+                splitter.lines.push(line);
 
-    /// Create a new line if necessary
-    fn prepare_line(&mut self) {
-        if self.lines.len() < self.cur_line+1 {
-            self.lines.push(Line{ number: self.source_line, words: vec![] }); 
-            self.cur_line = self.lines.len()-1;
-        }
-    }
-
-    /// Add word range to lines
-    fn add_word(&mut self, end: usize) {
-        if self.has_word {
-            let word = self.input.get(self.start..end).unwrap();
-
-            if self.dir_if != 0 { self.has_symbol = self.symbols.contains(&word.to_string()); }
-
-            match word {
-                "#if" => self.dir_if = self.cur_line,
-                "#else" => self.dir_else = true,
-                "#endif" => {
-                    self.dir_if = 0;
-                    self.dir_else = false;
-                }
-                _ => {
-                    //TODO test
-                    //if self.dir_if == 0 
-                    //|| (self.dir_if != 0 && self.has_symbol && self.dir_if != self.cur_line) {
-                    if self.dir_if == 0 || self.has_symbol && self.dir_if != self.cur_line {
-                        self.prepare_line();
-                        self.lines[self.cur_line].words.push(self.start..end);
-                    }
-                }
+                splitter.push_line = false;
             }
 
+            // Is there a directive to follow?
+            if !splitter.directive.is_empty() {
+                if splitter.directive[0] == "#endif" {
+                    splitter.process = true;
+                }
 
-            self.has_word = false;
+                else if splitter.directive[0] == "#else" {
+                    splitter.process = !splitter.process;
+                }
+
+                else if splitter.directive.len() == 2 && splitter.directive[0] == "#if" {
+                    splitter.process = symbols.contains(&splitter.directive[1]);
+                }
+
+                else {
+                    errors.push(SplitErr::new(
+                        SplitErrType::InvalidDirective, line, l_i + 1));
+                }
+
+                splitter.directive.clear();
+            }
+
+            // Line ended, reset values.
+            word_start = 0;
+            dir_line = false;
         }
+
+        let Splitter{ lines, line_numbers, words, .. } = splitter;
+        Ok(Split { lines, line_numbers, words })
+    }
+
+    #[cfg(feature="debug")]
+    pub fn debug(&self) {
+        use crate::process::title;
+
+        title("Split words");
+        
+        if self.line_numbers.is_empty() {
+            return
+        }
+
+        let mut line_number = self.line_numbers[0];
+        print!("L{}\t│", line_number);
+
+        for word in &self.words {
+            let ln = self.line_number(word.line_index);
+
+            if line_number != ln {
+                print!("\nL{}\t│", ln);
+                line_number = ln;
+            }
+
+            print!("{}│", word.value);
+        }
+
+        println!("\n");
     }
 
 }
+
+struct Splitter<'a> {
+    input: &'a str,
+    words: Vec<Word<'a>>,
+    lines : Vec<&'a str>,
+    line_numbers: Vec<usize>,
+    current_line: usize,
+    push_line: bool,
+    line_count: usize,
+    directive: Vec<&'a str>,
+    process: bool,
+}
+
+impl<'a> Splitter<'a> {
+
+    fn push(&mut self, value: &'a str, line: &'a str, line_index: usize) {
+        // Directive will be processed once the line has ended.
+        if !self.directive.is_empty() || matches!(value, "#if"|"#else"|"#endif") {
+            self.directive.push(value);
+            return
+        }
+
+        // Request a new line if necessary.
+        if self.current_line != line_index {
+            self.push_line = true;
+            self.current_line = line_index;
+            self.line_count += 1;
+        }
+
+        let word = Word { 
+            line_index: LineIndex { value: self.line_count - 1 },
+            value 
+        };
+
+        self.words.push(word);
+    }
+
+}
+
 
