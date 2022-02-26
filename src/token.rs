@@ -7,78 +7,7 @@ use crate::{
     macros::Macros,
 };
 
-/// Read-only reference to a token.
-/// Includes the AST for navigating the hierarchy.
-pub struct TokenRef<'a> {
-    pub ast: &'a Ast<'a>,
-    pub token: &'a Token<'a>,
-}
-
-impl<'a> TokenRef<'a> {
-
-    pub fn from_root(ast: &'a Ast) -> Self {
-        let token = ast.get_root();
-
-        Self { ast, token }
-    }
-
-    pub fn get(&self, child: usize) -> Self {
-        let token = &self.ast.tokens[self.token.children[child]];
-        let ast = &self.ast;
-
-        Self { ast, token }
-    }
-
-    pub fn try_get(&self, child: usize) -> Option<Self> {
-        let child = self.token.children.get(child)?;
-        let token = self.ast.tokens.get(*child)?;
-        let ast = self.ast;
-
-        Some(Self { ast, token })
-    }
-
-    pub fn ty(&self) -> TokenType {
-        self.token.ty
-    }
-
-    pub fn line_number(&self) -> usize {
-        self.token.line_number
-    }
-
-    pub fn line(&self) -> &'a str {
-        self.token.line
-    }
-
-    pub fn word(&self) -> &'a str {
-        self.token.word
-    }
-
-    pub fn data_key(&self) -> &Key {
-        &self.token.data_key
-    }
-
-    pub fn index(&self) -> usize {
-        self.token.index
-    }
-
-    pub fn parent(&self) -> TokenRef {
-        let token = &self.ast.tokens[self.token.parent];
-
-        TokenRef{ ast: self.ast, token }
-    }
-
-    pub fn children(&self) -> Vec<TokenRef> {
-        let children = vec![];
-
-        for child in self.token.children {
-            let token = &self.ast.tokens[child];
-            children.push(TokenRef{ ast: self.ast, token });
-        }
-
-        children
-    }
-
-}
+use std::hash::{Hash, Hasher};
 
 /// Token within the tree.
 #[derive(Debug)]
@@ -484,6 +413,97 @@ impl<'a> Ast<'a> {
         title("Token tree");
         children(self, &self.tokens[0], 0);
         println!();
+    }
+
+}
+
+/// Read-only reference to a token.
+/// Includes the AST for navigating the hierarchy.
+pub struct TokenRef<'a> {
+    pub ast: &'a Ast<'a>,
+    pub token: &'a Token<'a>,
+}
+
+impl<'a> PartialEq for TokenRef<'a> {
+
+    fn eq(&self, other: &Self) -> bool {
+        self.index() == other.index()
+    }
+
+}
+
+impl<'a> Eq for TokenRef<'a> {}
+
+impl<'a> Hash for TokenRef<'a> {
+
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.index().hash(state);
+    }
+
+}
+
+impl<'a> TokenRef<'a> {
+
+    pub fn from_root(ast: &'a Ast) -> Self {
+        let token = ast.get_root();
+
+        Self { ast, token }
+    }
+
+    pub fn get(&self, child: usize) -> Self {
+        let token = &self.ast.tokens[self.token.children[child]];
+        let ast = &self.ast;
+
+        Self { ast, token }
+    }
+
+    pub fn try_get(&self, child: usize) -> Option<Self> {
+        let child = self.token.children.get(child)?;
+        let token = self.ast.tokens.get(*child)?;
+        let ast = self.ast;
+
+        Some(Self { ast, token })
+    }
+
+    pub fn ty(&self) -> TokenType {
+        self.token.ty
+    }
+
+    pub fn line_number(&self) -> usize {
+        self.token.line_number
+    }
+
+    pub fn line(&self) -> &'a str {
+        self.token.line
+    }
+
+    pub fn word(&self) -> &'a str {
+        self.token.word
+    }
+
+    pub fn data_key(&self) -> &Key {
+        &self.token.data_key
+    }
+
+    pub fn index(&self) -> usize {
+        self.token.index
+    }
+
+    pub fn parent(&self) -> TokenRef {
+        let token = &self.ast.tokens[self.token.parent];
+
+        TokenRef{ ast: self.ast, token }
+    }
+
+    pub fn children(&self) -> Vec<TokenRef> {
+        let children = vec![];
+
+        for child in self.token.children {
+            let token = &self.ast.tokens[child];
+            children.push(TokenRef{ ast: self.ast, token });
+        }
+
+        children
     }
 
 }

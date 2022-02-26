@@ -70,8 +70,8 @@ impl<'a> Constants<'a> {
                     MacroCall => walk(token, ops_map, hashmap, offset, data),
 
                     Instruction => {
-                        let op = ops_map.get(&token).unwrap();
-                        size = op.bytes as usize + op.input;
+                        let op = ops_map.get(&token);
+                        size = op.len as usize;
                     }
 
                     Lit => size = Constants::sizeof_lit(&token, data),

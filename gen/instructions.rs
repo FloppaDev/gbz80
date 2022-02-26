@@ -3,7 +3,7 @@ const instructions_rs = `\
 use crate::{
     lingo::TokenType::{self, *},
     token::TokenRef,
-    error::{ErrCtx, OpErr},
+    error::{ErrCtx, OpErr, OpErrType},
 };
 
 use Constant::*;
@@ -24,7 +24,7 @@ enum Arg {
 impl Arg {
 
     fn cmp(token: Option<&TokenRef>) -> bool {
-        todo!();
+        
     }
 
 }
@@ -35,15 +35,15 @@ pub enum Constant {
 }
 
 pub struct OpCode {
-    cb: bool,
-    code: u8,
-    len: u8,
+    pub cb: bool,
+    pub code: u8,
+    pub len: u8,
 }
 
 impl OpCode {
 
     fn get_opcode(cb: bool, ops: Vec<(usize, usize, Vec<Arg>)>) -> Option<OpCode> {
-        todo!();
+
     }
 
     pub fn find(instruction: &TokenRef) -> Option<OpCode> {
@@ -59,22 +59,32 @@ impl OpCode {
 pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
 
 impl<'a> OpMap<'a> {
+    
+    pub fn get(&self, token: &TokenRef<'a>) -> &OpCode {
+        let Self(map) = self; 
 
-    pub fn new(ast: &TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
+        map.get(token).unwrap()
+    }
+
+}
+
+impl<'a> OpMap<'a> {
+
+    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
         let mut map = HashMap::new(); 
         let mut errors = vec![];
 
         fn walk<'a>(
-            ast: &TokenRef<'a>,
+            ast: &'a TokenRef<'a>,
             map: &mut HashMap<&'a TokenRef<'a>, OpCode>, 
             errors: &mut Vec<OpErr<'a>>,
         ) {
             for token in ast.children() {
                 match token.ty() {
-                    MacroCall => walk(token, map, errors),
+                    MacroCall => walk(&token, map, errors),
 
                     Instruction => {
-                        let opcode = OpCode::find(token);
+                        let opcode = OpCode::find(&token);
 
                         if opcode.is_none() {
                             errors.push(
@@ -83,7 +93,7 @@ impl<'a> OpMap<'a> {
                             continue;
                         }
 
-                        map.insert(token, opcode.unwrap());
+                        map.insert(&token, opcode.unwrap());
                     }
 
                     _ => {}
