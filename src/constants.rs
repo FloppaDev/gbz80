@@ -30,7 +30,7 @@
 
 use crate::{
     lingo::TokenType::*,
-    token::TokenRef,
+    token::{Token, TokenRef},
     data::{Data, Key},
     instructions::{OpCode, OpMap},
 };
@@ -49,55 +49,55 @@ impl<'a> Constants<'a> {
 
     fn get_markers(
         mut self,
-        ast: &TokenRef<'a>,
+        ast: TokenRef<'a>,
         ops_map: &OpMap,
         data: &Data,
-    ) -> HashMap<&'a TokenRef<'a>, usize> {
+    ) -> HashMap<TokenRef<'a>, usize> {
         let mut hashmap = HashMap::new();
         let mut offset = 0;
 
-        fn walk<'a>(
-            ast: &TokenRef<'a>,
-            ops_map: &OpMap,
-            mut hashmap: &mut HashMap<&'a TokenRef<'a>, usize>,
-            mut offset: &mut usize,
-            data: &Data,
-        ) {
-            let mut size = 0;
-
-            for token in &ast.children() {
-                match token.ty() {
-                    MacroCall => walk(token, ops_map, hashmap, offset, data),
-
-                    Instruction => {
-                        let op = ops_map.get(&token);
-                        size = op.len as usize;
-                    }
-
-                    Lit => size = Constants::sizeof_lit(&token, data),
-
-                    Identifier => {
-                        //? Markers are always double.
-                        //? Defines can have any size.
-                        //TODO need hashmap of defines and their sizes  
-                    }
-
-                    Marker => {
-                        //TODO Write offset to hashmap
-                    }
-                    _ => {}
-                }
-
-                *offset += size;
-            }
-        }
-
-        walk(&ast, ops_map, &mut hashmap, &mut offset, data);
+        Self::walk(ast, ops_map, &mut hashmap, &mut offset, data);
 
         hashmap
     }
 
-    fn sizeof_lit(lit: &TokenRef<'a>, data: &Data) -> usize {
+    fn walk(
+        ast: TokenRef<'a>,
+        ops_map: &OpMap,
+        mut hashmap: &mut HashMap<TokenRef<'a>, usize>,
+        mut offset: &mut usize,
+        data: &Data,
+    ) {
+        let mut size = 0;
+
+        for token in ast.children() {
+            match token.ty() {
+                MacroCall => Self::walk(*token, ops_map, hashmap, offset, data),
+
+                Instruction => {
+                    let op = ops_map.get(token);
+                    size = op.len as usize;
+                }
+
+                Lit => size = Constants::sizeof_lit(*token, data),
+
+                Identifier => {
+                    //? Markers are always double.
+                    //? Defines can have any size.
+                    //TODO need hashmap of defines and their sizes  
+                }
+
+                Marker => {
+                    //TODO Write offset to hashmap
+                }
+                _ => {}
+            }
+
+            *offset += size;
+        }
+    }
+
+    fn sizeof_lit(lit: TokenRef<'a>, data: &Data) -> usize {
         let litx = lit.get(0); 
         return match litx.ty() {
             LitDec|LitHex|LitBin => 
@@ -123,7 +123,7 @@ impl<'a> Constants<'a> {
 
     //TODO? Expressions always evaluate to a double
     pub fn get_defines_sizes(
-        defines: &[&TokenRef<'a>],
+        defines: &[TokenRef<'a>],
         data: &Data,
     ) -> HashMap<TokenRef<'a>, usize> {
         let hashmap = HashMap::new();
@@ -132,7 +132,7 @@ impl<'a> Constants<'a> {
             let token = define.get(2);
 
             let size = match token.ty() {
-                Lit => Self::sizeof_lit(&token, data),
+                Lit => Self::sizeof_lit(*token, data),
                 ty => panic!("Unexpected child type in define: {:?}", ty) 
             };
         }

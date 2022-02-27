@@ -422,6 +422,8 @@ impl<'a> Ast<'a> {
 pub struct TokenRef<'a> {
     pub ast: &'a Ast<'a>,
     pub token: &'a Token<'a>,
+    pub parent: Option<&'a Self>,
+    pub children: Vec<Self>,
 }
 
 impl<'a> PartialEq for TokenRef<'a> {
@@ -444,25 +446,25 @@ impl<'a> Hash for TokenRef<'a> {
 
 impl<'a> TokenRef<'a> {
 
-    pub fn from_root(ast: &'a Ast) -> Self {
+    /// Creates a `TokenRef` from the root token of an `Ast`.
+    pub fn new(ast: &'a Ast) -> Self {
         let token = ast.get_root();
 
-        Self { ast, token }
+        // TODO
+
+        Self { ast, token, parent, children }
     }
 
-    pub fn get(&self, child: usize) -> Self {
-        let token = &self.ast.tokens[self.token.children[child]];
-        let ast = &self.ast;
-
-        Self { ast, token }
+    /// Returns a reference to the child `TokenRef` at specified index.
+    /// Panics:
+    /// Index not found.
+    pub fn get(&self, child: usize) -> &Self {
+        &self.children[child]
     }
 
-    pub fn try_get(&self, child: usize) -> Option<Self> {
-        let child = self.token.children.get(child)?;
-        let token = self.ast.tokens.get(*child)?;
-        let ast = self.ast;
-
-        Some(Self { ast, token })
+    /// Tries to return a reference to the child `TokenRef` at specified index.
+    pub fn try_get(&self, child: usize) -> Option<&Self> {
+        self.children.get(child)
     }
 
     pub fn ty(&self) -> TokenType {
@@ -489,21 +491,18 @@ impl<'a> TokenRef<'a> {
         self.token.index
     }
 
-    pub fn parent(&self) -> TokenRef {
-        let token = &self.ast.tokens[self.token.parent];
-
-        TokenRef{ ast: self.ast, token }
+    /// Returns a reference to the parent `TokenRef` or `self` if it is the root.
+    pub fn parent(&self) -> &Self {
+        return if let Some(parent) = &self.parent {
+            parent
+        }else {
+            self   
+        };
     }
 
-    pub fn children(&self) -> Vec<TokenRef> {
-        let children = vec![];
-
-        for child in self.token.children {
-            let token = &self.ast.tokens[child];
-            children.push(TokenRef{ ast: self.ast, token });
-        }
-
-        children
+    /// Returns reference to all `TokenRef` children.
+    pub fn children(&self) -> Vec<&Self> {
+        self.children.iter().collect::<Vec<_>>()
     }
 
 }
