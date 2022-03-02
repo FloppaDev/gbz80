@@ -486,10 +486,12 @@ impl<'a> TokenRef<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn ast(&self) -> &Ast {
         self.ast
     }
 
+    #[allow(dead_code)]
     pub fn token(&self) -> &Token<'a> {
         self.token
     }
@@ -497,46 +499,56 @@ impl<'a> TokenRef<'a> {
     /// Returns a reference to the child `TokenRef` at specified index.
     /// Panics:
     /// Index not found.
+    #[allow(dead_code)]
     pub fn get(&self, child: usize) -> &Self {
         &self.children[child]
     }
 
     /// Tries to return a reference to the child `TokenRef` at specified index.
+    #[allow(dead_code)]
     pub fn try_get(&self, child: usize) -> Option<&Self> {
         self.children.get(child)
     }
 
+    #[allow(dead_code)]
     pub fn ty(&self) -> TokenType {
         self.token.ty
     }
 
+    #[allow(dead_code)]
     pub fn line_number(&self) -> usize {
         self.token.line_number
     }
 
+    #[allow(dead_code)]
     pub fn line(&self) -> &'a str {
         self.token.line
     }
 
+    #[allow(dead_code)]
     pub fn word(&self) -> &'a str {
         self.token.word
     }
 
+    #[allow(dead_code)]
     pub fn data_key(&self) -> &Key {
         &self.token.data_key
     }
 
+    #[allow(dead_code)]
     pub fn index(&self) -> usize {
         self.token.index
     }
 
     /// Returns a reference to the parent `TokenRef` or `self` if it is the root.
+    #[allow(dead_code)]
     pub fn parent(&self) -> &Self {
         // `TokenRef` contains an immutable ref to the Ast so its safe.
         unsafe { &*self.parent }
     }
 
     /// Returns reference to all `TokenRef` children.
+    #[allow(dead_code)]
     pub fn children(&self) -> Vec<&Self> {
         self.children.iter().collect::<Vec<_>>()
     }

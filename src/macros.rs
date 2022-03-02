@@ -256,33 +256,6 @@ impl<'a, 'b> Macros {
         call_ast
     }
 
-    fn copy_arg(
-        token: &Token<'a>,
-        ast: &Ast<'a>,
-        call_ast: &mut Ast<'a>,
-        offset: usize,
-        src: usize,
-        dest: usize,
-    ) {
-        //TODO
-        todo!();
-        let index = 0; //TODO remove
-
-        for child in &token.children {
-            let child = &ast.tokens[*child];
-
-            let Token{ ty, data_key, line_number, line, word, .. } = *child;
-            let children = vec![];
-            let parent = offset + dest;
-
-            let token = Token{
-                ty, line_number, line, word, data_key, index, parent, children
-            };
-
-            call_ast.tokens.push(token);
-        }
-    }
-
     /// Return token reference that corresponds to the specified name.
     fn get_arg_by_name(
         name: &'a str, 
