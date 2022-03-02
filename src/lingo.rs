@@ -25,6 +25,7 @@ pub enum TokenType {
         Define, Include,
         Macro,              MacroIdent, MacroArg, MacroBody,
         
+    Repeat,
     MacroCall,
     Marker,                 NamedMark, AnonMark, Label,
     Unknown,
@@ -86,12 +87,13 @@ impl Lexicon {
         let marker =        lexicon.branch(Marker, root);
 
         let i_n = vec![Adc, Add, And, Bit, Call, Ccf, Cp, Cpl, Daa, Dec, Di, Ei, Halt, 
-                       Inc, Jp, Jr, Ld, Ldi, Ldd, Ldhl, Or, Pop, Push, Res, Ret, Rl, Rla, 
-                       Rlc, Rld, Rr, Rra, Rrc, Rrca, Rrd, Rst, Sbc, Scf, Set, Sla, Sll, 
-                       Sra, Srl, Stop, Sub, Swap, Xor, Reti, Rlca, Nop];
+                       Inc, Jp, Jr, Ld, Ldh, Ldi, Ldd, Ldhl, Or, Pop, Push, Res, Ret,
+                       Rl, Rla, Rlc, Rld, Rr, Rra, Rrc, Rrca, Rrd, Rst, Sbc, Scf, Set,
+                       Sla, Sll, Sra, Srl, Stop, Sub, Swap, Xor, Reti, Rlca, Nop];
 
         let r_n = vec![A, B, C, D, E, H, L, Af, Bc, De, Hl, Sp];
 
+        //TODO test for checking that the Lexicon contains all types.
         lexicon.push(instr_name,    &i_n); 
         lexicon.push(argument,      &[Identifier]);
         lexicon.push(register,      &r_n);
@@ -101,7 +103,7 @@ impl Lexicon {
         lexicon.push(r#macro,       &[MacroIdent, MacroArg, MacroBody]);
         lexicon.push(directive,     &[Define, Include]);
         lexicon.push(marker,        &[NamedMark, AnonMark, Label]);
-        lexicon.push(root,          &[MacroCall, Marker, Unknown]);
+        lexicon.push(root,          &[Repeat, MacroCall, Marker, Unknown]);
 
         // Create names map, to parse from text.
         

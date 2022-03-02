@@ -79,8 +79,6 @@ impl<'a> Ast<'a> {
                 selection = ast.parent_of(selection);
             }
 
-            //TODO repeat
-
             // Is the token on a new line.
             if current_line != token.line_number {
                 current_line = token.line_number;
@@ -190,7 +188,6 @@ impl<'a> Ast<'a> {
                 self.cascade(*selection, &[p], token);
             }
 
-            //TODO take repeat count
             p @ Macro => {
                 // Is it a macro call? 
                 if token.ty == MacroIdent && self.type_of(*selection) != Macro {
@@ -243,7 +240,13 @@ impl<'a> Ast<'a> {
                     *selection = self.push(*selection, token);
                 }
 
-                _ => {}
+                Repeat|Label => {
+                    self.push(*selection, token);
+                }
+
+                _ => {
+                    panic!("Assembler bug: Unhandled token type '{:?}'.", token.ty);
+                }
             }
         }
     }
@@ -371,7 +374,7 @@ impl<'a> Ast<'a> {
         }
     }
 
-    #[cfg(feature = "debug")]
+    #[cfg(debug_assertions)]
     pub fn debug(&self) {
         fn children(ast: &Ast, token: &Token, indent: usize) {
             if indent >= 100 {

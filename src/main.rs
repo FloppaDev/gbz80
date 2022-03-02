@@ -105,6 +105,8 @@ mod tests;
 
 //TODO update crate doc
 
+//TODO parse 'Repeat's before 'Lit's and includes.
+
 //====================================================================
 
 use crate::{
@@ -161,7 +163,7 @@ fn main() -> Result<(), ()> {
     }
 
     let split = split.unwrap();
-    #[cfg(feature = "debug")] split.debug();
+    #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.
     let parsed_tokens = parse(&lexicon, &mut data, &split);
@@ -191,7 +193,7 @@ fn main() -> Result<(), ()> {
     }
 
     let mut ast = ast.unwrap();
-    #[cfg(feature = "debug")] ast.debug();
+    #[cfg(debug_assertions)] ast.debug();
 
     // Expand macro calls.
     if let Err(errors) = macros.expand(&mut ast, &lexicon, &data) {
@@ -204,10 +206,7 @@ fn main() -> Result<(), ()> {
         return Err(())
     }
 
-    let token_ref = TokenRef::new(&ast);
-    for child in token_ref.children() {
-        println!("{:?}", child.ty());
-    }
+    #[cfg(debug_assertions)] ast.debug();
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);

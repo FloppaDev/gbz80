@@ -114,7 +114,7 @@ pub fn thread_count() -> usize {
     4
 }
 
-#[cfg(feature = "debug")]
+#[cfg(debug_assertions)]
 pub fn title(title: &str) {
     let decoration = "=".repeat(79);
     println!("\n{}\n\t\t\t\t{}\n{}\n", decoration, title, decoration);

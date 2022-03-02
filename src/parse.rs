@@ -135,7 +135,7 @@ fn extract<'a>(
             Err(ParseErrType::BinOverflow)
         }
 
-        LitDec => {
+        LitDec|Repeat => {
             let mut dec = 0;
             let mut mul = 1;
 
@@ -354,7 +354,7 @@ fn identify<'a>(
                     return Err(ParseErrType::InvalidDec);
                 }
 
-                result.push((LitDec, dec.unwrap()));
+                result.push((Repeat, dec.unwrap()));
             }
         }
 

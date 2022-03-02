@@ -219,7 +219,7 @@ impl<'a> Split<'a> {
         Ok(Split { lines, line_numbers, words })
     }
 
-    #[cfg(feature="debug")]
+    #[cfg(debug_assertions)]
     pub fn debug(&self) {
         use crate::process::title;
 

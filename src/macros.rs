@@ -37,7 +37,6 @@ impl<'a, 'b> Macros {
 
             else {
                 errors.push(MacroErr::new(MacroErrType::InvalidDecl, err_ctx));
-
                 continue;
             }
 
@@ -85,7 +84,6 @@ impl<'a, 'b> Macros {
 
             if call_ident.is_none() {
                 errors.push(MacroErr::new(MacroErrType::NoCallIdent, token.into()));
-
                 continue;
             }
 
@@ -99,7 +97,6 @@ impl<'a, 'b> Macros {
 
                 if decl_ident == call_ident {
                     decl_index = Some(macro_decl);
-
                     break;
                 }
             }
@@ -107,11 +104,16 @@ impl<'a, 'b> Macros {
             // Macro declaration not found.
             if decl_index.is_none() {
                 errors.push(MacroErr::new(MacroErrType::DeclNotFound, token.into()));
-
                 continue;
             }
 
-            Self::expand_call(ast, *decl_index.unwrap(), *macro_call, data, &mut errors); 
+            let decl_index = *decl_index.unwrap();
+
+            // Disconnect the declaration from its parent.
+            let decl_parent = ast.tokens[decl_index].parent;
+            ast.tokens[decl_parent].children.retain(|c| *c != decl_index);
+
+            Self::expand_call(ast, decl_index, *macro_call, data, &mut errors); 
         }
 
         if errors.is_empty() {
@@ -146,7 +148,6 @@ impl<'a, 'b> Macros {
 
         if decl_args.len() != call_args.len() {
             errors.push(MacroErr::new(MacroErrType::ArgCountMismatch, call.into()));
-
             return;
         }
 
@@ -185,7 +186,8 @@ impl<'a, 'b> Macros {
             0, 
             &arg_names, 
             &arg_tokens, 
-            call);
+            call,
+            data);
 
         // Append the new `Ast` to the main one.
         for token in call_ast.tokens {
@@ -200,17 +202,32 @@ impl<'a, 'b> Macros {
         offset: usize,
         src: usize,
         dest: usize,
+
+        //TODO HashMap?
         arg_names: &[&str],
         arg_tokens: &[&'b Token<'a>],
+
         macro_call: &'b Token<'a>,
+        data: &Data<'a>,
     ) -> Ast<'a> {
         // Iterate over all tokens inside the declaration's body.
         for child in &ast.tokens[src].children {
-            let child = &ast.tokens[*child];
+            let mut child = &ast.tokens[*child];
+
+            // Macro arguments must be replaced with the corresponding tokens.
+            if child.ty == MacroArg {
+                let arg = data.get_str(&child.data_key);
+
+                for (i, arg_name) in arg_names.iter().enumerate() {
+                    if *arg_name == arg {
+                        child = arg_tokens[i];
+                        break;
+                    }
+                }
+            }
 
             // `call_ast` will be merged into `ast` after the declaration has been copied.
             let index = call_ast.tokens.len();
-
             call_ast.tokens[dest].children.push(offset + index);
 
             let Token{ ty, data_key, .. } = *child;
@@ -232,10 +249,38 @@ impl<'a, 'b> Macros {
                 index, 
                 arg_names, 
                 arg_tokens, 
-                macro_call);
+                macro_call,
+                data);
         }
 
         call_ast
+    }
+
+    fn copy_arg(
+        token: &Token<'a>,
+        ast: &Ast<'a>,
+        call_ast: &mut Ast<'a>,
+        offset: usize,
+        src: usize,
+        dest: usize,
+    ) {
+        //TODO
+        todo!();
+        let index = 0; //TODO remove
+
+        for child in &token.children {
+            let child = &ast.tokens[*child];
+
+            let Token{ ty, data_key, line_number, line, word, .. } = *child;
+            let children = vec![];
+            let parent = offset + dest;
+
+            let token = Token{
+                ty, line_number, line, word, data_key, index, parent, children
+            };
+
+            call_ast.tokens.push(token);
+        }
     }
 
     /// Return token reference that corresponds to the specified name.
