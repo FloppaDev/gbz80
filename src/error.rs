@@ -46,7 +46,7 @@ impl<'a> From<&Token<'a>> for ErrCtx<'a> {
 impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 
     fn from(token_ref: &TokenRef<'a>) -> Self {
-        let Token{ line_number, line, word, .. } = *token_ref.token;
+        let Token{ line_number, line, word, .. } = *token_ref.token();
         Self { line_number, line, word }
     }
 

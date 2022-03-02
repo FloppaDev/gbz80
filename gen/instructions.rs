@@ -34,7 +34,7 @@ impl Arg {
 
 }
 
-pub struct OpMap<'a>(HashMap<TokenRef<'a>, OpCode>);
+pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
 
 impl<'a> OpMap<'a> {
 
@@ -44,7 +44,7 @@ impl<'a> OpMap<'a> {
         map.get(token).unwrap()
     }
 
-    pub fn new(ast: TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
+    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
         let mut map = HashMap::new(); 
         let mut errors = vec![];
 
@@ -58,16 +58,16 @@ impl<'a> OpMap<'a> {
     }
 
     fn walk(
-        ast: TokenRef<'a>,
-        map: &mut HashMap<TokenRef<'a>, OpCode>, 
+        ast: &'a TokenRef<'a>,
+        map: &mut HashMap<&TokenRef<'a>, OpCode>, 
         errors: &mut Vec<OpErr<'a>>,
     ) {
         for token in ast.children() {
             match token.ty() {
-                MacroCall => Self::walk(*token, map, errors),
+                MacroCall => Self::walk(token, map, errors),
 
                 Instruction => {
-                    let opcode = OpCode::find(*token);
+                    let opcode = OpCode::find(token);
 
                     if opcode.is_none() {
                         errors.push(
@@ -76,7 +76,7 @@ impl<'a> OpMap<'a> {
                         continue;
                     }
 
-                    map.insert(*token, opcode.unwrap());
+                    map.insert(token, opcode.unwrap());
                 }
 
                 _ => {}
@@ -102,7 +102,7 @@ impl OpCode {
     }
 
     fn get_opcode(
-        instruction: TokenRef, 
+        instruction: &TokenRef, 
         cb: bool, 
         ops: Vec<(u8, u8, Vec<Arg>)>
     ) -> Option<OpCode> {
@@ -121,7 +121,7 @@ impl OpCode {
         None
     }
 
-    pub fn find(instruction: TokenRef) -> Option<OpCode> {
+    pub fn find(instruction: &TokenRef) -> Option<OpCode> {
         assert_eq!(instruction.ty(), Instruction);
 
         let instr_ty = instruction.get(0).get(0).ty();

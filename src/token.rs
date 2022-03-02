@@ -420,10 +420,10 @@ impl<'a> Ast<'a> {
 /// Read-only reference to a token.
 /// Includes the AST for navigating the hierarchy.
 pub struct TokenRef<'a> {
-    pub ast: &'a Ast<'a>,
-    pub token: &'a Token<'a>,
-    pub parent: Option<&'a Self>,
-    pub children: Vec<Self>,
+    ast: &'a Ast<'a>,
+    token: &'a Token<'a>,
+    parent: *const Self,
+    children: Vec<Self>,
 }
 
 impl<'a> PartialEq for TokenRef<'a> {
@@ -448,11 +448,47 @@ impl<'a> TokenRef<'a> {
 
     /// Creates a `TokenRef` from the root token of an `Ast`.
     pub fn new(ast: &'a Ast) -> Self {
-        let token = ast.get_root();
+        let mut fail_safe = 500;
+        let root = ast.get_root();
+        let mut current = Self{ 
+            ast, token: root, parent: 0 as *const _, children: vec![]
+        };
+        current.parent = &current;
 
-        // TODO
+        Self::walk(ast, &mut current, &mut fail_safe); 
 
-        Self { ast, token, parent, children }
+        current
+    }
+
+    fn walk(
+        ast: &'a Ast, 
+        current: &mut Self,
+        fail_safe: &mut usize,
+    ) {
+        if *fail_safe == 0 {
+            panic!("Assembler bug: Recursion limit reached while building TokenRef tree.");
+        }
+
+        for child in &current.token.children {
+            *fail_safe -= 1;
+            let token = &ast.tokens[*child];
+            let mut token_ref = Self{ 
+                ast, token, parent: current, children: vec![]
+            };
+
+            current.children.push(token_ref);
+
+            Self::walk(
+                ast, current.children.last_mut().unwrap(), fail_safe);
+        }
+    }
+
+    pub fn ast(&self) -> &Ast {
+        self.ast
+    }
+
+    pub fn token(&self) -> &Token<'a> {
+        self.token
     }
 
     /// Returns a reference to the child `TokenRef` at specified index.
@@ -493,11 +529,8 @@ impl<'a> TokenRef<'a> {
 
     /// Returns a reference to the parent `TokenRef` or `self` if it is the root.
     pub fn parent(&self) -> &Self {
-        return if let Some(parent) = &self.parent {
-            parent
-        }else {
-            self   
-        };
+        // `TokenRef` contains an immutable ref to the Ast so its safe.
+        unsafe { &*self.parent }
     }
 
     /// Returns reference to all `TokenRef` children.

@@ -112,7 +112,7 @@ use crate::{
     data::Data,
     split::Split,
     parse::parse,
-    token::Ast,
+    token::{Ast, TokenRef},
     process::clargs,
     macros::Macros,
 };
@@ -204,7 +204,10 @@ fn main() -> Result<(), ()> {
         return Err(())
     }
 
-    #[cfg(feature = "debug")] ast.debug();
+    let token_ref = TokenRef::new(&ast);
+    for child in token_ref.children() {
+        println!("{:?}", child.ty());
+    }
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);
