@@ -4,6 +4,7 @@ use crate::{
     lingo::TokenType::{self, *},
     token::{Token, TokenRef},
     error::{ErrCtx, OpErr, OpErrType},
+    process::bug,
 };
 
 use Constant::*;

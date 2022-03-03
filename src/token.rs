@@ -1,10 +1,11 @@
 
 use crate::{
-    data::Key,
+    data::{Data, Key},
     lingo::{ Lexicon, TokenType::{ self, * } },
     parse::ParsedToken,
     error::{ ErrCtx, AstErr, AstErrType },
     macros::Macros,
+    process::bug,
 };
 
 use std::hash::{Hash, Hasher};
@@ -252,9 +253,7 @@ impl<'a> Ast<'a> {
                     self.push(marker, token);
                 }
 
-                _ => {
-                    panic!("Assembler bug: Unhandled token type '{:?}'.", token.ty);
-                }
+                _ => bug(&format!("Unhandled token type '{:?}'.", token.ty))
             }
         }
     }
@@ -425,12 +424,12 @@ impl<'a> Ast<'a> {
         children(self, &self.tokens[0], 0);
         println!();
     }
-
 }
 
 /// Read-only reference to a token.
 /// Includes the AST for navigating the hierarchy.
 pub struct TokenRef<'a> {
+    data: &'a Data<'a>,
     ast: &'a Ast<'a>,
     token: &'a Token<'a>,
     parent: *const Self,
@@ -458,40 +457,46 @@ impl<'a> Hash for TokenRef<'a> {
 impl<'a> TokenRef<'a> {
 
     /// Creates a `TokenRef` from the root token of an `Ast`.
-    pub fn new(ast: &'a Ast) -> Self {
+    pub fn new(data: &'a Data, ast: &'a Ast) -> Self {
         let mut fail_safe = 500;
         let root = ast.get_root();
         let mut current = Self{ 
-            ast, token: root, parent: 0 as *const _, children: vec![]
+            data, ast, token: root, parent: 0 as *const _, children: vec![]
         };
         current.parent = &current;
 
-        Self::walk(ast, &mut current, &mut fail_safe); 
+        Self::walk(data, ast, &mut current, &mut fail_safe); 
 
         current
     }
 
     fn walk(
+        data: &'a Data,
         ast: &'a Ast, 
         current: &mut Self,
         fail_safe: &mut usize,
     ) {
         if *fail_safe == 0 {
-            panic!("Assembler bug: Recursion limit reached while building TokenRef tree.");
+            bug("Recursion limit reached while building TokenRef tree.");
         }
 
         for child in &current.token.children {
             *fail_safe -= 1;
             let token = &ast.tokens[*child];
             let mut token_ref = Self{ 
-                ast, token, parent: current, children: vec![]
+                data, ast, token, parent: current, children: vec![]
             };
 
             current.children.push(token_ref);
 
             Self::walk(
-                ast, current.children.last_mut().unwrap(), fail_safe);
+                data, ast, current.children.last_mut().unwrap(), fail_safe);
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn data(&self) -> &Data {
+        self.data
     }
 
     #[allow(dead_code)]

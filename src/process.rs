@@ -119,3 +119,8 @@ pub fn title(title: &str) {
     let decoration = "=".repeat(79);
     println!("\n{}\n\t\t\t\t{}\n{}\n", decoration, title, decoration);
 }
+
+/// Reports an bug in the assembler and panics.
+pub fn bug(msg: &str) -> ! {
+    panic!("Assembler error: {}\nThis is bug.", msg);
+}

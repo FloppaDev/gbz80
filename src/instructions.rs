@@ -8,6 +8,7 @@ use crate::{
     lingo::TokenType::{self, *},
     token::{Token, TokenRef},
     error::{ErrCtx, OpErr, OpErrType},
+    process::bug,
 };
 
 use Constant::*;
@@ -868,7 +869,7 @@ impl OpCode {
                 ])
             }
 
-            _ => panic!("Op not found"),
+            _ => bug("Op not found"),
         }
     }
 

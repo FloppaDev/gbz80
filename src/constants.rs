@@ -49,9 +49,16 @@ use crate::{
     token::{Token, TokenRef},
     data::{Data, Key},
     instructions::{OpCode, OpMap},
+    process::bug,
 };
 
 use std::collections::HashMap;
+
+pub enum ConstExpr<'a> {
+    Num(usize),
+    Str(Key),
+    Tkn(&'a TokenRef<'a>),
+}
 
 pub struct Constants<'a> {
     map: HashMap<&'a TokenRef<'a>, Key>,
@@ -59,12 +66,62 @@ pub struct Constants<'a> {
 
 impl<'a> Constants<'a> {
 
-    
+    fn get_constants(
+        ast: &'a TokenRef<'a>,
+        mut map: HashMap<&'a str, ConstExpr<'a>>,
+    ) -> HashMap<&'a str, ConstExpr<'a>> {
+        let data = ast.data();
+
+        for token in ast.children() {
+            match token.ty() {
+                MacroCall|MacroBody => map = Self::get_constants(token, map),
+
+                Marker => {
+                    let child = token.get(0);
+
+                    match child.ty() {
+                        Label => {
+                            let ident = data.get_str(child.data_key());
+                            let value = ConstExpr::Tkn(child);
+
+                            map.insert(ident, value).unwrap();
+                        }
+
+                        NamedMark => {
+                            let ident = data.get_str(child.data_key());
+                            let value = ConstExpr::Num(
+                                data.get_usize(child.get(0).get(0).data_key()));
+
+                            map.insert(ident, value).unwrap();
+                        }
+
+                        _ => {}
+                    }
+                }
+
+                Directive => {
+                    let child = token.get(0);
+
+                    if child.ty() == Define {
+                        let ident = data.get_str(child.get(0).data_key());
+                        let value = ConstExpr::Tkn(child);
+
+                        map.insert(ident, value);
+                    }
+                }
+
+                _ => {}
+            }
+        }
+
+        map
+    }
 
     fn insert(&mut self) {
         //TODO 
     }
 
+    //TODO this is obsolete.
     fn get_markers(
         mut self,
         ast: &'a TokenRef<'a>,
@@ -74,12 +131,12 @@ impl<'a> Constants<'a> {
         let mut hashmap = HashMap::new();
         let mut offset = 0;
 
-        Self::walk(ast, ops_map, &mut hashmap, &mut offset, data);
+        Self::_walk(ast, ops_map, &mut hashmap, &mut offset, data);
 
         hashmap
     }
 
-    fn walk(
+    fn _walk(
         ast: &'a TokenRef<'a>,
         ops_map: &OpMap,
         mut hashmap: &mut HashMap<&'a TokenRef<'a>, usize>,
@@ -90,7 +147,7 @@ impl<'a> Constants<'a> {
 
         for token in ast.children() {
             match token.ty() {
-                MacroCall => Self::walk(token, ops_map, hashmap, offset, data),
+                MacroCall => Self::_walk(token, ops_map, hashmap, offset, data),
 
                 Instruction => {
                     let op = ops_map.get(token);
@@ -118,24 +175,21 @@ impl<'a> Constants<'a> {
     fn sizeof_lit(lit: &TokenRef<'a>, data: &Data) -> usize {
         let litx = lit.get(0); 
         return match litx.ty() {
-            LitDec|LitHex|LitBin => 
-                if data.get_u16(litx.data_key()).is_some() { 2 }else{ 1 },
+            LitDec|LitHex|LitBin => Self::size_of(data.get_usize(litx.data_key())),
 
             LitStr => data.get_str(litx.data_key()).len(),
 
-            // No other type of literal.
-            _ => panic!(),
+            _ => bug("Unhandled literal type."),
         }
     }
 
-    fn sizeof_lit_dec(litd: &str) -> usize {
-        let value = litd.parse::<usize>().unwrap();
+    fn size_of(value: usize) -> usize {
         return match value {
             value if value <= 255 => 1,
 
             value if value >= 256 && value <= 65536 => 2,
 
-            _ => panic!("Value not allowed for a decimal literal {}", litd)
+            _ => bug("Exceeding number capacity.")
         }
     }
 
@@ -151,7 +205,8 @@ impl<'a> Constants<'a> {
 
             let size = match token.ty() {
                 Lit => Self::sizeof_lit(token, data),
-                ty => panic!("Unexpected child type in define: {:?}", ty) 
+
+                ty => bug(&format!("Unexpected child type in define: {:?}", ty))
             };
         }
 

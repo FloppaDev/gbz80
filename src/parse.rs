@@ -106,11 +106,7 @@ fn extract<'a>(
                 mul *= 16;
             }
 
-            if let Some(data_key) = data.push_num(hex) {
-                return Ok((ty, data_key));
-            }
-
-            Err(ParseErrType::HexOverflow)
+            return Ok((ty, data.push_usize(hex)));
         }
 
         LitBin => {
@@ -131,11 +127,7 @@ fn extract<'a>(
                 }
             }
 
-            if let Some(data_key) = data.push_num(bin) {
-                return Ok((ty, data_key));
-            }
-
-            Err(ParseErrType::BinOverflow)
+            return Ok((ty, data.push_usize(bin)));
         }
 
         LitDec|Repeat => {
@@ -150,11 +142,8 @@ fn extract<'a>(
                 mul *= 10;
             }
 
-            if let Some(data_key) = data.push_num(dec) {
-                return Ok((ty, data_key));
-            }
-
-            Err(ParseErrType::DecOverflow)
+            //TODO check for overflows in validation.
+            return Ok((ty, data.push_usize(dec)));
         }
 
         // Value for those is str_value

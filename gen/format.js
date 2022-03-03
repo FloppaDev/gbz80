@@ -117,7 +117,7 @@ ${opStr}\
             // CB instructions
 
 ${cbOpStr}\
-            _ => panic!("Op not found"),
+            _ => bug("Op not found"),
         }`
 );
 
