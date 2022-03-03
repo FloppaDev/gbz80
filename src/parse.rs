@@ -86,6 +86,9 @@ fn extract<'a>(
     let (ty, str_value) = word; 
 
     if lexicon.no_value(ty) {
+        //TODO don't remember what it does and why.
+        //println!("{}", str_value);
+        //  prints nothing. Use Key::Void instead?
         let data_key = data.push_str(str_value);
         return Ok((ty, data_key)) 
     }

@@ -4,6 +4,9 @@
 
 //  #def FOO 10                         ; size is 1
 //  #def MOO "uwu~"                     ; size is 4
+//  #def BAZ FOO
+//  #def ABC FOO + BAZ
+//  #def UGH :Label2 + 1                ; size is 2
 
 //  add a                   ; Instruction size: 1 byte
 //  &01                     ; 1 byte
@@ -28,6 +31,19 @@
 //  ABC depends on BAZ and FOO: try to calculate them before calculating ABC.
 //      There's a possiblity for circular dependencies.
 
+
+
+//  - Get labels values
+//  loop {
+//      - iterate through all constants and try to calculate their values.
+//      if count of unknown values remains the same {
+//          return error
+//      }
+//      if all values are known {
+//          break
+//      }
+//  }
+
 use crate::{
     lingo::TokenType::*,
     token::{Token, TokenRef},
@@ -38,10 +54,12 @@ use crate::{
 use std::collections::HashMap;
 
 pub struct Constants<'a> {
-    map: HashMap<TokenRef<'a>, Key>,
+    map: HashMap<&'a TokenRef<'a>, Key>,
 }
 
 impl<'a> Constants<'a> {
+
+    
 
     fn insert(&mut self) {
         //TODO 
@@ -49,10 +67,10 @@ impl<'a> Constants<'a> {
 
     fn get_markers(
         mut self,
-        ast: &TokenRef<'a>,
+        ast: &'a TokenRef<'a>,
         ops_map: &OpMap,
         data: &Data,
-    ) -> HashMap<TokenRef<'a>, usize> {
+    ) -> HashMap<&'a TokenRef<'a>, usize> {
         let mut hashmap = HashMap::new();
         let mut offset = 0;
 
@@ -62,9 +80,9 @@ impl<'a> Constants<'a> {
     }
 
     fn walk(
-        ast: &TokenRef<'a>,
+        ast: &'a TokenRef<'a>,
         ops_map: &OpMap,
-        mut hashmap: &mut HashMap<TokenRef<'a>, usize>,
+        mut hashmap: &mut HashMap<&'a TokenRef<'a>, usize>,
         mut offset: &mut usize,
         data: &Data,
     ) {

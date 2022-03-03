@@ -169,7 +169,9 @@ fn main() -> Result<(), ()> {
     let parsed_tokens = parse(&lexicon, &mut data, &split);
 
     if let Err(errors) = parsed_tokens {
-        eprintln!("Failed compilation with {} errors at stage 'parse'", errors.len());
+        eprintln!(
+            "Failed compilation with {} errors at stage 'parse'", 
+            errors.len());
 
         for err in errors {
             eprintln!("{:?}", err);
@@ -183,7 +185,9 @@ fn main() -> Result<(), ()> {
     let ast = Ast::new(&lexicon, parsed_tokens.unwrap(), &mut macros);
 
     if let Err(errors) = ast {
-        eprintln!("Failed compilation with {} errors at stage 'ast build'", errors.len());
+        eprintln!(
+            "Failed compilation with {} errors at stage 'ast build'", 
+            errors.len());
 
         for err in errors {
             eprintln!("{:?}", err);
@@ -197,7 +201,9 @@ fn main() -> Result<(), ()> {
 
     // Expand macro calls.
     if let Err(errors) = macros.expand(&mut ast, &lexicon, &data) {
-        eprintln!("Failed compilation with {} errors at stage 'macros expansion'", errors.len());
+        eprintln!(
+            "Failed compilation with {} errors at stage 'macros expansion'", 
+            errors.len());
 
         for err in errors {
             eprintln!("{:?}", err);

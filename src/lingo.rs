@@ -194,8 +194,8 @@ impl Lexicon {
 
     /// Is it one the token types that end on a newline.
     pub fn ends_on_newline(&self, ty: TokenType) -> bool {
-        matches!(ty, Instruction|Argument|MacroCall|Directive|AnonMark|NamedMark) ||
-            self.parent_type(ty) == Directive
+        matches!(ty, Instruction|Argument|MacroCall|Directive|Marker) ||
+            matches!(self.parent_type(ty), Directive|Marker)
     }
 
     /// Find a token type in the lexicon by its name.

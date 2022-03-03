@@ -237,11 +237,19 @@ impl<'a> Ast<'a> {
                 }
 
                 AnonMark|NamedMark => {
+                    let t = Self::empty(Marker, line_number, line);
+                    *selection = self.push(*selection, t);
                     *selection = self.push(*selection, token);
                 }
 
-                Repeat|Label => {
+                Repeat => {
                     self.push(*selection, token);
+                }
+
+                Label => {
+                    let t = Self::empty(Marker, line_number, line);
+                    let marker = self.push(*selection, t);
+                    self.push(marker, token);
                 }
 
                 _ => {
