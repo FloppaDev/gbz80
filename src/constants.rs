@@ -50,31 +50,62 @@ use crate::{
     data::{Data, Key},
     instructions::{OpCode, OpMap},
     process::bug,
+    error::{ConstantsErr, ConstantsErrType},
 };
 
 use std::collections::HashMap;
 
+/// Holds the value of a constant or the token required to calculate it.
+#[derive(Copy, Clone)]
 pub enum ConstExpr<'a> {
+    Nil,
     Num(usize),
     Str(Key),
     Tkn(&'a TokenRef<'a>),
 }
 
-pub struct Constants<'a> {
-    map: HashMap<&'a TokenRef<'a>, Key>,
-}
+pub struct Constants<'a>(HashMap<&'a str, ConstExpr<'a>>);
 
 impl<'a> Constants<'a> {
+
+    pub fn map(&self) -> &HashMap<&'a str, ConstExpr<'a>> {
+        let Self(map) = self;
+        map
+    }
+
+    pub fn new(
+        ast: &'a TokenRef<'a>,
+    ) -> Result<Self, ConstantsErr<'a>> {
+        let mut fail_safe = 500;
+        let mut constants = Self(
+            Self::get_constants(ast, HashMap::new(), &mut fail_safe)?);
+
+        for key in constants.map().keys() {
+            println!("{}", key);
+        }
+
+        Ok(constants)
+    }
 
     fn get_constants(
         ast: &'a TokenRef<'a>,
         mut map: HashMap<&'a str, ConstExpr<'a>>,
-    ) -> HashMap<&'a str, ConstExpr<'a>> {
+        fail_safe: &mut usize,
+    ) -> Result<HashMap<&'a str, ConstExpr<'a>>, ConstantsErr<'a>> {
+        *fail_safe -= 1;
+
+        if *fail_safe == 0 {
+            bug("Recursion limit reached while reading constants");
+        }
+
         let data = ast.data();
+        let nil = Some(ConstExpr::Nil);
 
         for token in ast.children() {
+            let err = ConstantsErr::new(ConstantsErrType::DuplicateKey, token.into());
+
             match token.ty() {
-                MacroCall|MacroBody => map = Self::get_constants(token, map),
+                MacroCall|MacroBody => map = Self::get_constants(token, map, fail_safe)?,
 
                 Marker => {
                     let child = token.get(0);
@@ -84,7 +115,7 @@ impl<'a> Constants<'a> {
                             let ident = data.get_str(child.data_key());
                             let value = ConstExpr::Tkn(child);
 
-                            map.insert(ident, value).unwrap();
+                            map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         NamedMark => {
@@ -92,7 +123,7 @@ impl<'a> Constants<'a> {
                             let value = ConstExpr::Num(
                                 data.get_usize(child.get(0).get(0).data_key()));
 
-                            map.insert(ident, value).unwrap();
+                            map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         _ => {}
@@ -106,7 +137,7 @@ impl<'a> Constants<'a> {
                         let ident = data.get_str(child.get(0).data_key());
                         let value = ConstExpr::Tkn(child);
 
-                        map.insert(ident, value);
+                        map.insert(ident, value).xor(nil).ok_or(err)?;
                     }
                 }
 
@@ -114,62 +145,7 @@ impl<'a> Constants<'a> {
             }
         }
 
-        map
-    }
-
-    fn insert(&mut self) {
-        //TODO 
-    }
-
-    //TODO this is obsolete.
-    fn get_markers(
-        mut self,
-        ast: &'a TokenRef<'a>,
-        ops_map: &OpMap,
-        data: &Data,
-    ) -> HashMap<&'a TokenRef<'a>, usize> {
-        let mut hashmap = HashMap::new();
-        let mut offset = 0;
-
-        Self::_walk(ast, ops_map, &mut hashmap, &mut offset, data);
-
-        hashmap
-    }
-
-    fn _walk(
-        ast: &'a TokenRef<'a>,
-        ops_map: &OpMap,
-        mut hashmap: &mut HashMap<&'a TokenRef<'a>, usize>,
-        mut offset: &mut usize,
-        data: &Data,
-    ) {
-        let mut size = 0;
-
-        for token in ast.children() {
-            match token.ty() {
-                MacroCall => Self::_walk(token, ops_map, hashmap, offset, data),
-
-                Instruction => {
-                    let op = ops_map.get(token);
-                    size = op.len as usize;
-                }
-
-                Lit => size = Constants::sizeof_lit(token, data),
-
-                Identifier => {
-                    //? Markers are always double.
-                    //? Defines can have any size.
-                    //TODO need hashmap of defines and their sizes  
-                }
-
-                Marker => {
-                    //TODO Write offset to hashmap
-                }
-                _ => {}
-            }
-
-            *offset += size;
-        }
+        Ok(map)
     }
 
     fn sizeof_lit(lit: &TokenRef<'a>, data: &Data) -> usize {

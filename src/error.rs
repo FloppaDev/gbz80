@@ -403,3 +403,31 @@ impl<'a> OpErr<'a> {
     }
 
 }
+
+#[derive(Debug)]
+pub enum ConstantsErrType {
+    DuplicateKey,
+}
+
+#[derive(Debug)]
+pub struct ConstantsErr<'a> {
+    ty: ConstantsErrType,
+    err_ctx: ErrCtx<'a>,
+}
+
+impl<'a> ConstantsErr<'a> {
+
+    pub const fn new(ty: ConstantsErrType, err_ctx: ErrCtx<'a>) -> Self {
+        Self { ty, err_ctx }
+    }
+
+    pub const fn fmt(&self) -> &'static str {
+        use ConstantsErrType::*;
+
+        match self.ty {
+            DuplicateKey =>
+                "DuplicateKey: Constant's key already existed.",
+        }
+    }
+
+}

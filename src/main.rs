@@ -117,6 +117,7 @@ use crate::{
     token::{Ast, TokenRef},
     process::clargs,
     macros::Macros,
+    constants::Constants,
 };
 
 use std::fs;
@@ -213,6 +214,9 @@ fn main() -> Result<(), ()> {
     }
 
     #[cfg(debug_assertions)] ast.debug();
+
+    let ast_ref = TokenRef::new(&data, &ast);
+    let constants = Constants::new(&ast_ref);
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);
