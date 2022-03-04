@@ -8,29 +8,31 @@ fn main() {
     build(&tree, &words);
 }
 
-fn split(text: &'a str) -> Vec<&'a str> {
+fn split(text: &str) -> Vec<String> {
     let mut words = vec![];
     let mut has_word = false;
+    let mut start = 0;
 
     for (l_i, line) in text.lines().enumerate() {
         for (c_i, ch) in line.chars().enumerate() {
-            if ch.is_white_space() {
-                push_current(line, start, ci, &mut words, &mut has_word);
+            if ch.is_whitespace() {
+                push_current(line, start, c_i, &mut words, &mut has_word);
                 continue;
             }
 
-            if ch == "#" {
-                push_current(line, start, ci, &mut words, &mut has_word);
+            if ch == '#' {
+                push_current(line, start, c_i, &mut words, &mut has_word);
                 break;
             }
 
-            if matches!(ch, "{", "}", "=") {
-                push_current(line, start, ci, &mut words, &mut has_word);
-                words.push(ch);
+            if matches!(ch, '{'|'}'|'=') {
+                push_current(line, start, c_i, &mut words, &mut has_word);
+                words.push(ch.to_string());
                 continue;
             }
 
             has_word = true;
+            start = c_i;
         }
     }
 
@@ -41,30 +43,30 @@ fn push_current(
     line: &str, 
     start: usize, 
     end: usize, 
-    words: &mut Vec<&str>, 
-    has_words: &mut bool
+    words: &mut Vec<String>, 
+    has_word: &mut bool
 ) {
-    if !has_word {
+    if !*has_word {
         return;
     }
 
-    has_word = false;
+    *has_word = false;
     let mut word = line.get(start..end).unwrap();
 
-    words.push(word);
+    words.push(word.to_string());
 }
 
 fn lit_str(word: &str) -> &str {
     word.get(1 .. word.len() - 1).unwrap()
 }
 
-fn var_scope(key: &str, words: &[&[&str]]) -> &[&str] {
+fn var_scope<'a>(key: &str, words: &'a [String]) -> &'a [String] {
     let mut start = 0;
 
     for (i, word) in words.iter().enumerate() {
         if *word == "key" {
             start = i + 3; 
-            end = close("}", words, start);
+            let end = close("}", words, start);
 
             return words.get(start..end).unwrap();
         }
@@ -73,7 +75,7 @@ fn var_scope(key: &str, words: &[&[&str]]) -> &[&str] {
     panic!();
 }
 
-fn close(closer: &str, words: &[&[&str]], opener: usize) -> usize {
+fn close(closer: &str, words: &[String], opener: usize) -> usize {
     let mut opened = 1;
     let mut closed = 0;
 
@@ -82,7 +84,7 @@ fn close(closer: &str, words: &[&[&str]], opener: usize) -> usize {
             opened += 1;
         }
 
-        if *word = ")" {
+        if *word == ")" {
             closed += 1;
         }
 
@@ -118,25 +120,25 @@ impl Tree {
 
     fn make_tree(
         mut tree: Self, 
-        words: &[&str],
+        words: &[String],
         opened: &mut usize,
         closed: &mut usize,
         offset: usize,
     ) -> Self {
         for (i, word) in words.iter().enumerate() {
             if i == 0 {
-                tree.value = word;
+                tree.value = Some(word.clone());
                 continue;
             }
 
-            match word {
+            match word.as_str() {
                 "{" => {
                     *opened += 1;
 
                     tree.children.push(
                         Self::make_tree(
                             Self{ value: None, children: vec![] },
-                            words.get(i+1..),
+                            words.get(i+1..).unwrap(),
                             opened,
                             closed,
                             *opened));
@@ -151,26 +153,32 @@ impl Tree {
                 }
 
                 _ => {
-                    tree.children.push(Self{ value: word, children: vec![] });
+                    tree.children.push(
+                        Self{ value: Some(word.clone()), children: vec![] });
                 }
             }
         }
+
+        tree
     }
 
-    fn expand(&self, words: &[&str]) -> Vec<String> {
-        let mut exp = vec![];
+    fn expand(&self, words: &[String]) -> Vec<String> {
+        let mut exp: Vec<String> = vec![];
 
         for word in words {
             if word.ends_with(">") {
-                let mut children = self.children_of(word.get(..word.len()-2);
+                let mut children = self.children_of(
+                    word.get(..word.len()-2).unwrap());
 
                 for child in children {
-                    exp.push(child.value.into());
+                    if let Some(value) = &child.value {
+                        exp.push(value.clone());
+                    }
                 }
             }
 
             else {
-                exp.push(word.into());
+                exp.push(word.clone());
             }
         }
 
@@ -178,7 +186,23 @@ impl Tree {
     }
 
     fn children_of(&self, word: &str) -> &[Tree] {
+        self.scan_children(self, word).unwrap()
+    }
 
+    fn scan_children(&self, node: &Tree, word: &str) -> Option<&[Tree]> {
+        for child in &self.children {
+            if child.value.is_some() && child.value.as_ref().unwrap() == word {
+                return Some(&child.children);
+            }
+
+            if !child.children.is_empty() {
+                if let Some(children) = self.scan_children(child, word) {
+                    return Some(children);
+                }
+            }
+        }
+
+        None
     }
 
 }
@@ -192,32 +216,33 @@ fn build(tree: &Tree, words: &[String]) {
 
     for (i, word) in words.iter().enumerate() {
         if word == "=" {
+            let name = words[i-1].as_str();
+
             match name {
-                k@"are_words" => are_words = are_words(scope(&k)),
-                k@"word_pairs" => word_pairs = word_pairs(scope(&k)),
-                k@"prefix_pairs" => prefix_pairs = prefix_pairs(scope(&k)),
-                k@"have_no_value" => have_no_value = have_no_value(scope(&k)),
-                k@"end_on_newline" => end_on_newline = end_on_newline(scope(&k)),
+                k@"are_words" => {
+                    are_words = String::new();
+                }
+
+                k@"word_pairs" => {
+                    word_pairs = String::new();
+                }
+
+                k@"prefix_pairs" => {
+                    prefix_pairs = String::new();
+                }
+
+                k@"have_no_value" => {
+                    have_no_value = String::new();
+                }
+
+                k@"end_on_newline" => {
+                    end_on_newline = String::new();
+                }
+
                 _ => panic!()
             }
         }
     }
 
-
-}
-
-fn word_pairs(words: &[&str]) -> String {
-
-}
-
-fn prefix_pairs(words: &[&str]) -> String {
-
-}
-
-fn have_no_value(words: &[&str]) -> String {
-
-}
-
-fn end_on_newline(words: &[&str]) -> String {
 
 }
