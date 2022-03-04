@@ -11,9 +11,10 @@ fn main() {
 fn split(text: &str) -> Vec<String> {
     let mut words = vec![];
     let mut has_word = false;
-    let mut start = 0;
 
     for (l_i, line) in text.lines().enumerate() {
+        let mut start = 0;
+
         for (c_i, ch) in line.chars().enumerate() {
             if ch.is_whitespace() {
                 push_current(line, start, c_i, &mut words, &mut has_word);
@@ -31,8 +32,14 @@ fn split(text: &str) -> Vec<String> {
                 continue;
             }
 
-            has_word = true;
-            start = c_i;
+            if !has_word {
+                has_word = true;
+                start = c_i;
+            }
+
+            if c_i == line.len() - 1 {
+                push_current(line, start, c_i + 1, &mut words, &mut has_word);
+            }
         }
     }
 
@@ -52,6 +59,7 @@ fn push_current(
 
     *has_word = false;
     let mut word = line.get(start..end).unwrap();
+    println!("{}", word);
 
     words.push(word.to_string());
 }
