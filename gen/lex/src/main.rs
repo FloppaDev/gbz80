@@ -51,7 +51,7 @@ fn push_current(
     start: usize, 
     end: usize, 
     words: &mut Vec<String>, 
-    has_word: &mut bool
+    has_word: &mut bool,
 ) {
     if !*has_word {
         return;
@@ -72,27 +72,27 @@ fn var_scope<'a>(key: &str, words: &'a [String]) -> &'a [String] {
     let mut start = 0;
 
     for (i, word) in words.iter().enumerate() {
-        if *word == "key" {
+        if word == key {
             start = i + 3; 
-            let end = close("}", words, start);
+            let end = close(words, start);
 
             return words.get(start..end).unwrap();
         }
     }
 
-    panic!();
+    panic!("{}", key);
 }
 
-fn close(closer: &str, words: &[String], opener: usize) -> usize {
+fn close(words: &[String], opener: usize) -> usize {
     let mut opened = 1;
     let mut closed = 0;
 
-    for (i, word) in words.iter().enumerate() {
-        if *word == "(" {
+    for (i, word) in words.get(opener..).unwrap().iter().enumerate() {
+        if *word == "{" {
             opened += 1;
         }
 
-        if *word == ")" {
+        else if *word == "}" {
             closed += 1;
         }
 
@@ -101,7 +101,7 @@ fn close(closer: &str, words: &[String], opener: usize) -> usize {
         }
     }
 
-    panic!();
+    panic!("{} != {} at {}", opened, closed, words[opener]);
 }
 
 pub struct Tree {
@@ -175,10 +175,9 @@ impl Tree {
 
         for word in words {
             if word.ends_with(">") {
-                let mut children = self.children_of(
-                    word.get(..word.len()-2).unwrap());
+                let mut node = self.find(word.get(..word.len()-1).unwrap());
 
-                for child in children {
+                for child in &node.children {
                     if let Some(value) = &child.value {
                         exp.push(value.clone());
                     }
@@ -193,20 +192,18 @@ impl Tree {
         exp
     }
 
-    fn children_of(&self, word: &str) -> &[Tree] {
-        self.scan_children(self, word).unwrap()
+    fn find(&self, word: &str) -> &Tree {
+        &self.scan_children(self, word).unwrap()
     }
 
-    fn scan_children(&self, node: &Tree, word: &str) -> Option<&[Tree]> {
-        for child in &self.children {
+    fn scan_children<'a>(&self, node: &'a Tree, word: &str) -> Option<&'a Tree> {
+        for child in &node.children {
             if child.value.is_some() && child.value.as_ref().unwrap() == word {
-                return Some(&child.children);
+                return Some(child);
             }
 
-            if !child.children.is_empty() {
-                if let Some(children) = self.scan_children(child, word) {
-                    return Some(children);
-                }
+            if let Some(children) = node.scan_children(child, word) {
+                return Some(children);
             }
         }
 
@@ -247,7 +244,9 @@ fn build(tree: &Tree, words: &[String]) {
                     end_on_newline = String::new();
                 }
 
-                _ => panic!()
+                "types" => {}
+
+                _ => panic!("{}", name)
             }
         }
     }
