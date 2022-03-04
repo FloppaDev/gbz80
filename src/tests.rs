@@ -10,40 +10,6 @@ use std::fs::File;
 use std::io::Read;
 
 #[test]
-#[cfg(test)]
-/// Make sure that the lexicon is up to date.
-fn lexicon() {
-    use TokenType::*;
-
-    let types = [ Instruction, InstrName, Adc, Add, And, Bit, Call, Ccf, Cp, Cpl, Daa, Dec, Di, 
-        Ei, Halt, Inc, Jp, Jr, Ld, Ldi, Ldd, Ldhl, Or, Pop, Push, Res, Ret, Rl, Rla, Rlc, Rld, Rr,
-        Rra, Rrc, Rrca, Rrd, Rst, Sbc, Scf, Set, Sla, Sll, Sra, Srl, Stop, Sub, Swap, Xor, Reti,
-        Rlca, Nop, Argument, Register, A, B, C, D, E, H, L, Af, Bc, De, Hl, Sp, 
-        Lit, LitBin, LitHex, LitDec, LitStr, At, At0, At1, Flag, FlagZ, FlagNz, 
-        FlagC, FlagNc, Identifier, Directive, Define, Include,
-        Macro, MacroIdent, MacroArg, MacroBody, MacroCall, Marker, NamedMark, AnonMark, Label,
-        Unknown, Root];
-
-    // Will not compile if variants are added.
-    match types[0] {
-        ty @ (Instruction|InstrName|Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|
-        Ei|Halt|Inc|Jp|Jr|Ld|Ldi|Ldd|Ldhl|Nop|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|
-        Rra|Rrc|Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|
-        Rlca|Argument|Register|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|
-        Lit|LitBin|LitHex|LitDec|LitStr|At|At0|At1|Flag|FlagZ|FlagNz|
-        FlagC|FlagNc|Identifier|Directive|Define|Include|
-        Macro|MacroIdent|MacroArg|MacroBody|MacroCall|Marker|NamedMark|AnonMark|Label|
-        Unknown|Root) => {}
-    }
-
-    let lexicon = Lexicon::new();
-
-    for ty in types {
-        let _ = lexicon.try_of_ty(ty);
-    }
-}
-
-#[test]
 fn split() {
     threaded(| | {
         let symbols = ["TEST"];

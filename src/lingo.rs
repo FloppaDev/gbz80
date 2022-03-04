@@ -21,6 +21,9 @@ pub enum TokenType {
             Flag,           FlagZ, FlagNz, FlagC, FlagNc,
             Identifier,
 
+            Expr,           BinAdd, BinSub, BinMul, BinDiv, BinMod, BinShr, BinShl, 
+                            BinAnd, BinOr, BinXor, BinPow, UnNot, UnNeg, 
+
     Directive,
         Define, Include,
         Macro,              MacroIdent, MacroArg, MacroBody,
@@ -82,6 +85,7 @@ impl Lexicon {
         let register =              lexicon.branch(Register, argument);
         let at =                    lexicon.branch(At, argument);
         let flag =                  lexicon.branch(Flag, argument);
+        let expr =                  lexicon.branch(Expr, argument);
         let directive =     lexicon.branch(Directive, root);
         let r#macro =           lexicon.branch(Macro, directive);
         let marker =        lexicon.branch(Marker, root);
@@ -93,6 +97,9 @@ impl Lexicon {
 
         let r_n = vec![A, B, C, D, E, H, L, Af, Bc, De, Hl, Sp];
 
+        let e_n = vec![BinAdd, BinSub, BinMul, BinDiv, BinMod, BinShr, BinShl, BinAnd, 
+            BinOr, BinXor, BinPow, UnNot, UnNeg];
+
         //TODO test for checking that the Lexicon contains all types.
         lexicon.push(instr_name,    &i_n); 
         lexicon.push(argument,      &[Identifier]);
@@ -100,6 +107,7 @@ impl Lexicon {
         lexicon.push(lit,           &[LitBin, LitHex, LitDec, LitStr]);
         lexicon.push(at,            &[At0, At1]);
         lexicon.push(flag,          &[FlagZ, FlagNz, FlagC, FlagNc]);
+        lexicon.push(expr,          &e_n);
         lexicon.push(r#macro,       &[MacroIdent, MacroArg, MacroBody]);
         lexicon.push(directive,     &[Define, Include]);
         lexicon.push(marker,        &[NamedMark, AnonMark, Label]);

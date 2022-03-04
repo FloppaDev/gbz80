@@ -101,6 +101,8 @@ mod tests;
 
 //====================================================================
 
+//TODO put + and - back in
+
 //TODO forbid LitStr in arithmetics.
 
 //TODO update crate doc

@@ -155,6 +155,7 @@ fn extract<'a>(
     }
 }
 
+//TODO use try '?'
 /// Get token type(s) and value(s) from word.
 fn identify<'a>(
     lexicon: &Lexicon,

@@ -169,7 +169,6 @@ impl<'a> Constants<'a> {
         }
     }
 
-    //TODO? Expressions always evaluate to a double
     pub fn get_defines_sizes(
         defines: &[&TokenRef<'a>],
         data: &Data,
