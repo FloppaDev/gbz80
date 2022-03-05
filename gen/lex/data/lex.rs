@@ -11,7 +11,9 @@ pub enum TokenType {
 
 /// Returns the parent of a type.
 pub const fn parent_type(ty: TokenType) -> TokenType {
-    //[[parent_type]]
+    match ty {
+        //[[parent_type]]
+    }
 }
 
 /// Generalization of a type within Argument.

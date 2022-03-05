@@ -150,21 +150,4 @@ impl Tree {
         None
     }
 
-    pub fn debug(&self) {
-        let mut out = String::new();
-        self.fmt_node(&self.nodes[0], 0, &mut out); 
-        println!("{}", out);
-    }
-
-    pub fn fmt_node(&self, node: &Node, indent: usize, out: &mut String) {
-        let tab = (0..indent).map(|_| "    ").collect::<String>();
-
-        for index in &node.children {
-            let child = &self.nodes[*index];
-            out.push_str(&format!("{}{}\n", tab, &child.value)); 
-
-            self.fmt_node(child, indent + 1, out)
-        }
-    }
-
 }
