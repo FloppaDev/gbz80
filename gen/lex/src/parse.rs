@@ -53,19 +53,20 @@ fn push_current(
     }
 
     *has_word = false;
-    let mut word = line.get(start..end).unwrap();
+    let word = line.get(start..end).unwrap();
 
     words.push(word.to_string());
 }
 
+#[allow(dead_code)]
 pub struct Node {
-    parent: usize,
-    value: String,
-    children: Vec<usize>,
+    pub parent: usize,
+    pub value: String,
+    pub children: Vec<usize>,
 }
 
 pub struct Tree {
-    nodes: Vec<Node>,
+    pub nodes: Vec<Node>,
 }
 
 impl Tree {
@@ -77,7 +78,7 @@ impl Tree {
         let mut parent = 0;
         let mut open = true;
 
-        for word in words.iter() {
+        for word in words {
             match word.as_ref() {
                 "{" => {
                     open = true;  
@@ -91,11 +92,11 @@ impl Tree {
                 }
 
                 _ => {
-                    if open && tree.nodes.len() > 0 {
+                    if open && !tree.nodes.is_empty() {
                         parent = tree.nodes.len() - 1;
                     }
 
-                    for value in tree.expand(&word) {
+                    for value in tree.expand(word) {
                         let node = Node{ 
                             parent, value, children: vec![] 
                         };
@@ -116,7 +117,7 @@ impl Tree {
     fn expand(&self, word: &str) -> Vec<String> {
         let mut exp = vec![];
 
-        if word.ends_with(">") {
+        if word.ends_with('>') {
             let node = self.find(word.get(..word.len()-1).unwrap());
 
             for index in &node.children {
@@ -132,14 +133,14 @@ impl Tree {
     }
 
     pub fn find(&self, word: &str) -> &Node {
-        &self.scan_children(&self.nodes[0], word).unwrap()
+        self.scan_children(&self.nodes[0], word).unwrap()
     }
 
     fn scan_children<'a>(&'a self, node: &'a Node, word: &str) -> Option<&'a Node> {
         for index in &node.children {
             let child = &self.nodes[*index];
 
-            if &child.value == word {
+            if child.value == word {
                 return Some(child);
             }
 
