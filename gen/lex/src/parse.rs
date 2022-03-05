@@ -83,11 +83,9 @@ impl Tree {
                 "{" => {
                     open = true;  
                     stack.push(parent);
-                    println!("{}", word);
                 }
 
                 "}" => {
-                    println!("{}", word);
                     parent = stack.pop().unwrap();
                 }
 
@@ -153,17 +151,19 @@ impl Tree {
     }
 
     pub fn debug(&self) {
-        dbg!(self.nodes[0].children.len());
-        self.debug_node(&self.nodes[0], 0); 
+        let mut out = String::new();
+        self.fmt_node(&self.nodes[0], 0, &mut out); 
+        println!("{}", out);
     }
 
-    fn debug_node(&self, node: &Node, indent: usize) {
+    pub fn fmt_node(&self, node: &Node, indent: usize, out: &mut String) {
         let tab = (0..indent).map(|_| "    ").collect::<String>();
 
         for index in &node.children {
             let child = &self.nodes[*index];
-            println!("{}{}", tab, &child.value); 
-            self.debug_node(child, indent + 1)
+            out.push_str(&format!("{}{}\n", tab, &child.value)); 
+
+            self.fmt_node(child, indent + 1, out)
         }
     }
 
