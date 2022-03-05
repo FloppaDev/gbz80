@@ -1,77 +1,77 @@
 
-types = {
-    Root {
-        Instruction {
-            InstrName {
-                Adc    Add    And    Bit    Call   Ccf    Cp     Cpl    Daa    Dec
-                Di     Ei     Halt   Inc    Jp     Jr     Ld     Ldh    Ldi    Ldd    
-                Ldhl   Or     Pop    Push   Res    Ret    Rl     Rla    Rlc    Rld    
-                Rr     Rra    Rrc    Rrca   Rrd    Rst    Sbc    Scf    Set    Sla    
-                Sll    Sra    Srl    Stop   Sub    Swap   Xor    Reti   Rlca   Nop
-            }
-
-            Argument {
-                Register  { A B C D E H L Af Bc De Hl Sp }
-
-                Lit  { LitBin LitHex LitDec LitStr }
-
-                At  { At0 At1 }
-
-                Flag  { FlagZ FlagNz FlagC FlagNc }
-
-                Expr  {
-                    BinAdd BinSub BinMul BinDiv BinMod BinShr BinShl BinAnd BinOr 
-                    BinXor BinPow UnNot UnNeg 
+{
+    types {
+        Root {
+            Instruction {
+                InstrName {
+                    Adc    Add    And    Bit    Call   Ccf    Cp     Cpl    Daa    Dec
+                    Di     Ei     Halt   Inc    Jp     Jr     Ld     Ldh    Ldi    Ldd    
+                    Ldhl   Or     Pop    Push   Res    Ret    Rl     Rla    Rlc    Rld    
+                    Rr     Rra    Rrc    Rrca   Rrd    Rst    Sbc    Scf    Set    Sla    
+                    Sll    Sra    Srl    Stop   Sub    Swap   Xor    Reti   Rlca   Nop
                 }
 
-                Identifier
+                Argument {
+                    Register  { A B C D E H L Af Bc De Hl Sp }
+
+                    Lit  { LitBin LitHex LitDec LitStr }
+
+                    At  { At0 At1 }
+
+                    Flag  { FlagZ FlagNz FlagC FlagNc }
+
+                    Expr  {
+                        BinAdd BinSub BinMul BinDiv BinMod BinShr BinShl BinAnd BinOr 
+                        BinXor BinPow UnNot UnNeg 
+                    }
+
+                    Identifier
+                }
             }
+
+            Directive {
+                Define
+                Include
+
+                Macro  { MacroIdent MacroArg MacroBody }
+            }
+
+            Marker  { NamedMark AnonMark Label }
+
+            Repeat
+            MacroCall
+            Unknown
         }
+    }
 
-        Directive {
-            Define
-            Include
+    are_words { InstrName> Register> }
 
-            Macro  { MacroIdent MacroArg MacroBody }
-        }
+    word_pairs {
+        { (     At0     } 
+        { )     At1     }
+        { Z     FlagZ   } 
+        { NZ    FlagNz  } 
+        { C     FlagC   } 
+        { NC    FlagNc  }
+    }
 
-        Marker  { NamedMark AnonMark Label }
+    prefix_pairs {
+        { &     LitHex    }
+        { #     Directive }
+        { %     LitBin    }
+        { "     LitStr    }
+        { .     MacroArg  }
+        { :     Label     }
+    }
 
-        Repeat
-        MacroCall
-        Unknown
+    #TODO check if they are still correct.
+    #TODO doc: no_value is only for parse.rs, which impacts only leaf tokens.
+    have_no_value { 
+        InstrName> Register> Flag> At> Directive> 
+    }
+
+    end_on_newline { 
+        Instruction Argument MacroCall Directive Marker 
+        Directive> Marker> 
     }
 }
-
-are_words = { InstrName> Register> }
-
-word_pairs = {
-    { (     At0     } 
-    { )     At1     }
-    { Z     FlagZ   } 
-    { NZ    FlagNz  } 
-    { C     FlagC   } 
-    { NC    FlagNc  }
-}
-
-prefix_pairs = {
-    { &     LitHex    }
-    { #     Directive }
-    { %     LitBin    }
-    { "     LitStr    }
-    { .     MacroArg  }
-    { :     Label     }
-}
-
-#TODO check if they are still correct.
-#TODO doc: no_value is only for parse.rs, which impacts only leaf tokens.
-have_no_value = { 
-    InstrName> Register> Flag> At> Directive> 
-}
-
-end_on_newline = { 
-    Instruction Argument MacroCall Directive Marker 
-    Directive> Marker> 
-}
-
-

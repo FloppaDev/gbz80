@@ -3,9 +3,10 @@ fn main() {
     let text = include_str!("../data/types.gen");
     let split = split(&text);
     let tree = Tree::new(&split);
+
     let words = tree.expand(&split);
 
-    build(&tree, &words);
+    build(&tree);
 }
 
 fn split(text: &str) -> Vec<String> {
@@ -26,7 +27,7 @@ fn split(text: &str) -> Vec<String> {
                 break;
             }
 
-            if matches!(ch, '{'|'}'|'=') {
+            if matches!(ch, '{'|'}') {
                 push_current(line, start, c_i, &mut words, &mut has_word);
                 words.push(ch.to_string());
                 continue;
@@ -59,110 +60,59 @@ fn push_current(
 
     *has_word = false;
     let mut word = line.get(start..end).unwrap();
-    println!("{}", word);
 
     words.push(word.to_string());
 }
 
-fn lit_str(word: &str) -> &str {
-    word.get(1 .. word.len() - 1).unwrap()
-}
-
-fn var_scope<'a>(key: &str, words: &'a [String]) -> &'a [String] {
-    let mut start = 0;
-
-    for (i, word) in words.iter().enumerate() {
-        if word == key {
-            start = i + 3; 
-            let end = close(words, start);
-
-            return words.get(start..end).unwrap();
-        }
-    }
-
-    panic!("{}", key);
-}
-
-fn close(words: &[String], opener: usize) -> usize {
-    let mut opened = 1;
-    let mut closed = 0;
-
-    for (i, word) in words.get(opener..).unwrap().iter().enumerate() {
-        if *word == "{" {
-            opened += 1;
-        }
-
-        else if *word == "}" {
-            closed += 1;
-        }
-
-        if opened == closed {
-            return i;
-        }
-    }
-
-    panic!("{} != {} at {}", opened, closed, words[opener]);
+pub struct Node {
+    parent: usize,
+    value: String,
+    children: Vec<usize>,
 }
 
 pub struct Tree {
-    pub value: Option<String>,
-    pub children: Vec<Tree>,
+    nodes: Vec<Node>,
 }
 
 impl Tree {
 
     pub fn new(words: &[String]) -> Self {
-        let words = var_scope("types", words);
-        let mut opened = 0;
-        let mut closed = 0;
+        let mut base = Node{ parent: 0, value: "".into(), children: vec![] };
+        let mut tree = Tree{ nodes: vec![base] };
+        let mut stack = vec![];
+        let mut current = 0;
+        let mut open = true;
 
-        let root = Self::make_tree(
-            Self{ value: None, children: vec![] },
-            words,
-            &mut opened,
-            &mut closed,
-            0);
-
-        root
-    }
-
-    fn make_tree(
-        mut tree: Self, 
-        words: &[String],
-        opened: &mut usize,
-        closed: &mut usize,
-        offset: usize,
-    ) -> Self {
-        for (i, word) in words.iter().enumerate() {
-            if i == 0 {
-                tree.value = Some(word.clone());
-                continue;
-            }
-
-            match word.as_str() {
+        for word in words.iter() {
+            match word.as_ref() {
                 "{" => {
-                    *opened += 1;
-
-                    tree.children.push(
-                        Self::make_tree(
-                            Self{ value: None, children: vec![] },
-                            words.get(i+1..).unwrap(),
-                            opened,
-                            closed,
-                            *opened));
+                    open = true;  
+                    stack.push(current);
                 }
 
                 "}" => {
-                    *closed += 1;
-
-                    if *closed == *opened - offset {
-                        return tree;
-                    }
+                    current = stack.pop().unwrap();
                 }
 
                 _ => {
-                    tree.children.push(
-                        Self{ value: Some(word.clone()), children: vec![] });
+                    let parent = if open {
+                        match tree.nodes.len() {
+                            0 => current,
+                            l@_ => l-1,
+                        }
+                    }else {
+                        current
+                    };
+
+                    let node = Node{ 
+                        parent, value: word.clone(), children: vec![] 
+                    };
+
+                    let index = tree.nodes.len();
+                    tree.nodes.push(node);
+                    tree.nodes[current].children.push(index);
+
+                    open = false;
                 }
             }
         }
@@ -177,10 +127,8 @@ impl Tree {
             if word.ends_with(">") {
                 let mut node = self.find(word.get(..word.len()-1).unwrap());
 
-                for child in &node.children {
-                    if let Some(value) = &child.value {
-                        exp.push(value.clone());
-                    }
+                for index in &node.children {
+                    exp.push(self.nodes[*index].value.clone());
                 }
             }
 
@@ -192,18 +140,20 @@ impl Tree {
         exp
     }
 
-    fn find(&self, word: &str) -> &Tree {
-        &self.scan_children(self, word).unwrap()
+    fn find(&self, word: &str) -> &Node {
+        &self.scan_children(&self.nodes[0], word).unwrap()
     }
 
-    fn scan_children<'a>(&self, node: &'a Tree, word: &str) -> Option<&'a Tree> {
-        for child in &node.children {
-            if child.value.is_some() && child.value.as_ref().unwrap() == word {
+    fn scan_children<'a>(&'a self, node: &'a Node, word: &str) -> Option<&'a Node> {
+        for index in &node.children {
+            let child = &self.nodes[*index];
+
+            if &child.value == word {
                 return Some(child);
             }
 
-            if let Some(children) = node.scan_children(child, word) {
-                return Some(children);
+            if let Some(child) = self.scan_children(child, word) {
+                return Some(child);
             }
         }
 
@@ -212,44 +162,10 @@ impl Tree {
 
 }
 
-fn build(tree: &Tree, words: &[String]) {
-    let mut are_words = String::new();
-    let mut word_pairs = String::new();
-    let mut prefix_pairs = String::new();
-    let mut have_no_value = String::new();
-    let mut end_on_newline = String::new();
-
-    for (i, word) in words.iter().enumerate() {
-        if word == "=" {
-            let name = words[i-1].as_str();
-
-            match name {
-                k@"are_words" => {
-                    are_words = String::new();
-                }
-
-                k@"word_pairs" => {
-                    word_pairs = String::new();
-                }
-
-                k@"prefix_pairs" => {
-                    prefix_pairs = String::new();
-                }
-
-                k@"have_no_value" => {
-                    have_no_value = String::new();
-                }
-
-                k@"end_on_newline" => {
-                    end_on_newline = String::new();
-                }
-
-                "types" => {}
-
-                _ => panic!("{}", name)
-            }
-        }
-    }
-
-
+fn build(tree: &Tree) {
+    let are_words = tree.find("are_words");
+    let word_pairs = tree.find("word_pairs");
+    let prefix_pairs = tree.find("prefix_pairs");
+    let have_no_value = tree.find("have_no_value");
+    let end_on_newline = tree.find("end_on_newline");
 }
