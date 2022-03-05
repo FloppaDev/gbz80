@@ -12,9 +12,13 @@ pub fn split(text: &str) -> Vec<String> {
                 continue;
             }
 
-            if ch == '#' {
-                push_current(line, start, c_i, &mut words, &mut has_word);
-                break;
+            if ch == '/' {
+                let ch2 = line.chars().nth(c_i + 1);
+
+                if ch2.is_some() && ch2.unwrap() == '/' {
+                    push_current(line, start, c_i, &mut words, &mut has_word);
+                    break;
+                }
             }
 
             if matches!(ch, '{'|'}') {
@@ -78,9 +82,11 @@ impl Tree {
                 "{" => {
                     open = true;  
                     stack.push(parent);
+                    println!("{}", word);
                 }
 
                 "}" => {
+                    println!("{}", word);
                     parent = stack.pop().unwrap();
                 }
 

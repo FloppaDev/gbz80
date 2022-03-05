@@ -47,25 +47,25 @@
     are_words { InstrName> Register> }
 
     word_pairs {
-        { (     At0     } 
-        { )     At1     }
-        { Z     FlagZ   } 
-        { NZ    FlagNz  } 
-        { C     FlagC   } 
-        { NC    FlagNc  }
+        At0         {   (    }
+        At1         {   )    }
+        FlagZ       {   Z    }
+        FlagNz      {   Nz   }
+        FlagC       {   C    }
+        FlagNc      {   Nc   }
     }
 
     prefix_pairs {
-        { &     LitHex    }
-        { #     Directive }
-        { %     LitBin    }
-        { "     LitStr    }
-        { .     MacroArg  }
-        { :     Label     }
+        LitHex      {   &    }
+        Directive   {   #    }
+        LitBin      {   %    }
+        LitStr      {   "    }
+        MacroArg    {   .    }
+        Label       {   :    }
     }
 
-    #TODO check if they are still correct.
-    #TODO doc: no_value is only for parse.rs, which impacts only leaf tokens.
+    //TODO check if they are still correct.
+    //TODO doc: no_value is only for parse.rs, which impacts only leaf tokens.
     have_no_value { 
         InstrName> Register> Flag> At> Directive> 
     }
