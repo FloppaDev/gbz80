@@ -70,7 +70,7 @@ fn build(tree: &Tree) {
 
     println!("{}", result);
 
-    let mut file = File::create("../../src/lex.rs").unwrap();
+    let mut file = File::create("../../src/parse/lex.rs").unwrap();
     file.write_all(result.as_bytes()).unwrap();
 }
 
