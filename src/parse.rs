@@ -2,7 +2,7 @@
 use crate::{
     text::{ CheckedStr, charset },
     lingo::{ TokenType::{self, *}, Lexicon },
-    error::{ ErrCtx, ParseErr, ParseErrType },
+    error::{ ErrCtx, ParseErr, ParseErrType::{self, *} },
     data::{ Data, Key },
     split::Split,
 };
@@ -171,13 +171,7 @@ fn identify<'a>(
         return Ok(vec![ (ty, charset::no_check("")) ]);
     }
 
-    let ch = word.get(0..1);
-
-    if ch.is_none() {
-        return Err(ParseErrType::Invalid);
-    }
-
-    let ch = ch.unwrap();
+    let ch = word.get(0..1).ok_or(Invalid)?;
     let c = ch.chars().next().unwrap();
     let last = word.chars().last().unwrap();
 
@@ -187,97 +181,48 @@ fn identify<'a>(
             LitHex => {
                 // &6762:
                 if last == ':' {
-                    let lit = word.get(1..word.len() - 1);
-                    if lit.is_none() {
-                        return Err(ParseErrType::InvalidAnonMark);
-                    }
-
-                    let lit = charset::check_hex(lit.unwrap());
-                    if lit.is_none() {
-                        return Err(ParseErrType::InvalidAnonMarkHex);
-                    }
-
-                    return Ok(vec![
-                        //TODO put hex in AnonMark?
-                        (AnonMark, charset::no_check("")),
-                        (LitHex, lit.unwrap()),
-                    ]);
+                    let lit = word.get(1..word.len() - 1).ok_or(InvalidAnonMark)?;
+                    let hex = charset::check_hex(lit).ok_or(InvalidAnonMarkHex)?;
+                    return Ok(vec![ (AnonMark, charset::no_check("")), (LitHex, hex) ]);
+                    //TODO put hex in AnonMark?
                 }
 
                 // &2763:label
                 if let Some(sep) = word.find(':') {
-                    let lit = word.get(1..sep);
-                    if lit.is_none() {
-                        return Err(ParseErrType::InvalidNamedMark);
-                    }
+                    let lit = word.get(1..sep).ok_or(InvalidNamedMark)?;
+                    let hex = charset::check_hex(lit).ok_or(InvalidNamedMarkHex)?;
 
-                    let lit = charset::check_hex(lit.unwrap());
-                    if lit.is_none() {
-                        return Err(ParseErrType::InvalidNamedMarkHex);
-                    }
+                    let label = word.get(sep + 1 ..).ok_or(InvalidNamedMarkLabel)?;
+                    let ident = charset::check_ident(label).ok_or(InvalidNamedMarkLabelIdent)?;
 
-                    let label = word.get(sep + 1 ..);
-                    if label.is_none() {
-                        return Err(ParseErrType::InvalidNamedMarkLabel);
-                    }
-
-                    let label = charset::check_ident(label.unwrap());
-                    if label.is_none() {
-                        return Err(ParseErrType::InvalidNamedMarkLabelIdent);
-                    }
-
-                    return Ok(vec![
-                        (NamedMark, label.unwrap()),
-                        (LitHex, lit.unwrap()),
-                    ]);
+                    return Ok(vec![ (NamedMark, ident), (LitHex, hex) ]);
+                    //TODO put hex in AnonMark?
                 }
 
                 // &2787
-                let wend = word.get(1..);
-                if wend.is_none() {
-                    return Err(ParseErrType::InvalidHex);
-                }
-
-                let lit = charset::check_hex(wend.unwrap());
-                if lit.is_none() {
-                    return Err(ParseErrType::InvalidHex);
-                }
-
-                return Ok(vec![ (LitHex, lit.unwrap()) ]);
+                let lit = word.get(1..).ok_or(InvalidHex)?;
+                let hex = charset::check_hex(lit).ok_or(InvalidHex)?;
+                return Ok(vec![ (LitHex, hex) ]);
             }
 
             // 0101_0101 or 11010
             LitBin => {
-                let wend = word.get(1..);
-                if wend.is_none() {
-                    return Err(ParseErrType::InvalidBin);
-                }
-
-                let lit = charset::check_bin(wend.unwrap());
-                if lit.is_none() {
-                    return Err(ParseErrType::InvalidBin);
-                }
-
-                return Ok(vec![ (LitBin, lit.unwrap()) ]);
+                let lit = word.get(1..).ok_or(InvalidBin)?;
+                let bin = charset::check_bin(lit).ok_or(InvalidBin)?;
+                return Ok(vec![ (LitBin, bin) ]);
             }
 
             // "...
             LitStr => {
-                if let Some(value) = word.get(1..) {
-                    return Ok(vec![ (LitStr, charset::no_check(value)) ]);
-                }
-                
-                return Err(ParseErrType::InvalidStr);
+                let value = word.get(1..).ok_or(InvalidStr)?;
+                return Ok(vec![ (LitStr, charset::no_check(value)) ]);
             }
 
             // "#def or "include or #macro
             Directive => {
-                let wend = word.get(1..);
-                if wend.is_none() {
-                    return Err(ParseErrType::InvalidDirective);
-                }
+                let directive = word.get(1..).ok_or(InvalidDirective)?;
 
-                return match wend.unwrap() {
+                return match directive {
                     "def" => Ok(vec![ (Define, charset::no_check("")) ]),
                     "include" => Ok(vec![ (Include, charset::no_check("")) ]),
                     "macro" => Ok(vec![ (Macro, charset::no_check("")) ]),
@@ -287,31 +232,15 @@ fn identify<'a>(
 
             // .arg
             MacroArg => {
-                let ident = word.get(1..);
-                if ident.is_none() {
-                    return Err(ParseErrType::InvalidMacroArg);
-                }
-
-                let ident = charset::check_ident(ident.unwrap());
-                if ident.is_none() {
-                    return Err(ParseErrType::InvalidMacroArgIdent);
-                }
-
-                return Ok(vec![ (MacroArg, ident.unwrap()) ]);
+                let arg = word.get(1..).ok_or(InvalidMacroArg)?;
+                let ident = charset::check_ident(arg).ok_or(InvalidMacroArgIdent)?;
+                return Ok(vec![ (MacroArg, ident) ]);
             }
 
             Label => {
-                let ident = word.get(1..);
-                if ident.is_none() {
-                    return Err(ParseErrType::InvalidLabel);
-                }
-
-                let ident = charset::check_ident(ident.unwrap());
-                if ident.is_none() {
-                    return Err(ParseErrType::InvalidLabelIdent);
-                }
-
-                return Ok(vec![ (ty, ident.unwrap()) ]);
+                let label = word.get(1..).ok_or(InvalidLabel)?;
+                let ident = charset::check_ident(label).ok_or(InvalidLabelIdent)?;
+                return Ok(vec![ (ty, ident) ]);
             }
 
             // Search by prefix gave a wrong result
@@ -323,66 +252,40 @@ fn identify<'a>(
 
     // Macro identifier ?
     if word.ends_with('.') {
-        let ident = word.get(..word.len() - 1);
-        if ident.is_none() {
-            return Err(ParseErrType::InvalidMacroIdent);
-        }
-        let ident = ident.unwrap();
-
+        let macro_ident = word.get(..word.len() - 1).ok_or(InvalidMacroIdent)?;
         let mut result = vec![];
 
         // In macro calls, the identifier can come with a repeat count.
         // e.g. '16ident.'
         let mut dec_i = 0;
-        for (i, ident_c) in ident.chars().rev().enumerate() {
+        for (i, ident_c) in macro_ident.chars().rev().enumerate() {
             if charset::is_char_num(ident_c) {
-                dec_i = ident.len() - i;
-                let dec = ident.get(0 .. dec_i);
+                dec_i = macro_ident.len() - i;
+                let lit = macro_ident.get(0 .. dec_i).ok_or(InvalidDec)?;
+                let dec = charset::check_dec(lit).ok_or(InvalidDec)?;
 
-                if dec.is_none() {
-                    return Err(ParseErrType::InvalidDec);
-                }
-
-                let dec = charset::check_dec(dec.unwrap());
-                if dec.is_none() {
-                    return Err(ParseErrType::InvalidDec);
-                }
-
-                result.push((Repeat, dec.unwrap()));
+                result.push((Repeat, dec));
             }
         }
 
         // Split after repeat count.
-        let ident = ident.get(dec_i..);
-        if ident.is_none() {
-            return Err(ParseErrType::InvalidMacroIdent);
-        }
+        let name = macro_ident.get(dec_i..).ok_or(InvalidMacroIdent)?;
+        let ident = charset::check_ident(name).ok_or(InvalidMacroIdent)?;
 
-        let ident = charset::check_ident(ident.unwrap());
-        if ident.is_none() {
-            return Err(ParseErrType::InvalidMacroIdent);
-        }
-
-        result.push((MacroIdent, ident.unwrap()));
+        result.push((MacroIdent, ident));
         return Ok(result);
     }
 
     // Identifier ?
     if charset::is_char_ident_first(c) {
-        if let Some(ident) = charset::check_ident(word) {
-            return Ok(vec![ (Identifier, ident) ]);
-        }
-
-        return Err(ParseErrType::InvalidIdent);
+        let ident = charset::check_ident(word).ok_or(InvalidIdent)?;
+        return Ok(vec![ (Identifier, ident) ]);
     }
 
     // Decimal literal ?
     if charset::is_char_num(c) {
-        if let Some(dec) = charset::check_dec(word) {
-            return Ok(vec![ (LitDec, dec) ]);
-        }
-
-        return Err(ParseErrType::InvalidDec);
+        let dec = charset::check_dec(word).ok_or(InvalidDec)?;
+        return Ok(vec![ (LitDec, dec) ]);
     }
 
     // Could not parse word.
