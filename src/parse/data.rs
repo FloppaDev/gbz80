@@ -1,6 +1,8 @@
 
 use KeyType::*;
-use crate::process::bug;
+use crate::{
+    program::control::bug,
+};
 
 #[derive(Debug, Copy, Clone)]
 enum KeyType {

@@ -2,7 +2,7 @@
 let output = `
 // File generated automatically
 //  - from <https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html>
-//  - by code in 'gen/opcodes'
+//  - by code in 'gen/instructions'
 //
 // Do no edit manually.
 `;

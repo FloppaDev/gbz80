@@ -37,7 +37,7 @@ pub const fn ends_on_newline(ty: TokenType) -> bool {
 }
 
 /// Find a token type that can be identified from a word.
-pub const fn get_by_word(name: &str) -> Option<TokenType> {
+pub fn get_by_word(name: &str) -> Option<TokenType> {
     match name {
         //[[get_by_word]]
         _ => None

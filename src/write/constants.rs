@@ -1,56 +1,16 @@
 
-//  Within expressions, markers and defines are both identifiers.
-//  The size of an identifier could be 1 or 2 bytes, or anything with strings.
-
-//  #def FOO 10                         ; size is 1
-//  #def MOO "uwu~"                     ; size is 4
-//  #def BAZ FOO
-//  #def ABC FOO + BAZ
-//  #def UGH :Label2 + 1                ; size is 2
-
-//  add a                   ; Instruction size: 1 byte
-//  &01                     ; 1 byte
-//  &2938                   ; 2 bytes
-//  MOO                     ; 4 (no \0)
-//  Label1:                 ; @8
-//  10                      ; 1
-//  1000                    ; 2
-//  FOO                     ; 1 
-//  "Hello"                 ; 5
-//  BAR                     ; 1? 2?
-//  :Label2                 ; @?
-//  BAR                     ; 1? 2?
-//  BAR                     ; 1? 2?
-//  &00FF:Marker            ; @256
-
-//  The first thing to do is to determine which identifiers are markers/labels because
-//      their size will always be 2 bytes.
-//
-//  Create a dictionnary of all defines and check for undefined identifiers.
-//
-//  ABC depends on BAZ and FOO: try to calculate them before calculating ABC.
-//      There's a possiblity for circular dependencies.
-
-
-
-//  - Get labels values
-//  loop {
-//      - iterate through all constants and try to calculate their values.
-//      if count of unknown values remains the same {
-//          return error
-//      }
-//      if all values are known {
-//          break
-//      }
-//  }
-
 use crate::{
-    lingo::TokenType::*,
-    token::{Token, TokenRef},
-    data::{Data, Key},
-    instructions::{OpCode, OpMap},
-    process::bug,
-    error::{ConstantsErr, ConstantsErrType},
+    parse::{
+        lex::TokenType::*,
+        data::{Data, Key},
+    },
+    program::{
+        control::bug,
+        error::{ConstantsErr, ConstantsErrType},
+    },
+    token::{
+        read::TokenRef,
+    },
 };
 
 use std::collections::HashMap;

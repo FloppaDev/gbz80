@@ -1,4 +1,20 @@
 
+use crate::{
+    parse::{
+        data::{Key, Data},
+        lex::TokenType,
+    },
+    token::{
+        Token,
+        ast::Ast,
+    },
+    program::{
+        control::bug,
+    },
+};
+
+use std::hash::{Hash, Hasher};
+
 /// Read-only reference to a token.
 /// Includes the AST for navigating the hierarchy.
 pub struct TokenRef<'a> {

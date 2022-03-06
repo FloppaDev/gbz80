@@ -61,43 +61,15 @@
 #![allow(unused_mut, unused_variables, dead_code)] //TODO
 
 //====================================================================
-                
-/// Store the data parsed from the source file.
-mod data;
-
-/// Provide all error types needed throughout the compilation.
-mod error;
-
-/// Splits the input file into words.
-mod split;
-
-/// Wrapper over token types and helpers to identify them.
-mod lingo;
-
-/// Converts words into token types and data.
+            
 mod parse;
+
+mod program;
 
 /// Constructs the hierarchy of tokens.
 mod token;
 
-/// Macros validation and expansion.
-mod macros;
-
-/// Provides tools to work with strings and check for valid characters.
-mod text;
-
-/// Helper functions for the program.
-mod process;
-
-//TODO doc
-mod instructions;
-
-/// Writes values from defines and markers.
-mod constants;
-
-/// Tests for all the main components of the project.
-#[cfg(test)]
-mod tests;
+mod write;
 
 //====================================================================
 
@@ -112,14 +84,20 @@ mod tests;
 //====================================================================
 
 use crate::{
-    lingo::Lexicon,
-    data::Data,
-    split::Split,
-    parse::parse,
-    token::{Ast, TokenRef},
-    process::clargs,
-    macros::Macros,
-    constants::Constants,
+    parse::{
+        data::Data,
+        split::Split,
+        prepare::parse,
+    },
+    token::{
+        ast::Ast, 
+        read::TokenRef,
+        macros::Macros,
+    },
+    write::{
+        constants::Constants,
+    },
+    program::control::clargs,
 };
 
 use std::fs;
@@ -149,7 +127,6 @@ fn main() -> Result<(), ()> {
     }
 
     let input = input.unwrap();
-    let lexicon = Lexicon::new();
     let mut data = Data::new();
 
     // Split source file into words.
@@ -169,7 +146,7 @@ fn main() -> Result<(), ()> {
     #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.
-    let parsed_tokens = parse(&lexicon, &mut data, &split);
+    let parsed_tokens = parse(&mut data, &split);
 
     if let Err(errors) = parsed_tokens {
         eprintln!(
@@ -185,7 +162,7 @@ fn main() -> Result<(), ()> {
 
     // Build the token tree.
     let mut macros = Macros::new();
-    let ast = Ast::new(&lexicon, parsed_tokens.unwrap(), &mut macros);
+    let ast = Ast::new(parsed_tokens.unwrap(), &mut macros);
 
     if let Err(errors) = ast {
         eprintln!(
@@ -203,7 +180,7 @@ fn main() -> Result<(), ()> {
     #[cfg(debug_assertions)] ast.debug();
 
     // Expand macro calls.
-    if let Err(errors) = macros.expand(&mut ast, &lexicon, &data) {
+    if let Err(errors) = macros.expand(&mut ast, &data) {
         eprintln!(
             "Failed compilation with {} errors at stage 'macros expansion'", 
             errors.len());

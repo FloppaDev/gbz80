@@ -10,115 +10,115 @@ use TokenType::*;
 /// All the different token types than can be identified.
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum TokenType {
-    Root
-    Instruction
-        InstrName
-            Adc
-            Add
-            And
-            Bit
-            Call
-            Ccf
-            Cp
-            Cpl
-            Daa
-            Dec
-            Di
-            Ei
-            Halt
-            Inc
-            Jp
-            Jr
-            Ld
-            Ldh
-            Ldi
-            Ldd
-            Ldhl
-            Or
-            Pop
-            Push
-            Res
-            Ret
-            Rl
-            Rla
-            Rlc
-            Rld
-            Rr
-            Rra
-            Rrc
-            Rrca
-            Rrd
-            Rst
-            Sbc
-            Scf
-            Set
-            Sla
-            Sll
-            Sra
-            Srl
-            Stop
-            Sub
-            Swap
-            Xor
-            Reti
-            Rlca
-            Nop
-        Argument
-            Register
-                A
-                B
-                C
-                D
-                E
-                H
-                L
-                Af
-                Bc
-                De
-                Hl
-                Sp
-            Lit
-                LitBin
-                LitHex
-                LitDec
-                LitStr
-            At
-                At0
-                At1
-            Flag
-                FlagZ
-                FlagNz
-                FlagC
-                FlagNc
-            Expr
-                BinAdd
-                BinSub
-                BinMul
-                BinDiv
-                BinMod
-                BinShr
-                BinShl
-                BinAnd
-                BinOr
-                BinXor
-                BinPow
-                UnNot
-                UnNeg
-            Identifier
-    Directive
-        Define
-        Include
-        Macro
-            MacroIdent
-            MacroArg
-            MacroBody
-    Marker
-        NamedMark
-        AnonMark
-        Label
-    Repeat
-    MacroCall
-    Unknown 
+    Root,
+    Instruction,
+        InstrName,
+            Adc,
+            Add,
+            And,
+            Bit,
+            Call,
+            Ccf,
+            Cp,
+            Cpl,
+            Daa,
+            Dec,
+            Di,
+            Ei,
+            Halt,
+            Inc,
+            Jp,
+            Jr,
+            Ld,
+            Ldh,
+            Ldi,
+            Ldd,
+            Ldhl,
+            Or,
+            Pop,
+            Push,
+            Res,
+            Ret,
+            Rl,
+            Rla,
+            Rlc,
+            Rld,
+            Rr,
+            Rra,
+            Rrc,
+            Rrca,
+            Rrd,
+            Rst,
+            Sbc,
+            Scf,
+            Set,
+            Sla,
+            Sll,
+            Sra,
+            Srl,
+            Stop,
+            Sub,
+            Swap,
+            Xor,
+            Reti,
+            Rlca,
+            Nop,
+        Argument,
+            Register,
+                A,
+                B,
+                C,
+                D,
+                E,
+                H,
+                L,
+                Af,
+                Bc,
+                De,
+                Hl,
+                Sp,
+            Lit,
+                LitBin,
+                LitHex,
+                LitDec,
+                LitStr,
+            At,
+                At0,
+                At1,
+            Flag,
+                FlagZ,
+                FlagNz,
+                FlagC,
+                FlagNc,
+            Expr,
+                BinAdd,
+                BinSub,
+                BinMul,
+                BinDiv,
+                BinMod,
+                BinShr,
+                BinShl,
+                BinAnd,
+                BinOr,
+                BinXor,
+                BinPow,
+                UnNot,
+                UnNeg,
+            Identifier,
+    Directive,
+        Define,
+        Include,
+        Macro,
+            MacroIdent,
+            MacroArg,
+            MacroBody,
+    Marker,
+        NamedMark,
+        AnonMark,
+        Label,
+    Repeat,
+    MacroCall,
+    Unknown, 
 }
 
 /// Returns the parent of a type.
@@ -153,8 +153,6 @@ pub const fn parent_type(ty: TokenType) -> TokenType {
         MacroIdent|MacroArg|MacroBody => Macro,
 
         NamedMark|AnonMark|Label => Marker,
-
-        _ => unreachable!()
     }
 }
 
@@ -179,76 +177,76 @@ pub const fn ends_on_newline(ty: TokenType) -> bool {
 }
 
 /// Find a token type that can be identified from a word.
-pub const fn get_by_word(name: &str) -> Option<TokenType> {
+pub fn get_by_word(name: &str) -> Option<TokenType> {
     match name {
-        "adc" => Adc,
-        "add" => Add,
-        "and" => And,
-        "bit" => Bit,
-        "call" => Call,
-        "ccf" => Ccf,
-        "cp" => Cp,
-        "cpl" => Cpl,
-        "daa" => Daa,
-        "dec" => Dec,
-        "di" => Di,
-        "ei" => Ei,
-        "halt" => Halt,
-        "inc" => Inc,
-        "jp" => Jp,
-        "jr" => Jr,
-        "ld" => Ld,
-        "ldh" => Ldh,
-        "ldi" => Ldi,
-        "ldd" => Ldd,
-        "ldhl" => Ldhl,
-        "or" => Or,
-        "pop" => Pop,
-        "push" => Push,
-        "res" => Res,
-        "ret" => Ret,
-        "rl" => Rl,
-        "rla" => Rla,
-        "rlc" => Rlc,
-        "rld" => Rld,
-        "rr" => Rr,
-        "rra" => Rra,
-        "rrc" => Rrc,
-        "rrca" => Rrca,
-        "rrd" => Rrd,
-        "rst" => Rst,
-        "sbc" => Sbc,
-        "scf" => Scf,
-        "set" => Set,
-        "sla" => Sla,
-        "sll" => Sll,
-        "sra" => Sra,
-        "srl" => Srl,
-        "stop" => Stop,
-        "sub" => Sub,
-        "swap" => Swap,
-        "xor" => Xor,
-        "reti" => Reti,
-        "rlca" => Rlca,
-        "nop" => Nop,
-        "a" => A,
-        "b" => B,
-        "c" => C,
-        "d" => D,
-        "e" => E,
-        "h" => H,
-        "l" => L,
-        "af" => Af,
-        "bc" => Bc,
-        "de" => De,
-        "hl" => Hl,
-        "sp" => Sp,
-        "(" => At0,
-        ")" => At1,
-        "Z" => FlagZ,
-        "NZ" => FlagNz,
-        "C" => FlagC,
-        "NC" => FlagNc,
+        "adc" => Some(Adc),
+        "add" => Some(Add),
+        "and" => Some(And),
+        "bit" => Some(Bit),
+        "call" => Some(Call),
+        "ccf" => Some(Ccf),
+        "cp" => Some(Cp),
+        "cpl" => Some(Cpl),
+        "daa" => Some(Daa),
+        "dec" => Some(Dec),
+        "di" => Some(Di),
+        "ei" => Some(Ei),
+        "halt" => Some(Halt),
+        "inc" => Some(Inc),
+        "jp" => Some(Jp),
+        "jr" => Some(Jr),
+        "ld" => Some(Ld),
+        "ldh" => Some(Ldh),
+        "ldi" => Some(Ldi),
+        "ldd" => Some(Ldd),
+        "ldhl" => Some(Ldhl),
+        "or" => Some(Or),
+        "pop" => Some(Pop),
+        "push" => Some(Push),
+        "res" => Some(Res),
+        "ret" => Some(Ret),
+        "rl" => Some(Rl),
+        "rla" => Some(Rla),
+        "rlc" => Some(Rlc),
+        "rld" => Some(Rld),
+        "rr" => Some(Rr),
+        "rra" => Some(Rra),
+        "rrc" => Some(Rrc),
+        "rrca" => Some(Rrca),
+        "rrd" => Some(Rrd),
+        "rst" => Some(Rst),
+        "sbc" => Some(Sbc),
+        "scf" => Some(Scf),
+        "set" => Some(Set),
+        "sla" => Some(Sla),
+        "sll" => Some(Sll),
+        "sra" => Some(Sra),
+        "srl" => Some(Srl),
+        "stop" => Some(Stop),
+        "sub" => Some(Sub),
+        "swap" => Some(Swap),
+        "xor" => Some(Xor),
+        "reti" => Some(Reti),
+        "rlca" => Some(Rlca),
+        "nop" => Some(Nop),
+        "a" => Some(A),
+        "b" => Some(B),
+        "c" => Some(C),
+        "d" => Some(D),
+        "e" => Some(E),
+        "h" => Some(H),
+        "l" => Some(L),
+        "af" => Some(Af),
+        "bc" => Some(Bc),
+        "de" => Some(De),
+        "hl" => Some(Hl),
+        "sp" => Some(Sp),
+        "(" => Some(At0),
+        ")" => Some(At1),
+        "Z" => Some(FlagZ),
+        "NZ" => Some(FlagNz),
+        "C" => Some(FlagC),
+        "NC" => Some(FlagNc),
         _ => None
     }
 }

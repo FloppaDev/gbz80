@@ -1,6 +1,8 @@
 
-use crate::text::charset;
-use crate::error::{ ClargsErr, ClargsErrType };
+use crate::{
+    parse::text::charset,
+    program::error::{ ClargsErr, ClargsErrType },
+};
 
 #[derive(Default)]
 /// Contains the parsed arguments.

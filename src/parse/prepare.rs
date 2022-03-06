@@ -1,10 +1,12 @@
 
 use crate::{
-    text::{ CheckedStr, charset },
-    lingo::{ TokenType::{self, *}, Lexicon },
-    error::{ ErrCtx, ParseErr, ParseErrType::{self, *} },
-    data::{ Data, Key },
-    split::Split,
+    parse::{
+        text::{CheckedStr, charset},
+        lex::{self, TokenType::{self, *}},
+        data::{Data, Key},
+        split::Split,
+    },
+    program::error::{ ErrCtx, ParseErr, ParseErrType::{self, *} },
 };
 
 /// Output of the parser. Contains the type and the key to the data.
@@ -18,7 +20,6 @@ pub struct ParsedToken<'a> {
 
 /// Map words to token types and extract their data.
 pub fn parse<'a>(
-    lexicon: &Lexicon,
     data: &mut Data<'a>,
     split: &Split<'a>,
 ) -> Result<Vec<ParsedToken<'a>>, Vec<ParseErr<'a>>> {
@@ -26,7 +27,7 @@ pub fn parse<'a>(
     let mut errors = vec![];
 
     for word in split.words() {
-        let id_words = identify(lexicon, word.value);
+        let id_words = identify(word.value);
 
         // Error while identifying token type.
         if let Err(err_type) = id_words {
@@ -43,7 +44,7 @@ pub fn parse<'a>(
 
         // Extract data for all words and collect errors.
         for (ty, word_str) in id_words.unwrap() {
-            let values = extract(lexicon, data, (ty, word_str.as_str()));
+            let values = extract(data, (ty, word_str.as_str()));
 
             if let Err(err_type) = values {
                 let err_ctx = ErrCtx::new(
@@ -79,13 +80,12 @@ pub fn parse<'a>(
 
 /// Extract the data from a word.
 fn extract<'a>(
-    lexicon: &Lexicon,
     data: &mut Data<'a>,
     word: (TokenType, &'a str)
 ) -> Result<(TokenType, Key), ParseErrType> {
     let (ty, str_value) = word; 
 
-    if lexicon.no_value(ty) {
+    if !lex::has_value(ty) {
         //TODO don't remember what it does and why.
         //println!("{}", str_value);
         //  prints nothing. Use Key::Void instead?
@@ -158,7 +158,6 @@ fn extract<'a>(
 //TODO use try '?'
 /// Get token type(s) and value(s) from word.
 fn identify<'a>(
-    lexicon: &Lexicon,
     word: &'a str
 ) -> Result<Vec<(TokenType, CheckedStr<'a>)>, ParseErrType> {
     if word.is_empty() {
@@ -167,18 +166,17 @@ fn identify<'a>(
 
     // Find token type by name.
     // Works with registers and instruction names.
-    if let Some(ty) = lexicon.get_by_name(word) {
+    if let Some(ty) = lex::get_by_word(word) {
         return Ok(vec![ (ty, charset::no_check("")) ]);
     }
 
-    let ch = word.get(0..1).ok_or(Invalid)?;
-    let c = ch.chars().next().unwrap();
+    let c = word.get(0..1).ok_or(Invalid)?.chars().next().unwrap();
     let last = word.chars().last().unwrap();
 
     // Find token type by prefix.
-    if let Some(ty) = lexicon.get_by_prefix(ch) {
-        match ty {
-            LitHex => {
+    if lex::has_prefix(c) {
+        match c {
+            '&' => {
                 // &6762:
                 if last == ':' {
                     let lit = word.get(1..word.len() - 1).ok_or(InvalidAnonMark)?;
@@ -206,20 +204,20 @@ fn identify<'a>(
             }
 
             // 0101_0101 or 11010
-            LitBin => {
+            '%' => {
                 let lit = word.get(1..).ok_or(InvalidBin)?;
                 let bin = charset::check_bin(lit).ok_or(InvalidBin)?;
                 return Ok(vec![ (LitBin, bin) ]);
             }
 
             // "...
-            LitStr => {
+            '"' => {
                 let value = word.get(1..).ok_or(InvalidStr)?;
                 return Ok(vec![ (LitStr, charset::no_check(value)) ]);
             }
 
             // "#def or "include or #macro
-            Directive => {
+            '#' => {
                 let directive = word.get(1..).ok_or(InvalidDirective)?;
 
                 return match directive {
@@ -231,16 +229,16 @@ fn identify<'a>(
             }
 
             // .arg
-            MacroArg => {
+            '.' => {
                 let arg = word.get(1..).ok_or(InvalidMacroArg)?;
                 let ident = charset::check_ident(arg).ok_or(InvalidMacroArgIdent)?;
                 return Ok(vec![ (MacroArg, ident) ]);
             }
 
-            Label => {
+            ':' => {
                 let label = word.get(1..).ok_or(InvalidLabel)?;
                 let ident = charset::check_ident(label).ok_or(InvalidLabelIdent)?;
-                return Ok(vec![ (ty, ident) ]);
+                return Ok(vec![ (Label, ident) ]);
             }
 
             // Search by prefix gave a wrong result

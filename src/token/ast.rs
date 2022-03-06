@@ -1,4 +1,23 @@
 
+use crate::{
+    parse::{
+        lex::{self, TokenType::{self, *}},
+        data::Key,
+        prepare::ParsedToken,
+    },
+    token::{
+        Token,
+        macros::Macros,
+    },
+    program::{
+        control::bug,
+        error::{ErrCtx, AstErr, AstErrType},
+    },
+};
+
+#[cfg(debug_assertions)]
+use crate::program::control::title;
+
 /// Abstract Token Tree.
 /// The whole hierarchy of parsed tokens from the source file.
 pub struct Ast<'a> {
@@ -13,7 +32,6 @@ impl<'a> Ast<'a> {
 
     /// Assemble the tokens into a tree.
     pub fn new(
-        lexicon: &Lexicon, 
         tokens: Vec<ParsedToken<'a>>,
         macros: &mut Macros,
     ) -> Result<Self, Vec<AstErr<'a>>> {
@@ -47,16 +65,16 @@ impl<'a> Ast<'a> {
                 current_line = token.line_number;
 
                 // Update selection after the end of a line.
-                if ast.newline(lexicon, &mut selection, &mut errors).is_err() {
+                if ast.newline(&mut selection, &mut errors).is_err() {
                     return Err(errors)
                 }
             }
 
-            ast.process_token(lexicon, token, &mut selection, macros, &mut errors);
+            ast.process_token(token, &mut selection, macros, &mut errors);
         }
 
         // Run `newline` for the last line too.
-        let _ = ast.newline(lexicon, &mut selection, &mut errors);
+        let _ = ast.newline(&mut selection, &mut errors);
 
         if errors.is_empty() {
             Ok(ast)
@@ -69,7 +87,6 @@ impl<'a> Ast<'a> {
     /// Return Err(()) if an unrecoverable error occured.
     fn newline(
         &mut self,
-        lexicon : &Lexicon,
         selection: &mut usize,
         errors: &mut Vec<AstErr<'a>>,
     ) -> Result<(), ()> {
@@ -93,7 +110,7 @@ impl<'a> Ast<'a> {
 
             loop_counter += 1;
 
-            if lexicon.ends_on_newline(sel_ty) {
+            if lex::ends_on_newline(sel_ty) {
                 match sel_ty {
                     // If it's a macro declaration, add a new macro body.
                     Macro => {
@@ -132,7 +149,6 @@ impl<'a> Ast<'a> {
     /// Insert the token into the tree and update selection.
     fn process_token(
         &mut self,
-        lexicon: &Lexicon,
         token: ParsedToken<'a>,
         selection: &mut usize,
         macros: &mut Macros,
@@ -142,7 +158,7 @@ impl<'a> Ast<'a> {
         let err_ctx: ErrCtx = (&token).into();
 
         // Match parent type of the token.
-        match lexicon.parent_type(token.ty) {
+        match lex::parent_type(token.ty) {
             p @ InstrName => {
                 *selection = self.cascade(*selection, &[Instruction, p], token);
             }
@@ -379,8 +395,6 @@ impl<'a> Ast<'a> {
                 children(ast, child, indent+1);
             }
         }
-
-        use crate::process::title;
 
         title("Token tree");
         children(self, &self.tokens[0], 0);

@@ -1,14 +1,18 @@
 
-use crate::{
-    data::{Data, Key},
-    lingo::{ Lexicon, TokenType::{ self, * } },
-    parse::ParsedToken,
-    error::{ ErrCtx, AstErr, AstErrType },
-    macros::Macros,
-    process::bug,
-};
+/// Macros validation and expansion.
+pub mod macros;
 
-use std::hash::{Hash, Hasher};
+pub mod read;
+
+pub mod ast;
+
+use crate::{
+    parse::{
+        lex::TokenType,
+        prepare::ParsedToken,
+        data::Key,
+    },
+};
 
 /// Token within the tree.
 #[derive(Debug)]

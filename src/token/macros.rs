@@ -1,9 +1,14 @@
 
 use crate::{
-    data::Data,
-    lingo::{ Lexicon, TokenType::* },
-    error::{ MacroErr, MacroErrType },
-    token::{ Token, Ast },
+    parse::{
+        lex::{ TokenType::* },
+        data::Data,
+    },
+    token::{ 
+        Token,
+        ast::Ast,
+    },
+    program::error::{ MacroErr, MacroErrType },
 };
 
 pub struct Macros {
@@ -65,7 +70,6 @@ impl<'a, 'b> Macros {
     pub fn expand(
         &self,
         ast: &'b mut Ast<'a>,
-        lexicon: &Lexicon,
         data: &'b Data<'a>,
     ) -> Result<(), Vec<MacroErr<'a>>> {
         let mut errors = vec![];

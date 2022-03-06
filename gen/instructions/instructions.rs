@@ -1,10 +1,14 @@
 const instructions_rs = `\
 \
 use crate::{
-    lingo::TokenType::{self, *},
-    token::{Token, TokenRef},
-    error::{ErrCtx, OpErr, OpErrType},
-    process::bug,
+    parse::lex::TokenType::{self, *},
+    token::{
+        read::TokenRef,
+    },
+    program::{
+        error::{OpErr, OpErrType},
+        control::bug,
+    }
 };
 
 use Constant::*;

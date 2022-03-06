@@ -1,14 +1,18 @@
 
 // File generated automatically
 //  - from <https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html>
-//  - by code in 'gen/opcodes'
+//  - by code in 'gen/instructions'
 //
 // Do no edit manually.
 use crate::{
-    lingo::TokenType::{self, *},
-    token::{Token, TokenRef},
-    error::{ErrCtx, OpErr, OpErrType},
-    process::bug,
+    parse::lex::TokenType::{self, *},
+    token::{
+        read::TokenRef,
+    },
+    program::{
+        error::{OpErr, OpErrType},
+        control::bug,
+    }
 };
 
 use Constant::*;

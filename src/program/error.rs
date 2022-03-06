@@ -1,8 +1,13 @@
 
 use crate::{
-    lingo::TokenType,
-    parse::ParsedToken,
-    token::{Token, TokenRef},
+    parse::{
+        lex::TokenType,
+        prepare::ParsedToken,
+    },
+    token::{
+        Token, 
+        read::TokenRef
+    },
 };
 
 /// Provides context for an error in the parsed source file.

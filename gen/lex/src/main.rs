@@ -35,7 +35,6 @@ fn build(tree: &Tree) {
     let mut parent_type = String::new();
     let root = &tree.nodes[types.children[0]];
     fmt_parents(tree, root, &mut parent_type, &mut 0);
-    parent_type.push_str("_ => unreachable!()");
     parent_type = tab(2, &parent_type);
 
     let has_value = tree.find("has_value");
@@ -106,7 +105,7 @@ pub fn fmt_types(
 
     for index in &node.children {
         let child = &tree.nodes[*index];
-        let line = format!("{}{}\n", tab, &child.value);
+        let line = format!("{}{},\n", tab, &child.value);
         out.push_str(&line); 
 
         fmt_types(tree, child, indent + 1, out)
@@ -170,14 +169,14 @@ fn fmt_match_true(
 fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
     for (i, index) in words.children.iter().enumerate() {
         let value = &tree.nodes[*index].value;
-        let arm = format!("\"{}\" => {},\n", value.to_lowercase(), value);
+        let arm = format!("\"{}\" => Some({}),\n", value.to_lowercase(), value);
         out.push_str(&arm);
     }
 
     for (i, index) in pairs.children.iter().enumerate() {
         let child = &tree.nodes[*index];
         let word = &tree.nodes[child.children[0]].value;
-        let arm = format!("\"{}\" => {},\n", word, child.value);
+        let arm = format!("\"{}\" => Some({}),\n", word, child.value);
         out.push_str(&arm);
     }
 }

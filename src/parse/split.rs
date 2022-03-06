@@ -1,6 +1,12 @@
 
-use crate::error::{ SplitErr, SplitErrType };
-use crate::text::charset;
+use crate::{
+    parse::text::charset,
+    program::error::{ SplitErr, SplitErrType },
+};
+
+#[cfg(debug_assertions)]
+use crate::program::control::title;
+
 
 #[derive(Copy, Clone)]
 pub struct LineIndex {
@@ -221,8 +227,6 @@ impl<'a> Split<'a> {
 
     #[cfg(debug_assertions)]
     pub fn debug(&self) {
-        use crate::process::title;
-
         title("Split words");
         
         if self.line_numbers.is_empty() {
