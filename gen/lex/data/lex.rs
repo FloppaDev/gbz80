@@ -25,7 +25,11 @@ pub const fn argument_type(ty: TokenType) -> TokenType {
 
 /// Can this token type hold a value?
 pub const fn has_value(ty: TokenType) -> bool {
-    //[[has_value]]
+    match ty {
+        //[[has_value]]
+
+        _ => false
+    }
 }
 
 /// Is it one the tokens that end on a newline?

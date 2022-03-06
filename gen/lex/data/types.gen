@@ -4,25 +4,25 @@
         Root {
             Instruction {
                 InstrName {
-                    Adc    Add    And    Bit    Call   Ccf    Cp     Cpl    Daa    Dec
-                    Di     Ei     Halt   Inc    Jp     Jr     Ld     Ldh    Ldi    Ldd    
-                    Ldhl   Or     Pop    Push   Res    Ret    Rl     Rla    Rlc    Rld    
-                    Rr     Rra    Rrc    Rrca   Rrd    Rst    Sbc    Scf    Set    Sla    
-                    Sll    Sra    Srl    Stop   Sub    Swap   Xor    Reti   Rlca   Nop
+                    Adc Add And Bit Call Ccf Cp Cpl Daa Dec
+                    Di Ei Halt Inc Jp Jr Ld Ldh Ldi Ldd Ldhl 
+                    Or Pop Push Res Ret Rl Rla Rlc Rld Rr Rra 
+                    Rrc Rrca Rrd Rst Sbc Scf Set Sla Sll Sra 
+                    Srl Stop Sub Swap Xor Reti Rlca Nop
                 }
 
                 Argument {
-                    Register  { A B C D E H L Af Bc De Hl Sp }
+                    Register { A B C D E H L Af Bc De Hl Sp }
 
-                    Lit  { LitBin LitHex LitDec LitStr }
+                    Lit { LitBin LitHex LitDec LitStr }
 
-                    At  { At0 At1 }
+                    At { At0 At1 }
 
-                    Flag  { FlagZ FlagNz FlagC FlagNc }
+                    Flag { FlagZ FlagNz FlagC FlagNc }
 
-                    Expr  {
-                        BinAdd BinSub BinMul BinDiv BinMod BinShr BinShl BinAnd BinOr 
-                        BinXor BinPow UnNot UnNeg 
+                    Expr {
+                        BinAdd BinSub BinMul BinDiv BinMod BinShr 
+                        BinShl BinAnd BinOr BinXor BinPow UnNot UnNeg 
                     }
 
                     Identifier
@@ -33,10 +33,10 @@
                 Define
                 Include
 
-                Macro  { MacroIdent MacroArg MacroBody }
+                Macro { MacroIdent MacroArg MacroBody }
             }
 
-            Marker  { NamedMark AnonMark Label }
+            Marker { NamedMark AnonMark Label }
 
             Repeat
             MacroCall
@@ -47,31 +47,33 @@
     are_words { InstrName> Register> }
 
     word_pairs {
-        At0         {   (    }
-        At1         {   )    }
-        FlagZ       {   Z    }
-        FlagNz      {   Nz   }
-        FlagC       {   C    }
-        FlagNc      {   Nc   }
+        At0 { ( }
+        At1 { ) }
+        FlagZ { Z }
+        FlagNz { NZ }
+        FlagC { C }
+        FlagNc { NC }
     }
 
     prefix_pairs {
-        LitHex      {   &    }
-        Directive   {   #    }
-        LitBin      {   %    }
-        LitStr      {   "    }
-        MacroArg    {   .    }
-        Label       {   :    }
+        LitHex { & }
+        Directive { # }
+        LitBin { % }
+        LitStr { " }
+        MacroArg { . }
+        Label { : }
     }
 
-    //TODO check if they are still correct.
-    //TODO doc: no_value is only for parse.rs, which impacts only leaf tokens.
-    have_no_value { 
-        InstrName> Register> Flag> At> Directive> 
+    has_value { 
+        NamedMark MacroArg Label Repeat MacroIdent Identifier
+        Lit> 
     }
 
     end_on_newline { 
         Instruction Argument MacroCall Directive Marker 
         Directive> Marker> 
     }
+
 }
+
+
