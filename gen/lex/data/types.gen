@@ -57,14 +57,13 @@
         FlagNc { NC }
     }
 
-    // Provides guesses based on prefix.
-    prefix_pairs {
-        LitHex { & }
-        Directive { # }
-        LitBin { % }
-        LitStr { " }
-        MacroArg { . }
-        Label { : }
+    prefixes {
+        & // LitHex AnonMark NamedMark
+        # // Directive>
+        % // LitBin
+        " // LitStr
+        . // MacroArg
+        : // Label
     }
 
     // These types can hold a value.
@@ -80,5 +79,3 @@
     }
 
 }
-
-

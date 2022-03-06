@@ -29,8 +29,8 @@ fn build(tree: &Tree) {
     let template = include_str!("../data/lex.rs");
 
     let types = tree.find("types");
-    let mut token_types = String::new();
-    fmt_types(tree, types, 0, &mut token_types);
+    let mut types_str= String::new();
+    fmt_types(tree, types, 0, &mut types_str);
 
     let mut parent_type = String::new();
     let root = &tree.nodes[types.children[0]];
@@ -39,14 +39,14 @@ fn build(tree: &Tree) {
     parent_type = tab(2, &parent_type);
 
     let has_value = tree.find("has_value");
-    let mut values = String::new();
-    fmt_match_true(tree, has_value, &mut values, &mut 0);
-    values = tab(2, &values);
+    let mut has_value_str = String::new();
+    fmt_match_true(tree, has_value, &mut has_value_str, &mut 0);
+    has_value_str = tab(2, &has_value_str);
 
     let ends_on_newline = tree.find("ends_on_newline");
-    let mut newline = String::new();
-    fmt_match_true(tree, ends_on_newline, &mut newline, &mut 0);
-    newline = tab(2, &newline);
+    let mut ends_on_newline_str = String::new();
+    fmt_match_true(tree, ends_on_newline, &mut ends_on_newline_str, &mut 0);
+    ends_on_newline_str = tab(2, &ends_on_newline_str);
 
     let are_words = tree.find("are_words");
     let word_pairs = tree.find("word_pairs");
@@ -54,17 +54,19 @@ fn build(tree: &Tree) {
     fmt_words(tree, are_words, word_pairs, &mut words);
     words = tab(2, &words);
 
-    //let _end_on_newline = tree.find("end_on_newline");
+    let prefixes = tree.find("prefixes");
+    let mut prefixes_str = String::new();
+    fmt_prefixes(tree, prefixes, &mut prefixes_str);
+    prefixes_str = tab(2, &prefixes_str);
 
     let result = template
         .replace(&key("no_touchy"), NO_TOUCHY)
-        .replace(&key("token_types"), token_types.trim_end())
+        .replace(&key("types"), types_str.trim_end())
         .replace(&key("parent_type"), parent_type.trim_end())
-        //.replace(&key("argument_type"), &argument_type)
-        .replace(&key("has_value"), values.trim_end())
-        .replace(&key("ends_on_newline"), newline.trim_end())
-        .replace(&key("get_by_word"), words.trim_end());
-        //.replace(&key("get_by_prefix"), &get_by_prefix);
+        .replace(&key("has_value"), has_value_str.trim_end())
+        .replace(&key("ends_on_newline"), ends_on_newline_str.trim_end())
+        .replace(&key("get_by_word"), words.trim_end())
+        .replace(&key("prefixes"), prefixes_str.trim_end());
 
     println!("{}", result);
 
@@ -104,7 +106,8 @@ pub fn fmt_types(
 
     for index in &node.children {
         let child = &tree.nodes[*index];
-        out.push_str(&format!("{}{}\n", tab, &child.value)); 
+        let line = format!("{}{}\n", tab, &child.value);
+        out.push_str(&line); 
 
         fmt_types(tree, child, indent + 1, out)
     }
@@ -126,20 +129,19 @@ fn fmt_parents(
             *ln_start = out.len();
         }
 
-        let child = &tree.nodes[*index];
-        out.push_str(&child.value);
+        out.push_str(&tree.nodes[*index].value);
 
         if i != node.children.len() - 1 {
             out.push_str("|");
         }
     }
 
-    out.push_str(&format!(" => {},\n\n", node.value));
+    let arm = format!(" => {},\n\n", node.value);
+    out.push_str(&arm);
     *ln_start = out.len() - 1;
 
     for index in &node.children {
-        let child = &tree.nodes[*index];
-        fmt_parents(tree, child, out, ln_start);
+        fmt_parents(tree, &tree.nodes[*index], out, ln_start);
     }
 }
 
@@ -155,8 +157,7 @@ fn fmt_match_true(
             *ln_start = out.len();
         }
 
-        let child = &tree.nodes[*index];
-        out.push_str(&child.value);
+        out.push_str(&tree.nodes[*index].value);
 
         if i != node.children.len() - 1 {
             out.push_str("|");
@@ -168,16 +169,34 @@ fn fmt_match_true(
 
 fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
     for (i, index) in words.children.iter().enumerate() {
-        let child = &tree.nodes[*index];
-
-        out.push_str(
-            &format!("\"{}\" => {},\n", child.value.to_lowercase(), child.value));
+        let value = &tree.nodes[*index].value;
+        let arm = format!("\"{}\" => {},\n", value.to_lowercase(), value);
+        out.push_str(&arm);
     }
 
     for (i, index) in pairs.children.iter().enumerate() {
         let child = &tree.nodes[*index];
-
         let word = &tree.nodes[child.children[0]].value;
-        out.push_str(&format!("\"{}\" => {},\n", word, child.value));
+        let arm = format!("\"{}\" => {},\n", word, child.value);
+        out.push_str(&arm);
     }
+}
+
+pub fn fmt_prefixes(
+    tree: &Tree, 
+    node: &Node, 
+    out: &mut String
+) {
+    out.push_str("matches!(prefix, ");
+
+    for (i, index) in node.children.iter().enumerate() {
+        let prefix = format!("'{}'", &tree.nodes[*index].value);
+        out.push_str(&prefix); 
+
+        if i != node.children.len() - 1 {
+            out.push_str("|");
+        }
+    }
+
+    out.push_str(")");
 }

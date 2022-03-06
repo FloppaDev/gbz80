@@ -124,6 +124,8 @@ pub enum TokenType {
 /// Returns the parent of a type.
 pub const fn parent_type(ty: TokenType) -> TokenType {
     match ty {
+        Root => Root,
+
         Instruction|Directive|Marker|Repeat|MacroCall|Unknown => Root,
 
         InstrName|Argument => Instruction,
@@ -156,30 +158,102 @@ pub const fn parent_type(ty: TokenType) -> TokenType {
     }
 }
 
-/// Generalization of a type within Argument.
-/// Instruction -> Argument -> Lit -> ...   = Lit
-/// Instruction -> Argument -> Identifier   = Identifier
-pub const fn argument_type(ty: TokenType) -> TokenType {
-    //[[argument_type]]
-}
-
 /// Can this token type hold a value?
 pub const fn has_value(ty: TokenType) -> bool {
-    //[[has_value]]
+    match ty {
+        NamedMark|MacroArg|Label|Repeat|MacroIdent|Identifier|LitBin|
+        LitHex|LitDec|LitStr => true,
+
+        _ => false
+    }
 }
 
 /// Is it one the tokens that end on a newline?
 pub const fn ends_on_newline(ty: TokenType) -> bool {
-    //[[ends_on_newline]]
+    match ty {
+        Instruction|Argument|MacroCall|Directive|Marker|Define|Include|
+        Macro|NamedMark|AnonMark|Label => true,
+
+        _ => false
+    }
 }
 
 /// Find a token type that can be identified from a word.
 pub const fn get_by_word(name: &str) -> Option<TokenType> {
-    //[[get_by_word]]
+    match name {
+        "adc" => Adc,
+        "add" => Add,
+        "and" => And,
+        "bit" => Bit,
+        "call" => Call,
+        "ccf" => Ccf,
+        "cp" => Cp,
+        "cpl" => Cpl,
+        "daa" => Daa,
+        "dec" => Dec,
+        "di" => Di,
+        "ei" => Ei,
+        "halt" => Halt,
+        "inc" => Inc,
+        "jp" => Jp,
+        "jr" => Jr,
+        "ld" => Ld,
+        "ldh" => Ldh,
+        "ldi" => Ldi,
+        "ldd" => Ldd,
+        "ldhl" => Ldhl,
+        "or" => Or,
+        "pop" => Pop,
+        "push" => Push,
+        "res" => Res,
+        "ret" => Ret,
+        "rl" => Rl,
+        "rla" => Rla,
+        "rlc" => Rlc,
+        "rld" => Rld,
+        "rr" => Rr,
+        "rra" => Rra,
+        "rrc" => Rrc,
+        "rrca" => Rrca,
+        "rrd" => Rrd,
+        "rst" => Rst,
+        "sbc" => Sbc,
+        "scf" => Scf,
+        "set" => Set,
+        "sla" => Sla,
+        "sll" => Sll,
+        "sra" => Sra,
+        "srl" => Srl,
+        "stop" => Stop,
+        "sub" => Sub,
+        "swap" => Swap,
+        "xor" => Xor,
+        "reti" => Reti,
+        "rlca" => Rlca,
+        "nop" => Nop,
+        "a" => A,
+        "b" => B,
+        "c" => C,
+        "d" => D,
+        "e" => E,
+        "h" => H,
+        "l" => L,
+        "af" => Af,
+        "bc" => Bc,
+        "de" => De,
+        "hl" => Hl,
+        "sp" => Sp,
+        "(" => At0,
+        ")" => At1,
+        "Z" => FlagZ,
+        "NZ" => FlagNz,
+        "C" => FlagC,
+        "NC" => FlagNc,
+        _ => None
+    }
 }
 
-/// Find all types that match the prefix.
-/// e.g. &2893 is a hexadecimal literal.
-pub const fn get_by_prefix(first: &str) -> Vec<TokenType> {
-    //[[get_by_prefix]]
+/// Is there any type that starts with this prefix character?
+pub const fn has_prefix(prefix: char) -> bool {
+    matches!(prefix, '&'|'#'|'%'|'"'|'.'|':')
 }

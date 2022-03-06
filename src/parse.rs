@@ -198,6 +198,7 @@ fn identify<'a>(
                     }
 
                     return Ok(vec![
+                        //TODO put hex in AnonMark?
                         (AnonMark, charset::no_check("")),
                         (LitHex, lit.unwrap()),
                     ]);
