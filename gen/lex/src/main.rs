@@ -33,22 +33,27 @@ fn build(tree: &Tree) {
     fmt_types(tree, types, 0, &mut token_types);
 
     let mut parent_type = String::new();
-
-    fmt_parents(
-        tree, &tree.nodes[types.children[0]], &mut parent_type, &mut 0);
-
+    let root = &tree.nodes[types.children[0]];
+    fmt_parents(tree, root, &mut parent_type, &mut 0);
     parent_type.push_str("_ => unreachable!()");
     parent_type = tab(2, &parent_type);
 
     let has_value = tree.find("has_value");
     let mut values = String::new();
-
-    fmt_values(tree, has_value, &mut values, &mut 0);
+    fmt_match_true(tree, has_value, &mut values, &mut 0);
     values = tab(2, &values);
 
-    //let _are_words = tree.find("are_words");
-    //let _word_pairs = tree.find("word_pairs");
-    //let _prefix_pairs = tree.find("prefix_pairs");
+    let ends_on_newline = tree.find("ends_on_newline");
+    let mut newline = String::new();
+    fmt_match_true(tree, ends_on_newline, &mut newline, &mut 0);
+    newline = tab(2, &newline);
+
+    let are_words = tree.find("are_words");
+    let word_pairs = tree.find("word_pairs");
+    let mut words = String::new();
+    fmt_words(tree, are_words, word_pairs, &mut words);
+    words = tab(2, &words);
+
     //let _end_on_newline = tree.find("end_on_newline");
 
     let result = template
@@ -56,9 +61,9 @@ fn build(tree: &Tree) {
         .replace(&key("token_types"), token_types.trim_end())
         .replace(&key("parent_type"), parent_type.trim_end())
         //.replace(&key("argument_type"), &argument_type)
-        .replace(&key("has_value"), &values.trim_end());
-        //.replace(&key("ends_on_newline"), &ends_on_newline)
-        //.replace(&key("get_by_word"), &get_by_word)
+        .replace(&key("has_value"), values.trim_end())
+        .replace(&key("ends_on_newline"), newline.trim_end())
+        .replace(&key("get_by_word"), words.trim_end());
         //.replace(&key("get_by_prefix"), &get_by_prefix);
 
     println!("{}", result);
@@ -73,14 +78,17 @@ fn key(name: &str) -> String {
 
 fn tab(n: usize, s: &str) -> String {
     let mut result = String::new();
+    let lines = s.lines().collect::<Vec<_>>();
 
-    for (i, line) in s.lines().enumerate() {
+    for (i, line) in lines.iter().enumerate() {
         if !line.trim().is_empty() && i > 0 {
             result.push_str(&(0..n).map(|_| "    ").collect::<String>()); 
         }
 
         result.push_str(line);
-        result.push_str("\n");
+        if i != lines.len() - 1 {
+            result.push_str("\n");
+        }
     }
 
     result
@@ -135,7 +143,7 @@ fn fmt_parents(
     }
 }
 
-fn fmt_values(
+fn fmt_match_true(
     tree: &Tree, 
     node: &Node, 
     out: &mut String, 
@@ -158,3 +166,18 @@ fn fmt_values(
     out.push_str(" => true,\n\n");
 }
 
+fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
+    for (i, index) in words.children.iter().enumerate() {
+        let child = &tree.nodes[*index];
+
+        out.push_str(
+            &format!("\"{}\" => {},\n", child.value.to_lowercase(), child.value));
+    }
+
+    for (i, index) in pairs.children.iter().enumerate() {
+        let child = &tree.nodes[*index];
+
+        let word = &tree.nodes[child.children[0]].value;
+        out.push_str(&format!("\"{}\" => {},\n", word, child.value));
+    }
+}

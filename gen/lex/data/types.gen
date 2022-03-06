@@ -44,8 +44,10 @@
         }
     }
 
+    // Those are identified by their name lowercased.
     are_words { InstrName> Register> }
 
+    // Those are identified by the contained word.
     word_pairs {
         At0 { ( }
         At1 { ) }
@@ -55,6 +57,7 @@
         FlagNc { NC }
     }
 
+    // Provides guesses based on prefix.
     prefix_pairs {
         LitHex { & }
         Directive { # }
@@ -64,12 +67,14 @@
         Label { : }
     }
 
+    // These types can hold a value.
     has_value { 
         NamedMark MacroArg Label Repeat MacroIdent Identifier
         Lit> 
     }
 
-    end_on_newline { 
+    // These tokens are closed on a newline.
+    ends_on_newline { 
         Instruction Argument MacroCall Directive Marker 
         Directive> Marker> 
     }

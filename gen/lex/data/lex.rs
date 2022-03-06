@@ -34,12 +34,19 @@ pub const fn has_value(ty: TokenType) -> bool {
 
 /// Is it one the tokens that end on a newline?
 pub const fn ends_on_newline(ty: TokenType) -> bool {
-    //[[ends_on_newline]]
+    match ty {
+        //[[ends_on_newline]]
+
+        _ => false
+    }
 }
 
 /// Find a token type that can be identified from a word.
 pub const fn get_by_word(name: &str) -> Option<TokenType> {
-    //[[get_by_word]]
+    match name {
+        //[[get_by_word]]
+        _ => None
+    }
 }
 
 /// Find all types that match the prefix.
