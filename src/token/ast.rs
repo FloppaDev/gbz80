@@ -46,7 +46,7 @@ impl<'a> Ast<'a> {
         let mut errors = vec![];
 
         // Initialize the tree with a Root token and select it.
-        let root = Self::root();
+        let root = Self::create_root();
         let mut ast = Self { tokens: vec![root] };
         let mut selection = 0;
         let mut current_line = 0;
@@ -345,8 +345,7 @@ impl<'a> Ast<'a> {
     }
 
     /// Root of the token tree.
-    //TODO rename to 'create_root'
-    pub const fn root() -> Token<'a> {
+    pub const fn create_root() -> Token<'a> {
         Token {
             ty: Root,
             line_number: 0,

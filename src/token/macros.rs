@@ -65,7 +65,6 @@ impl<'a, 'b> Macros {
         err_count == errors.len()
     }
 
-    //TODO repeat count
     /// Expand all macro calls from the `Ast`.
     pub fn expand(
         &self,

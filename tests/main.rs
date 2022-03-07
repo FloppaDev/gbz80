@@ -1,4 +1,6 @@
 
+//TODO update tests
+
 use crate::data::{ Data, Key };
 use crate::lingo::{ Lexicon, TokenType };
 use crate::parse::{ self, ParsedToken };
@@ -102,6 +104,7 @@ fn ast() {
     });
 }
 
+//TODO remove, not closs-platform
 /// Run the function on multiple threads.
 fn threaded(f: fn() -> ()) {
     let mut handlers = vec![];

@@ -85,12 +85,9 @@ fn extract<'a>(
 ) -> Result<(TokenType, Key), ParseErrType> {
     let (ty, str_value) = word; 
 
+    // There is no value to extract.
     if !lex::has_value(ty) {
-        //TODO don't remember what it does and why.
-        //println!("{}", str_value);
-        //  prints nothing. Use Key::Void instead?
-        let data_key = data.push_str(str_value);
-        return Ok((ty, data_key));
+        return Ok((ty, Key::void()));
     }
 
     match ty {
@@ -155,7 +152,6 @@ fn extract<'a>(
     }
 }
 
-//TODO use try '?'
 /// Get token type(s) and value(s) from word.
 fn identify(
     word: &str
