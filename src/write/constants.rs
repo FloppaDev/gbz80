@@ -2,7 +2,7 @@
 use crate::{
     parse::{
         lex::TokenType::*,
-        data::{Data, Key},
+        data::Data,
     },
     program::{
         control::bug,
@@ -20,31 +20,26 @@ use std::collections::HashMap;
 pub enum ConstExpr<'a> {
     Nil,
     Num(usize),
-    Str(Key),
-    Tkn(&'a TokenRef<'a>),
+    Str(&'a str),
+    Label,
+    Expr(&'a TokenRef<'a>),
 }
 
-pub struct Constants<'a>(HashMap<&'a str, ConstExpr<'a>>);
+pub struct Constants<'a> {
+    data: &'a Data<'a>,
+    map: HashMap<&'a str, ConstExpr<'a>>,
+}
 
 impl<'a> Constants<'a> {
-
-    pub const fn map(&self) -> &HashMap<&'a str, ConstExpr<'a>> {
-        let Self(map) = self;
-        map
-    }
 
     pub fn new(
         ast: &'a TokenRef<'a>,
     ) -> Result<Self, ConstantsErr<'a>> {
         let mut fail_safe = 500;
-        let mut constants = Self(
-            Self::get_constants(ast, HashMap::new(), &mut fail_safe)?);
+        let mut map = Self::get_constants(ast, HashMap::new(), &mut fail_safe)?; 
+        Self::resolve(&mut map);
 
-        for key in constants.map().keys() {
-            println!("{}", key);
-        }
-
-        Ok(constants)
+        Ok(Self{ data: ast.data(), map })
     }
 
     fn get_constants(
@@ -73,7 +68,7 @@ impl<'a> Constants<'a> {
                     match child.ty() {
                         Label => {
                             let ident = data.get_str(child.data_key());
-                            let value = ConstExpr::Tkn(child);
+                            let value = ConstExpr::Label;
 
                             map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
@@ -95,7 +90,7 @@ impl<'a> Constants<'a> {
 
                     if child.ty() == Define {
                         let ident = data.get_str(child.get(0).data_key());
-                        let value = ConstExpr::Tkn(child);
+                        let value = ConstExpr::Expr(child);
 
                         map.insert(ident, value).xor(nil).ok_or(err)?;
                     }
@@ -106,6 +101,24 @@ impl<'a> Constants<'a> {
         }
 
         Ok(map)
+    }
+
+    fn resolve(map: &mut HashMap<&'a str, ConstExpr<'a>>) {
+        use ConstExpr::*;
+
+        for (key, value) in map.iter_mut() {
+            match value {
+                Expr(token) => {
+                    //TODO resolve math expressions
+                }
+
+                Label => {
+                    //TODO *value = Num(x)
+                }
+
+                _ => {}
+            }
+        }
     }
 
     fn sizeof_lit(lit: &TokenRef<'a>, data: &Data) -> usize {
