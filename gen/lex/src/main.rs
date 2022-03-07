@@ -8,7 +8,7 @@ use crate::{
 use std::fs::File;
 use std::io::prelude::*;
 
-const NO_TOUCHY: &'static str = "\
+const NO_TOUCHY: &str = "\
 // File generated automatically
 //  - templates in 'gen/lex/data'
 //  - code in 'gen/lex/src'
@@ -88,7 +88,7 @@ fn tab(n: usize, s: &str) -> String {
 
         result.push_str(line);
         if i != lines.len() - 1 {
-            result.push_str("\n");
+            result.push('\n');
         }
     }
 
@@ -124,14 +124,14 @@ fn fmt_parents(
 
     for (i, index) in node.children.iter().enumerate() {
         if out.len() - *ln_start >= 60 {
-            out.push_str("\n"); 
+            out.push('\n'); 
             *ln_start = out.len();
         }
 
         out.push_str(&tree.nodes[*index].value);
 
         if i != node.children.len() - 1 {
-            out.push_str("|");
+            out.push('|');
         }
     }
 
@@ -152,28 +152,28 @@ fn fmt_match_true(
 ) {
     for (i, index) in node.children.iter().enumerate() {
         if out.len() - *ln_start >= 60 {
-            out.push_str("\n"); 
+            out.push('\n'); 
             *ln_start = out.len();
         }
 
         out.push_str(&tree.nodes[*index].value);
 
         if i != node.children.len() - 1 {
-            out.push_str("|");
+            out.push('|');
         }
     }
 
-    out.push_str(" => true,\n\n");
+    out.push(')');
 }
 
 fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
-    for (i, index) in words.children.iter().enumerate() {
+    for index in &words.children {
         let value = &tree.nodes[*index].value;
         let arm = format!("\"{}\" => Some({}),\n", value.to_lowercase(), value);
         out.push_str(&arm);
     }
 
-    for (i, index) in pairs.children.iter().enumerate() {
+    for index in &pairs.children {
         let child = &tree.nodes[*index];
         let word = &tree.nodes[child.children[0]].value;
         let arm = format!("\"{}\" => Some({}),\n", word, child.value);
@@ -193,9 +193,9 @@ pub fn fmt_prefixes(
         out.push_str(&prefix); 
 
         if i != node.children.len() - 1 {
-            out.push_str("|");
+            out.push('|');
         }
     }
 
-    out.push_str(")");
+    out.push(')');
 }

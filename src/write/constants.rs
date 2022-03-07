@@ -28,7 +28,7 @@ pub struct Constants<'a>(HashMap<&'a str, ConstExpr<'a>>);
 
 impl<'a> Constants<'a> {
 
-    pub fn map(&self) -> &HashMap<&'a str, ConstExpr<'a>> {
+    pub const fn map(&self) -> &HashMap<&'a str, ConstExpr<'a>> {
         let Self(map) = self;
         map
     }
@@ -120,11 +120,12 @@ impl<'a> Constants<'a> {
     }
 
     fn size_of(value: usize) -> usize {
-        return match value {
+        match value {
             value if value <= 255 => 1,
 
-            value if value >= 256 && value <= 65536 => 2,
+            value if (256..=65536).contains(&value) => 2,
 
+            //TODO return Option?
             _ => bug("Exceeding number capacity.")
         }
     }

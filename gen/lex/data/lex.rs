@@ -12,28 +12,20 @@ pub enum TokenType {
 /// Returns the parent of a type.
 pub const fn parent_type(ty: TokenType) -> TokenType {
     match ty {
-        Root => Root,
-
-        //[[parent_type]]
+        Root|//[[parent_type]]
     }
 }
 
 /// Can this token type hold a value?
 pub const fn has_value(ty: TokenType) -> bool {
-    match ty {
+    matches!(ty,
         //[[has_value]]
-
-        _ => false
-    }
 }
 
 /// Is it one the tokens that end on a newline?
 pub const fn ends_on_newline(ty: TokenType) -> bool {
-    match ty {
+    matches!(ty,
         //[[ends_on_newline]]
-
-        _ => false
-    }
 }
 
 /// Find a token type that can be identified from a word.

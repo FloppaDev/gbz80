@@ -73,13 +73,12 @@ mod write;
 
 //====================================================================
 
-//TODO put + and - back in
+//TODO memory banks.
 
+//TODO math expressions.
 //TODO forbid LitStr in arithmetics.
 
 //TODO update crate doc
-
-//TODO parse 'Repeat's before 'Lit's and includes.
 
 //====================================================================
 

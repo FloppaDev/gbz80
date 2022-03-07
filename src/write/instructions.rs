@@ -37,8 +37,8 @@ enum Arg {
 
 impl Arg {
 
-    fn cmp(token: TokenRef) -> bool {
-        true 
+    const fn cmp(token: &TokenRef) -> bool {
+        todo!()//TODO? 
     }
 
 }
@@ -107,14 +107,14 @@ impl OpCode {
         instr_args: &[&TokenRef],
         op_args: &[Arg],
     ) -> bool {
-        true
+        todo!()//TODO
     }
 
     fn get_opcode(
         instruction: &TokenRef, 
         cb: bool, 
         ops: Vec<(u8, u8, Vec<Arg>)>
-    ) -> Option<OpCode> {
+    ) -> Option<Self> {
         let instr_children = instruction.children();
 
         for op in ops {
@@ -130,7 +130,7 @@ impl OpCode {
         None
     }
 
-    pub fn find(instruction: &TokenRef) -> Option<OpCode> {
+    pub fn find(instruction: &TokenRef) -> Option<Self> {
         assert_eq!(instruction.ty(), Instruction);
 
         let instr_ty = instruction.get(0).get(0).ty();

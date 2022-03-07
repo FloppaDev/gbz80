@@ -1,4 +1,6 @@
 
+#![allow(dead_code)]
+
 use crate::{
     parse::{
         data::{Key, Data},
@@ -50,7 +52,7 @@ impl<'a> TokenRef<'a> {
         let mut fail_safe = 500;
         let root = ast.get_root();
         let mut current = Self{ 
-            data, ast, token: root, parent: 0 as *const _, children: vec![]
+            data, ast, token: root, parent: std::ptr::null(), children: vec![]
         };
         current.parent = &current;
 
@@ -83,74 +85,61 @@ impl<'a> TokenRef<'a> {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn data(&self) -> &Data {
+    pub const fn data(&self) -> &Data {
         self.data
     }
 
-    #[allow(dead_code)]
-    pub fn ast(&self) -> &Ast {
+    pub const fn ast(&self) -> &Ast {
         self.ast
     }
 
-    #[allow(dead_code)]
-    pub fn token(&self) -> &Token<'a> {
+    pub const fn token(&self) -> &Token<'a> {
         self.token
     }
 
     /// Returns a reference to the child `TokenRef` at specified index.
     /// Panics:
     /// Index not found.
-    #[allow(dead_code)]
     pub fn get(&self, child: usize) -> &Self {
         &self.children[child]
     }
 
     /// Tries to return a reference to the child `TokenRef` at specified index.
-    #[allow(dead_code)]
     pub fn try_get(&self, child: usize) -> Option<&Self> {
         self.children.get(child)
     }
 
-    #[allow(dead_code)]
-    pub fn ty(&self) -> TokenType {
+    pub const fn ty(&self) -> TokenType {
         self.token.ty
     }
 
-    #[allow(dead_code)]
-    pub fn line_number(&self) -> usize {
+    pub const fn line_number(&self) -> usize {
         self.token.line_number
     }
 
-    #[allow(dead_code)]
-    pub fn line(&self) -> &'a str {
+    pub const fn line(&self) -> &'a str {
         self.token.line
     }
 
-    #[allow(dead_code)]
-    pub fn word(&self) -> &'a str {
+    pub const fn word(&self) -> &'a str {
         self.token.word
     }
 
-    #[allow(dead_code)]
-    pub fn data_key(&self) -> &Key {
+    pub const fn data_key(&self) -> &Key {
         &self.token.data_key
     }
 
-    #[allow(dead_code)]
-    pub fn index(&self) -> usize {
+    pub const fn index(&self) -> usize {
         self.token.index
     }
 
     /// Returns a reference to the parent `TokenRef` or `self` if it is the root.
-    #[allow(dead_code)]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn parent(&self) -> &Self {
-        // `TokenRef` contains an immutable ref to the Ast so its safe.
         unsafe { &*self.parent }
     }
 
     /// Returns reference to all `TokenRef` children.
-    #[allow(dead_code)]
     pub fn children(&self) -> Vec<&Self> {
         self.children.iter().collect::<Vec<_>>()
     }

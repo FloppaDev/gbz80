@@ -90,7 +90,7 @@ fn extract<'a>(
         //println!("{}", str_value);
         //  prints nothing. Use Key::Void instead?
         let data_key = data.push_str(str_value);
-        return Ok((ty, data_key)) 
+        return Ok((ty, data_key));
     }
 
     match ty {
@@ -106,7 +106,7 @@ fn extract<'a>(
                 mul *= 16;
             }
 
-            return Ok((ty, data.push_usize(hex)));
+            Ok((ty, data.push_usize(hex)))
         }
 
         LitBin => {
@@ -127,7 +127,7 @@ fn extract<'a>(
                 }
             }
 
-            return Ok((ty, data.push_usize(bin)));
+            Ok((ty, data.push_usize(bin)))
         }
 
         LitDec|Repeat => {
@@ -143,7 +143,7 @@ fn extract<'a>(
             }
 
             //TODO check for overflows in validation.
-            return Ok((ty, data.push_usize(dec)));
+            Ok((ty, data.push_usize(dec)))
         }
 
         // Value for those is str_value
@@ -157,9 +157,9 @@ fn extract<'a>(
 
 //TODO use try '?'
 /// Get token type(s) and value(s) from word.
-fn identify<'a>(
-    word: &'a str
-) -> Result<Vec<(TokenType, CheckedStr<'a>)>, ParseErrType> {
+fn identify(
+    word: &str
+) -> Result<Vec<(TokenType, CheckedStr)>, ParseErrType> {
     if word.is_empty() {
         return Err(ParseErrType::EmptyStr);
     }
