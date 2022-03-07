@@ -1,7 +1,4 @@
 
-/// Store the data parsed from the source file.
-pub mod data;
-
 /// Splits the input file into words.
 pub mod split;
 

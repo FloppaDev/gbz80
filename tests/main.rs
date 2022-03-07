@@ -1,12 +1,11 @@
 
 //TODO update tests
 
-use crate::data::{ Data, Key };
-use crate::lingo::{ Lexicon, TokenType };
-use crate::parse::{ self, ParsedToken };
-use crate::process;
+use crate::lex::{self, TokenType}; 
+use crate::parse::prepare::{ self, ParsedToken };
+use crate::program;
 use crate::token::Ast;
-use crate::macros::Macros;
+use crate::token::macros::Macros;
 use std::thread;
 use std::fs::File;
 use std::io::Read;

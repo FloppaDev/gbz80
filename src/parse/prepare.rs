@@ -1,9 +1,9 @@
 
 use crate::{
+    token::Value,
     parse::{
         text::{CheckedStr, charset},
         lex::{self, TokenType::{self, *}},
-        data::{Data, Key},
         split::Split,
     },
     program::error::{ ErrCtx, ParseErr, ParseErrType::{self, *} },
@@ -12,7 +12,7 @@ use crate::{
 /// Output of the parser. Contains the type and the key to the data.
 pub struct ParsedToken<'a> {
     pub ty: TokenType,
-    pub data_key: Key,
+    pub value: Value<'a>,
     pub line_number: usize,
     pub line: &'a str,
     pub word: &'a str,
@@ -20,7 +20,6 @@ pub struct ParsedToken<'a> {
 
 /// Map words to token types and extract their data.
 pub fn parse<'a>(
-    data: &mut Data<'a>,
     split: &Split<'a>,
 ) -> Result<Vec<ParsedToken<'a>>, Vec<ParseErr<'a>>> {
     let mut parsed_tokens = vec![];
@@ -44,7 +43,7 @@ pub fn parse<'a>(
 
         // Extract data for all words and collect errors.
         for (ty, word_str) in id_words.unwrap() {
-            let values = extract(data, (ty, word_str.as_str()));
+            let values = extract((ty, word_str.as_str()));
 
             if let Err(err_type) = values {
                 let err_ctx = ErrCtx::new(
@@ -58,10 +57,10 @@ pub fn parse<'a>(
                 continue;
             }
 
-            let (ty, data_key) = values.unwrap();
+            let (ty, value) = values.unwrap();
             let parsed_token = ParsedToken { 
                 ty, 
-                data_key, 
+                value, 
                 line_number: split.line_number(word.line_index),
                 line: split.line(word.line_index), 
                 word: word_str.as_str(),
@@ -80,14 +79,13 @@ pub fn parse<'a>(
 
 /// Extract the data from a word.
 fn extract<'a>(
-    data: &mut Data<'a>,
     word: (TokenType, &'a str)
-) -> Result<(TokenType, Key), ParseErrType> {
+) -> Result<(TokenType, Value), ParseErrType> {
     let (ty, str_value) = word; 
 
     // There is no value to extract.
     if !lex::has_value(ty) {
-        return Ok((ty, Key::void()));
+        return Ok((ty, Value::Void));
     }
 
     match ty {
@@ -103,7 +101,7 @@ fn extract<'a>(
                 mul *= 16;
             }
 
-            Ok((ty, data.push_usize(hex)))
+            Ok((ty, Value::Usize(hex)))
         }
 
         LitBin => {
@@ -124,7 +122,7 @@ fn extract<'a>(
                 }
             }
 
-            Ok((ty, data.push_usize(bin)))
+            Ok((ty, Value::Usize(bin)))
         }
 
         LitDec|Repeat => {
@@ -140,12 +138,12 @@ fn extract<'a>(
             }
 
             //TODO check for overflows in validation.
-            Ok((ty, data.push_usize(dec)))
+            Ok((ty, Value::Usize(dec)))
         }
 
         // Value for those is str_value
         LitStr|Identifier|Label|NamedMark|AnonMark|MacroArg|MacroIdent => {
-            Ok((ty, data.push_str(str_value)))
+            Ok((ty, Value::Str(str_value)))
         }
 
         _ => Err(ParseErrType::UnhandledType)

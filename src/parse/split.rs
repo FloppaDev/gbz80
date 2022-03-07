@@ -1,12 +1,11 @@
 
 use crate::{
     parse::text::charset,
-    program::error::{ SplitErr, SplitErrType },
+    program::error::{SplitErr, SplitErrType},
 };
 
 #[cfg(debug_assertions)]
-use crate::program::control::title;
-
+use crate::program::title;
 
 #[derive(Copy, Clone)]
 pub struct LineIndex {

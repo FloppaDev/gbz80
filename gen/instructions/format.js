@@ -117,7 +117,7 @@ ${opStr}\
             // CB instructions
 
 ${cbOpStr}\
-            _ => bug("Op not found"),
+            _ => unreachable!("Op not found"),
         }`
 );
 

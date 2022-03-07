@@ -2,21 +2,19 @@
 use crate::{
     parse::{
         lex::{self, TokenType::{self, *}},
-        data::Key,
         prepare::ParsedToken,
     },
     token::{
-        Token,
+        Token, Value,
         macros::Macros,
     },
     program::{
-        control::bug,
         error::{ErrCtx, AstErr, AstErrType},
     },
 };
 
 #[cfg(debug_assertions)]
-use crate::program::control::title;
+use crate::program::title;
 
 /// Abstract Token Tree.
 /// The whole hierarchy of parsed tokens from the source file.
@@ -231,7 +229,8 @@ impl<'a> Ast<'a> {
                     self.push(marker, token);
                 }
 
-                _ => bug(&format!("Unhandled token type '{:?}'.", token.ty))
+                _ => unreachable!(
+                    &format!("Unhandled token type '{:?}'.", token.ty))
             }
         }
     }
@@ -338,10 +337,10 @@ impl<'a> Ast<'a> {
         line: &'a str,
     ) -> ParsedToken<'a> {
         let line_number =  line_number;
-        let data_key = Key::void();
+        let value = Value::Void;
         let word = "";
 
-        ParsedToken { ty, data_key, line_number, line, word }
+        ParsedToken { ty, value, line_number, line, word }
     }
 
     /// Root of the token tree.
@@ -351,7 +350,7 @@ impl<'a> Ast<'a> {
             line_number: 0,
             line: "",
             word: "",
-            data_key: Key::void(),
+            value: Value::Void,
             index: 0,
             parent: 0,
             children: vec![],

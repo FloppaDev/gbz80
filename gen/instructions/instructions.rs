@@ -5,10 +5,7 @@ use crate::{
     token::{
         read::TokenRef,
     },
-    program::{
-        error::{OpErr, OpErrType},
-        control::bug,
-    }
+    program::error::{OpErr, OpErrType},
 };
 
 use Constant::*;

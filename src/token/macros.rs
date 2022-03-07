@@ -2,7 +2,6 @@
 use crate::{
     parse::{
         lex::{ TokenType::* },
-        data::Data,
     },
     token::{ 
         Token,
@@ -69,7 +68,6 @@ impl<'a, 'b> Macros {
     pub fn expand(
         &self,
         ast: &'b mut Ast<'a>,
-        data: &'b Data<'a>,
     ) -> Result<(), Vec<MacroErr<'a>>> {
         let mut errors = vec![];
 
@@ -90,14 +88,14 @@ impl<'a, 'b> Macros {
                 continue;
             }
 
-            let call_ident = data.get_str(&ast.tokens[*call_ident.unwrap()].data_key);
+            let call_ident = &ast.tokens[*call_ident.unwrap()].value.as_str();
             let mut decl_index = None;
 
             // Search for the corresponding declaration.
             for macro_decl in &self.decls {
                 let decl_ident_token = &ast.tokens[ast.tokens[*macro_decl].children[0]];
-                let decl_ident = data.get_str(&decl_ident_token.data_key);
-
+                let decl_ident = &decl_ident_token.value.as_str();
+               
                 if decl_ident == call_ident {
                     decl_index = Some(macro_decl);
                     break;
@@ -116,7 +114,7 @@ impl<'a, 'b> Macros {
             let decl_parent = ast.tokens[decl_index].parent;
             ast.tokens[decl_parent].children.retain(|c| *c != decl_index);
 
-            Self::expand_call(ast, decl_index, *macro_call, data, &mut errors); 
+            Self::expand_call(ast, decl_index, *macro_call, &mut errors); 
         }
 
         if errors.is_empty() {
@@ -131,7 +129,6 @@ impl<'a, 'b> Macros {
         ast: &'b mut Ast<'a>, 
         macro_decl: usize,
         macro_call: usize,
-        data: &'b Data<'a>,
         errors: &mut Vec<MacroErr<'a>>,
     ) {
         // Add the call's `MacroBody` as a child.
@@ -144,7 +141,7 @@ impl<'a, 'b> Macros {
         let decl_body_index = decl.children.last().unwrap();
 
         let call = &ast.tokens[macro_call];
-        let Token{ line_number, line, word, data_key, .. } = *call;
+        let Token{ line_number, line, word, value, .. } = *call;
 
         let call_children = &call.children;
         let call_args = call_children.get(1..call_children.len()-1).unwrap();
@@ -160,7 +157,7 @@ impl<'a, 'b> Macros {
 
         for decl_arg in decl_args {
             let decl_arg_token = &ast.tokens[*decl_arg];
-            arg_names.push(data.get_str(&decl_arg_token.data_key)); 
+            arg_names.push(decl_arg_token.value.as_str()); 
         }
 
         for call_arg in call_args {
@@ -172,7 +169,7 @@ impl<'a, 'b> Macros {
             line_number,
             line,
             word,
-            data_key, 
+            value, 
             index: call_body_index,
             parent: macro_call,
             children: vec![],
@@ -189,8 +186,7 @@ impl<'a, 'b> Macros {
             0, 
             &arg_names, 
             &arg_tokens, 
-            call,
-            data);
+            call);
 
         // Append the new `Ast` to the main one.
         for token in call_ast.tokens {
@@ -211,7 +207,6 @@ impl<'a, 'b> Macros {
         arg_tokens: &[&'b Token<'a>],
 
         macro_call: &'b Token<'a>,
-        data: &Data<'a>,
     ) -> Ast<'a> {
         // Iterate over all tokens inside the declaration's body.
         for child in &ast.tokens[src].children {
@@ -219,7 +214,7 @@ impl<'a, 'b> Macros {
 
             // Macro arguments must be replaced with the corresponding tokens.
             if child.ty == MacroArg {
-                let arg = data.get_str(&child.data_key);
+                let arg = child.value.as_str();
 
                 for (i, arg_name) in arg_names.iter().enumerate() {
                     if *arg_name == arg {
@@ -233,13 +228,13 @@ impl<'a, 'b> Macros {
             let index = call_ast.tokens.len();
             call_ast.tokens[dest].children.push(offset + index);
 
-            let Token{ ty, data_key, .. } = *child;
+            let Token{ ty, value, .. } = *child;
             let Token{ line_number, line, word, .. } = *macro_call;
             let children = vec![];
             let parent = offset + dest;
 
             let token = Token{
-                ty, line_number, line, word, data_key, index, parent, children
+                ty, line_number, line, word, value, index, parent, children
             };
 
             call_ast.tokens.push(token);
@@ -252,8 +247,7 @@ impl<'a, 'b> Macros {
                 index, 
                 arg_names, 
                 arg_tokens, 
-                macro_call,
-                data);
+                macro_call);
         }
 
         call_ast

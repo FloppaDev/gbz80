@@ -2,17 +2,14 @@
 #![allow(dead_code)]
 
 use crate::{
-    parse::{
-        data::{Key, Data},
-        lex::TokenType,
-    },
+    parse::lex::TokenType,
     token::{
-        Token,
+        Token, Value,
         ast::Ast,
     },
     program::{
-        control::bug,
-    },
+        RECURSION_LIMIT,
+    }
 };
 
 use std::hash::{Hash, Hasher};
@@ -20,7 +17,6 @@ use std::hash::{Hash, Hasher};
 /// Read-only reference to a token.
 /// Includes the AST for navigating the hierarchy.
 pub struct TokenRef<'a> {
-    data: &'a Data<'a>,
     ast: &'a Ast<'a>,
     token: &'a Token<'a>,
     parent: *const Self,
@@ -48,45 +44,35 @@ impl<'a> Hash for TokenRef<'a> {
 impl<'a> TokenRef<'a> {
 
     /// Creates a `TokenRef` from the root token of an `Ast`.
-    pub fn new(data: &'a Data, ast: &'a Ast) -> Self {
-        let mut fail_safe = 500;
+    pub fn new(ast: &'a Ast) -> Self {
+        let mut fail_safe = RECURSION_LIMIT;
         let root = ast.get_root();
         let mut current = Self{ 
-            data, ast, token: root, parent: std::ptr::null(), children: vec![]
+            ast, token: root, parent: std::ptr::null(), children: vec![]
         };
         current.parent = &current;
 
-        Self::walk(data, ast, &mut current, &mut fail_safe); 
+        Self::walk(ast, &mut current, &mut fail_safe); 
 
         current
     }
 
-    fn walk(
-        data: &'a Data,
-        ast: &'a Ast, 
-        current: &mut Self,
-        fail_safe: &mut usize,
-    ) {
+    fn walk(ast: &'a Ast, current: &mut Self, fail_safe: &mut usize) {
         if *fail_safe == 0 {
-            bug("Recursion limit reached while building TokenRef tree.");
+            unreachable!("Recursion limit reached while building TokenRef tree.");
         }
 
         for child in &current.token.children {
             *fail_safe -= 1;
             let token = &ast.tokens[*child];
             let mut token_ref = Self{ 
-                data, ast, token, parent: current, children: vec![]
+                ast, token, parent: current, children: vec![]
             };
 
             current.children.push(token_ref);
 
-            Self::walk(
-                data, ast, current.children.last_mut().unwrap(), fail_safe);
+            Self::walk(ast, current.children.last_mut().unwrap(), fail_safe);
         }
-    }
-
-    pub const fn data(&self) -> &Data {
-        self.data
     }
 
     pub const fn ast(&self) -> &Ast {
@@ -125,8 +111,8 @@ impl<'a> TokenRef<'a> {
         self.token.word
     }
 
-    pub const fn data_key(&self) -> &Key {
-        &self.token.data_key
+    pub const fn value(&self) -> &Value {
+        &self.token.value
     }
 
     pub const fn index(&self) -> usize {

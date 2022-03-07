@@ -2,15 +2,15 @@
 use crate::{
     parse::{
         lex::TokenType::*,
-        data::Data,
-    },
-    program::{
-        control::bug,
-        error::{ConstantsErr, ConstantsErrType},
     },
     token::{
+        Value,
         read::TokenRef,
     },
+    program::{
+        error::{ConstantsErr, ConstantsErrType},
+        RECURSION_LIMIT,
+    }
 };
 
 use std::collections::HashMap;
@@ -18,28 +18,31 @@ use std::collections::HashMap;
 /// Holds the value of a constant or the token required to calculate it.
 #[derive(Copy, Clone)]
 pub enum ConstExpr<'a> {
+    /// Not stored anywhere, used only for convenience.
     Nil,
-    Num(usize),
-    Str(&'a str),
+
+    /// Location needs to be calculated.
     Label,
+
+    /// Known value.
+    Value(&'a Value<'a>),
+
+    /// Expression needs to be resolved.
     Expr(&'a TokenRef<'a>),
 }
 
 pub struct Constants<'a> {
-    data: &'a Data<'a>,
     map: HashMap<&'a str, ConstExpr<'a>>,
 }
 
 impl<'a> Constants<'a> {
 
-    pub fn new(
-        ast: &'a TokenRef<'a>,
-    ) -> Result<Self, ConstantsErr<'a>> {
-        let mut fail_safe = 500;
+    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, ConstantsErr<'a>> {
+        let mut fail_safe = RECURSION_LIMIT;
         let mut map = Self::get_constants(ast, HashMap::new(), &mut fail_safe)?; 
         Self::resolve(&mut map);
 
-        Ok(Self{ data: ast.data(), map })
+        Ok(Self{ map })
     }
 
     fn get_constants(
@@ -50,10 +53,9 @@ impl<'a> Constants<'a> {
         *fail_safe -= 1;
 
         if *fail_safe == 0 {
-            bug("Recursion limit reached while reading constants");
+            panic!("Recursion limit reached while reading constants");
         }
 
-        let data = ast.data();
         let nil = Some(ConstExpr::Nil);
 
         for token in ast.children() {
@@ -67,17 +69,15 @@ impl<'a> Constants<'a> {
 
                     match child.ty() {
                         Label => {
-                            let ident = data.get_str(child.data_key());
+                            let ident = child.value().as_str();
                             let value = ConstExpr::Label;
 
                             map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         NamedMark => {
-                            let ident = data.get_str(child.data_key());
-                            let value = ConstExpr::Num(
-                                data.get_usize(child.get(0).get(0).data_key()));
-
+                            let ident = child.value().as_str();
+                            let value = ConstExpr::Value(child.get(0).get(0).value());
                             map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
@@ -89,9 +89,8 @@ impl<'a> Constants<'a> {
                     let child = token.get(0);
 
                     if child.ty() == Define {
-                        let ident = data.get_str(child.get(0).data_key());
+                        let ident = child.get(0).value().as_str();
                         let value = ConstExpr::Expr(child);
-
                         map.insert(ident, value).xor(nil).ok_or(err)?;
                     }
                 }
@@ -121,14 +120,14 @@ impl<'a> Constants<'a> {
         }
     }
 
-    fn sizeof_lit(lit: &TokenRef<'a>, data: &Data) -> usize {
+    fn sizeof_lit(lit: &TokenRef<'a>) -> usize {
         let litx = lit.get(0); 
         return match litx.ty() {
-            LitDec|LitHex|LitBin => Self::size_of(data.get_usize(litx.data_key())),
+            LitDec|LitHex|LitBin => Self::size_of(litx.value().as_usize()),
 
-            LitStr => data.get_str(litx.data_key()).len(),
+            LitStr => litx.value().as_str().len(),
 
-            _ => bug("Unhandled literal type."),
+            _ => unreachable!("Unhandled literal type."),
         }
     }
 
@@ -139,13 +138,12 @@ impl<'a> Constants<'a> {
             value if (256..=65536).contains(&value) => 2,
 
             //TODO return Option?
-            _ => bug("Exceeding number capacity.")
+            _ => unreachable!("Exceeding number capacity.")
         }
     }
 
     pub fn get_defines_sizes(
         defines: &[&TokenRef<'a>],
-        data: &Data,
     ) -> HashMap<TokenRef<'a>, usize> {
         let hashmap = HashMap::new();
 
@@ -153,9 +151,10 @@ impl<'a> Constants<'a> {
             let token = define.get(2);
 
             let size = match token.ty() {
-                Lit => Self::sizeof_lit(token, data),
+                Lit => Self::sizeof_lit(token),
 
-                ty => bug(&format!("Unexpected child type in define: {:?}", ty))
+                ty => unreachable!(
+                    &format!("Unexpected child type in define: {:?}", ty))
             };
         }
 

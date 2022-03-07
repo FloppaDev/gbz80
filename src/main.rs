@@ -84,7 +84,6 @@ mod write;
 
 use crate::{
     parse::{
-        data::Data,
         split::Split,
         prepare::parse,
     },
@@ -96,7 +95,7 @@ use crate::{
     write::{
         constants::Constants,
     },
-    program::control::clargs,
+    program::clargs,
 };
 
 use std::fs;
@@ -126,7 +125,6 @@ fn main() -> Result<(), ()> {
     }
 
     let input = input.unwrap();
-    let mut data = Data::new();
 
     // Split source file into words.
     let split = Split::new(&input, &clargs.symbols);
@@ -145,7 +143,7 @@ fn main() -> Result<(), ()> {
     #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.
-    let parsed_tokens = parse(&mut data, &split);
+    let parsed_tokens = parse(&split);
 
     if let Err(errors) = parsed_tokens {
         eprintln!(
@@ -179,7 +177,7 @@ fn main() -> Result<(), ()> {
     #[cfg(debug_assertions)] ast.debug();
 
     // Expand macro calls.
-    if let Err(errors) = macros.expand(&mut ast, &data) {
+    if let Err(errors) = macros.expand(&mut ast) {
         eprintln!(
             "Failed compilation with {} errors at stage 'macros expansion'", 
             errors.len());
@@ -193,7 +191,7 @@ fn main() -> Result<(), ()> {
 
     #[cfg(debug_assertions)] ast.debug();
 
-    let ast_ref = TokenRef::new(&data, &ast);
+    let ast_ref = TokenRef::new(&ast);
     let constants = Constants::new(&ast_ref);
 
     // let instructions = opcodes::get_instructions();
