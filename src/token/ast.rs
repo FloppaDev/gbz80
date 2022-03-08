@@ -9,6 +9,7 @@ use crate::{
         macros::Macros,
     },
     program::{
+        RECURSION_LIMIT,
         error::{ErrCtx, AstErr, AstErrType},
     },
 };
@@ -91,22 +92,20 @@ impl<'a> Ast<'a> {
         let token = &self.tokens[*selection];
         let Token{ line_number, line, word, .. } = *token;
         let err_ctx = token.into();
-
-        // Fail-safe in case variants are added and not handled.
-        let mut loop_counter = 0;
+        let mut fail_safe = RECURSION_LIMIT;
 
         // Check for tokens that end on a new line and close them.
         loop {
             let sel_ty = self.type_of(*selection);
 
-            if loop_counter >= 1000 {
+            if fail_safe == 0 {
                 let e = AstErr::new(AstErrType::UnhandledNewline(sel_ty), err_ctx);
                 errors.push(e);
 
                 return Err(());
             }
 
-            loop_counter += 1;
+            fail_safe -= 1;
 
             if lex::ends_on_newline(sel_ty) {
                 match sel_ty {

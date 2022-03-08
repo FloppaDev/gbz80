@@ -78,9 +78,7 @@ pub fn parse<'a>(
 }
 
 /// Extract the data from a word.
-fn extract<'a>(
-    word: (TokenType, &'a str)
-) -> Result<(TokenType, Value), ParseErrType> {
+fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseErrType> {
     let (ty, str_value) = word; 
 
     // There is no value to extract.

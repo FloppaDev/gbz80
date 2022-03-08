@@ -93,6 +93,7 @@ use crate::{
         macros::Macros,
     },
     write::{
+        instructions::OpMap,
         constants::Constants,
     },
     program::clargs,
@@ -192,7 +193,22 @@ fn main() -> Result<(), ()> {
     #[cfg(debug_assertions)] ast.debug();
 
     let ast_ref = TokenRef::new(&ast);
-    let constants = Constants::new(&ast_ref);
+    let op_map = OpMap::new(&ast_ref);
+
+    if let Err(errors) = op_map {
+        eprintln!(
+            "Failed compilation with {} errors at stage 'ops map build'", 
+            errors.len());
+
+        for err in errors {
+            eprintln!("{:?}", err);
+        }
+
+        return Err(())
+    }
+
+    let op_map = op_map.unwrap();
+    let constants = Constants::new(&ast_ref, &op_map);
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);

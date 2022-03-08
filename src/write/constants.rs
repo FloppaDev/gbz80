@@ -10,7 +10,8 @@ use crate::{
     program::{
         error::{ConstantsErr, ConstantsErrType},
         RECURSION_LIMIT,
-    }
+    },
+    write::instructions::OpMap,
 };
 
 use std::collections::HashMap;
@@ -22,10 +23,10 @@ pub enum ConstExpr<'a> {
     Nil,
 
     /// Location needs to be calculated.
-    Label,
+    Mark,
 
     /// Known value.
-    Value(&'a Value<'a>),
+    Value(Value<'a>),
 
     /// Expression needs to be resolved.
     Expr(&'a TokenRef<'a>),
@@ -37,10 +38,14 @@ pub struct Constants<'a> {
 
 impl<'a> Constants<'a> {
 
-    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, ConstantsErr<'a>> {
+    pub fn new(
+        ast: &'a TokenRef<'a>,
+        op_map: &OpMap<'a>,
+    ) -> Result<Self, ConstantsErr<'a>> {
         let mut fail_safe = RECURSION_LIMIT;
         let mut map = Self::get_constants(ast, HashMap::new(), &mut fail_safe)?; 
-        Self::resolve(&mut map);
+
+        Self::resolve(&mut map, op_map, ast);
 
         Ok(Self{ map })
     }
@@ -70,14 +75,14 @@ impl<'a> Constants<'a> {
                     match child.ty() {
                         Label => {
                             let ident = child.value().as_str();
-                            let value = ConstExpr::Label;
+                            let value = ConstExpr::Mark;
 
                             map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         NamedMark => {
                             let ident = child.value().as_str();
-                            let value = ConstExpr::Value(child.get(0).get(0).value());
+                            let value = ConstExpr::Value(*child.get(0).get(0).value());
                             map.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
@@ -102,28 +107,96 @@ impl<'a> Constants<'a> {
         Ok(map)
     }
 
-    fn resolve(map: &mut HashMap<&'a str, ConstExpr<'a>>) {
-        use ConstExpr::*;
+    /// Calculate values in expressions and labels.
+    fn resolve(
+        const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
+        op_map: &OpMap<'a>,
+        ast: &'a TokenRef<'a>,
+    ) {
+        let mut location = 0;
 
-        for (key, value) in map.iter_mut() {
-            match value {
-                Expr(token) => {
-                    //TODO resolve math expressions
-                }
-
-                Label => {
-                    //TODO *value = Num(x)
-                }
-
-                _ => {}
-            }
+        // Calculate the size of labels and validate markers.
+        for child in ast.children() {
+            location += size_of_token(child)?; 
         }
     }
 
-    fn sizeof_lit(lit: &TokenRef<'a>) -> usize {
+    fn size_of_token(
+        const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
+        op_map: &OpMap<'a>,
+        token: &'a TokenRef<'a>,
+    ) Result<usize, ConstantsErr<'a>> {
+        return match child.ty() {
+            MacroCall => {}//TODO recursion.
+
+            Instruction => location += op_map.get(child).len as usize,
+
+            Lit => location += Self::size_of_lit(child),
+
+            Identifier => Self::size_of_ident(child.value().as_str())?,
+
+            Label => {
+                let value = ConstExpr::Value(Value::Usize(location));
+                *const_map.get_mut(child.value().as_str()).unwrap() = value;
+                location += 2;
+            }
+
+            AnonMark|NamedMark => {
+                let marker_location = child.get(0).get(0).value().as_usize();
+
+                if location == marker_location {
+                    let value = ConstExpr::Value(Value::Usize(location));
+                    *const_map.get_mut(child.value().as_str()).unwrap() = value;
+                }
+
+                else {
+                    return ConstantsErr::new(
+                        child.into(), ConstantsErrType::MisplacedMarker));
+                }
+
+                location += 2;
+            }
+
+            _ => 0 
+        }
+    }
+    
+    fn size_of_ident(
+        const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
+        op_map: &OpMap<'a>,
+        ident: &'a str,
+    ) Result<usize, ConstantsErr<'a>> {
+        match const_map[ident] {
+            ConstExpr::Value(value) => {
+                match value {
+                    Value::Usize(v) => location += Self::size_of_num(v),
+
+                    Value::Str(v) => location += v.len(),
+
+                    _ => unreachable!()
+                }
+            },
+
+            ConstExpr::Expr(expr) => {
+                //TODO
+                // Try to find size of the expr, 
+                // or its dependencies, then the expr.
+            },
+
+            ConstExpr::Mark => location += 2,
+
+            _ => unreachable!(),
+        }
+    }
+
+    fn size_of_expr(lit: &TokenRef<'a>) -> Option<usize> {
+
+    }
+
+    fn size_of_lit(lit: &TokenRef<'a>) -> usize {
         let litx = lit.get(0); 
         return match litx.ty() {
-            LitDec|LitHex|LitBin => Self::size_of(litx.value().as_usize()),
+            LitDec|LitHex|LitBin => Self::size_of_num(litx.value().as_usize()),
 
             LitStr => litx.value().as_str().len(),
 
@@ -131,7 +204,7 @@ impl<'a> Constants<'a> {
         }
     }
 
-    fn size_of(value: usize) -> usize {
+    fn size_of_num(value: usize) -> usize {
         match value {
             value if value <= 255 => 1,
 
@@ -140,25 +213,6 @@ impl<'a> Constants<'a> {
             //TODO return Option?
             _ => unreachable!("Exceeding number capacity.")
         }
-    }
-
-    pub fn get_defines_sizes(
-        defines: &[&TokenRef<'a>],
-    ) -> HashMap<TokenRef<'a>, usize> {
-        let hashmap = HashMap::new();
-
-        for define in defines {
-            let token = define.get(2);
-
-            let size = match token.ty() {
-                Lit => Self::sizeof_lit(token),
-
-                ty => unreachable!(
-                    &format!("Unexpected child type in define: {:?}", ty))
-            };
-        }
-
-        hashmap
     }
 
 }
