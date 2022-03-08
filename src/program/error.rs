@@ -412,6 +412,7 @@ impl<'a> OpErr<'a> {
 #[derive(Debug)]
 pub enum ConstantsErrType {
     DuplicateKey,
+    MisplacedMarker,
 }
 
 #[derive(Debug)]
@@ -432,6 +433,9 @@ impl<'a> ConstantsErr<'a> {
         match self.ty {
             DuplicateKey =>
                 "DuplicateKey: Constant's key already existed.",
+            
+            MisplacedMarker =>
+                "MisplacedMarker: The location of the marker does match its value.",
         }
     }
 

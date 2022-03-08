@@ -45,7 +45,7 @@ impl<'a> Constants<'a> {
         let mut fail_safe = RECURSION_LIMIT;
         let mut map = Self::get_constants(ast, HashMap::new(), &mut fail_safe)?; 
 
-        Self::resolve(&mut map, op_map, ast);
+        Self::resolve(&mut map, op_map, ast)?;
 
         Ok(Self{ map })
     }
@@ -112,85 +112,94 @@ impl<'a> Constants<'a> {
         const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
         op_map: &OpMap<'a>,
         ast: &'a TokenRef<'a>,
-    ) {
+    ) -> Result<(), ConstantsErr<'a>> {
         let mut location = 0;
 
         // Calculate the size of labels and validate markers.
         for child in ast.children() {
-            location += size_of_token(child)?; 
+            Self::size_of_token(const_map, op_map, child, &mut location)?; 
         }
+
+        Ok(())
     }
 
+    /// Increases the current location by the size in bytes of a token.
+    //TODO rename
     fn size_of_token(
         const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
         op_map: &OpMap<'a>,
         token: &'a TokenRef<'a>,
-    ) Result<usize, ConstantsErr<'a>> {
-        return match child.ty() {
-            MacroCall => {}//TODO recursion.
+        location: &mut usize,
+    ) -> Result<(), ConstantsErr<'a>> {
+        match token.ty() {
+            //MacroCall => {}//TODO recursion.
 
-            Instruction => location += op_map.get(child).len as usize,
+            Instruction => *location += op_map.get(token).len as usize,
 
-            Lit => location += Self::size_of_lit(child),
+            Lit => *location += Self::size_of_lit(token),
 
-            Identifier => Self::size_of_ident(child.value().as_str())?,
+            Identifier => {
+                let ident = token.value().as_str();
+                *location += Self::size_of_ident(const_map, op_map, ident)?;
+            }
 
             Label => {
-                let value = ConstExpr::Value(Value::Usize(location));
-                *const_map.get_mut(child.value().as_str()).unwrap() = value;
-                location += 2;
+                let value = ConstExpr::Value(Value::Usize(*location));
+                *const_map.get_mut(token.value().as_str()).unwrap() = value;
+                *location += 2;
             }
 
             AnonMark|NamedMark => {
-                let marker_location = child.get(0).get(0).value().as_usize();
+                let marker_location = token.get(0).get(0).value().as_usize();
 
-                if location == marker_location {
-                    let value = ConstExpr::Value(Value::Usize(location));
-                    *const_map.get_mut(child.value().as_str()).unwrap() = value;
+                if *location == marker_location {
+                    let value = ConstExpr::Value(Value::Usize(*location));
+                    *const_map.get_mut(token.value().as_str()).unwrap() = value;
                 }
 
                 else {
-                    return ConstantsErr::new(
-                        child.into(), ConstantsErrType::MisplacedMarker));
+                    return Err(ConstantsErr::new(
+                        ConstantsErrType::MisplacedMarker, token.into()));
                 }
 
-                location += 2;
+                *location += 2;
             }
 
-            _ => 0 
+            _ => {}
         }
+
+        Ok(())
     }
     
     fn size_of_ident(
         const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
         op_map: &OpMap<'a>,
         ident: &'a str,
-    ) Result<usize, ConstantsErr<'a>> {
+    ) -> Result<usize, ConstantsErr<'a>> {
         match const_map[ident] {
             ConstExpr::Value(value) => {
                 match value {
-                    Value::Usize(v) => location += Self::size_of_num(v),
+                    Value::Usize(v) => Ok(Self::size_of_num(v)),
 
-                    Value::Str(v) => location += v.len(),
+                    Value::Str(v) => Ok(v.len()),
 
                     _ => unreachable!()
                 }
             },
 
-            ConstExpr::Expr(expr) => {
-                //TODO
-                // Try to find size of the expr, 
-                // or its dependencies, then the expr.
-            },
+            ConstExpr::Expr(expr) => Ok(Self::size_of_expr(expr)?),
 
-            ConstExpr::Mark => location += 2,
+            ConstExpr::Mark => Ok(2),
 
             _ => unreachable!(),
         }
     }
 
-    fn size_of_expr(lit: &TokenRef<'a>) -> Option<usize> {
-
+    fn size_of_expr(expr: &TokenRef<'a>) -> Result<usize, ConstantsErr<'a>> {
+        todo!()
+        //TODO
+        // Try to find size of the expr, 
+        // or its dependencies, then the expr.
     }
 
     fn size_of_lit(lit: &TokenRef<'a>) -> usize {
@@ -210,7 +219,7 @@ impl<'a> Constants<'a> {
 
             value if (256..=65536).contains(&value) => 2,
 
-            //TODO return Option?
+            //TODO return Err
             _ => unreachable!("Exceeding number capacity.")
         }
     }
