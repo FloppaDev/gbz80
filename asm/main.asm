@@ -1,8 +1,8 @@
 ; Arithmetic expressions are only allowed in #def directives.
-#def FOO 10
-#def BAR "Hey that's a string"
-#def BAZ &10AB
-#def FLAGS %0110_1010
+#db FOO 10
+#ds BAR "Hey that's a string"
+#dw BAZ &10AB
+#db FLAGS %0110_1010
 
 ;Interrupts
 &0040: reti     ;v-blank

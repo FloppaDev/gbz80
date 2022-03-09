@@ -27,9 +27,6 @@ pub enum ConstExpr<'a> {
 
     /// Known value.
     Value(Value<'a>),
-
-    /// Expression needs to be resolved.
-    Expr(&'a TokenRef<'a>),
 }
 
 pub struct Constants<'a> {
@@ -92,11 +89,30 @@ impl<'a> Constants<'a> {
 
                 Directive => {
                     let child = token.get(0);
+                    let ident = child.get(0).value().as_str();
 
-                    if child.ty() == Define {
-                        let ident = child.get(0).value().as_str();
-                        let value = ConstExpr::Expr(child);
-                        map.insert(ident, value).xor(nil).ok_or(err)?;
+                    match child.ty() {
+                        DefB => {
+                            let value = ConstExpr::Value(Value::Usize(1));
+                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                        }
+
+                        DefW => {
+                            let value = ConstExpr::Value(Value::Usize(2));
+                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                        }
+
+                        DefS => {
+                            let len = child.get(0).value().as_str().len();
+                            let value = ConstExpr::Value(Value::Usize(len));
+                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                        }
+
+                        Include => {
+                            //TODO
+                        }
+
+                        _ => {}
                     }
                 }
 
@@ -124,7 +140,7 @@ impl<'a> Constants<'a> {
     }
 
     /// Increases the current location by the size in bytes of a token.
-    //TODO rename
+    //TODO rename, it assigns to location.
     fn size_of_token(
         const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
         op_map: &OpMap<'a>,
@@ -132,7 +148,14 @@ impl<'a> Constants<'a> {
         location: &mut usize,
     ) -> Result<(), ConstantsErr<'a>> {
         match token.ty() {
-            //MacroCall => {}//TODO recursion.
+            MacroCall => {
+                for child in token.children() {
+                    if child.ty() == MacroBody {
+                        Self::size_of_token(const_map, op_map, child, location)?;
+                        break;
+                    }
+                }
+            }
 
             Instruction => *location += op_map.get(token).len as usize,
 
@@ -185,21 +208,12 @@ impl<'a> Constants<'a> {
 
                     _ => unreachable!()
                 }
-            },
-
-            ConstExpr::Expr(expr) => Ok(Self::size_of_expr(expr)?),
+            }
 
             ConstExpr::Mark => Ok(2),
 
             _ => unreachable!(),
         }
-    }
-
-    fn size_of_expr(expr: &TokenRef<'a>) -> Result<usize, ConstantsErr<'a>> {
-        todo!()
-        //TODO
-        // Try to find size of the expr, 
-        // or its dependencies, then the expr.
     }
 
     fn size_of_lit(lit: &TokenRef<'a>) -> usize {

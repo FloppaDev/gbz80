@@ -30,7 +30,9 @@
             }
 
             Directive {
-                Define
+                DefB
+                DefW
+                DefS
                 Include
 
                 Macro { MacroIdent MacroArg MacroBody }

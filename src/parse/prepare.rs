@@ -208,12 +208,14 @@ fn identify(
                 return Ok(vec![ (LitStr, charset::no_check(value)) ]);
             }
 
-            // "#def or "include or #macro
+            // db, dw, ds, include, or macro
             '#' => {
                 let directive = word.get(1..).ok_or(InvalidDirective)?;
 
                 return match directive {
-                    "def" => Ok(vec![ (Define, charset::no_check("")) ]),
+                    "db" => Ok(vec![ (DefB, charset::no_check("")) ]),
+                    "dw" => Ok(vec![ (DefW, charset::no_check("")) ]),
+                    "ds" => Ok(vec![ (DefS, charset::no_check("")) ]),
                     "include" => Ok(vec![ (Include, charset::no_check("")) ]),
                     "macro" => Ok(vec![ (Macro, charset::no_check("")) ]),
                     _ => Err(ParseErrType::InvalidDirectiveIdent)

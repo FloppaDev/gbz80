@@ -106,7 +106,9 @@ pub enum TokenType {
                 UnNeg,
             Identifier,
     Directive,
-        Define,
+        DefB,
+        DefW,
+        DefS,
         Include,
         Macro,
             MacroIdent,
@@ -146,7 +148,7 @@ pub const fn parent_type(ty: TokenType) -> TokenType {
         BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
         BinXor|BinPow|UnNot|UnNeg => Expr,
 
-        Define|Include|Macro => Directive,
+        DefB|DefW|DefS|Include|Macro => Directive,
 
         MacroIdent|MacroArg|MacroBody => Macro,
 
@@ -164,8 +166,8 @@ pub const fn has_value(ty: TokenType) -> bool {
 /// Is it one the tokens that end on a newline?
 pub const fn ends_on_newline(ty: TokenType) -> bool {
     matches!(ty,
-        Instruction|Argument|MacroCall|Directive|Marker|Define|Include|
-        Macro|NamedMark|AnonMark|Label)
+        Instruction|Argument|MacroCall|Directive|Marker|DefB|DefW|DefS|
+        Include|Macro|NamedMark|AnonMark|Label)
 }
 
 /// Find a token type that can be identified from a word.

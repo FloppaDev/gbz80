@@ -206,7 +206,7 @@ impl<'a> Ast<'a> {
                     }
                 }
 
-                Define|Include => {
+                DefB|DefW|DefS|Include => {
                     let t = Self::empty(Directive, line_number, line);
                     *selection = self.push(*selection, t);
                     *selection = self.push(*selection, token);
