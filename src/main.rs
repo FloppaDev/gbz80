@@ -93,7 +93,7 @@ use crate::{
         macros::Macros,
     },
     write::{
-        instructions::OpMap,
+        ops::OpMap,
         constants::Constants,
     },
     program::clargs,

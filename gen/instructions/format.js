@@ -49,7 +49,7 @@ for (instr of INSTRUCTIONS) {
 
         let pName  = pascal(instr.name);
         curOpStr += 
-            `${ttt}${pName} => {\n${ttt}${t}Self::get_opcode(instruction, ${instr.cb}, vec![\n`;
+            `${ttt}${pName} => {\n${ttt}${t}OpCode::get_opcode(instruction, ${instr.cb}, vec![\n`;
 
         name = instr.name;
     }

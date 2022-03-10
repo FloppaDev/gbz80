@@ -1,0 +1,221 @@
+
+use crate::{
+    write::instructions,
+    parse::lex::TokenType::{self, *},
+    token::{
+        read::TokenRef,
+    },
+    program::error::{OpErr, OpErrType},
+};
+
+use Constant::*;
+
+use std::collections::HashMap;
+
+pub enum Constant {
+    BitN(usize),
+    Byte,
+    Word,
+}
+
+pub enum Arg {
+    /// Address.
+    At(Box<Arg>),
+
+    /// Identified by a \`TokenType\`.
+    Token(TokenType),
+
+    /// Constant value.
+    Const(Constant),
+}
+
+impl Arg {
+
+    fn cmp_const(constant: &Constant, token: &TokenRef) -> bool {
+        match token.ty() {
+            Lit => {
+                match constant {
+                    Byte => {
+                        match token.get(0).ty() {
+                            LitDec|LitHex|LitBin => {
+                                return token.get(0).value().as_usize() <= 255;
+                            }
+
+                            LitStr => {
+                                return token.get(0).value().as_str().len() == 1;
+                            }
+
+                            _ => unreachable!()
+                        }
+                    }
+
+                    Word => {
+                        match token.get(0).ty() {
+                            LitDec|LitHex|LitBin => {
+                                return token.get(0).value().as_usize() <= 65535;
+                            }
+
+                            LitStr => {
+                                return token.get(0).value().as_str().len() == 1;
+                            }
+
+                            _ => unreachable!()
+                        }
+                    }
+
+                    BitN(b) => {
+                        if token.get(0).ty() == LitDec {
+                            return token.get(0).value().as_usize() == *b;
+                        }
+
+                        return false;
+                    }
+                }
+            }
+
+            Identifier => {
+                //TODO
+                return true;
+            }
+
+            _ => false
+        }
+    }
+
+    //TODO Return Result.
+    fn cmp(&self, token: &TokenRef) -> bool {
+        match self {
+            Arg::At(arg) if token.ty() == At => {
+                match &**arg {
+                    Arg::Token(ty) => *ty == token.ty(),
+
+                    Arg::Const(constant) => Self::cmp_const(&constant, token),
+
+                    _ => unreachable!()
+                }
+            }
+
+            Arg::Token(ty) => token.ty() == *ty,
+                
+            Arg::Const(constant) => Self::cmp_const(&constant, token),
+
+            _ => false
+        }
+    }
+
+}
+
+pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
+
+impl<'a> OpMap<'a> {
+
+    pub fn get(&self, token: &TokenRef<'a>) -> &OpCode {
+        let Self(map) = self; 
+
+        map.get(token).unwrap()
+    }
+
+    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
+        let mut map = HashMap::new(); 
+        let mut errors = vec![];
+
+        Self::walk(ast, &mut map, &mut errors);
+
+        if !errors.is_empty() {
+            Err(errors)
+        }else {
+            Ok(Self(map))
+        }
+    }
+
+    fn walk(
+        ast: &'a TokenRef<'a>,
+        map: &mut HashMap<&TokenRef<'a>, OpCode>, 
+        errors: &mut Vec<OpErr<'a>>,
+    ) {
+        for token in ast.children() {
+            match token.ty() {
+                MacroCall => Self::walk(token, map, errors),
+
+                Instruction => {
+                    let opcode = instructions::find(token);
+
+                    if opcode.is_none() {
+                        errors.push(
+                            OpErr::new(OpErrType::NotFound, token.into()));
+
+                        continue;
+                    }
+
+                    map.insert(token, opcode.unwrap());
+                }
+
+                _ => {}
+            }
+        }
+    }
+
+}
+
+pub struct OpCode {
+    pub cb: bool,
+    pub code: u8,
+    pub len: u8,
+}
+
+impl OpCode {
+
+    fn cmp_args(
+        instr_args: &[&TokenRef],
+        op_args: &[Arg],
+    ) -> bool {
+        if instr_args.len() > op_args.len() {
+            return false;
+        }
+
+        if op_args.is_empty() && instr_args.is_empty() {
+            return true;
+        }
+
+        if let Arg::Token(ty) = op_args[0] {
+            if ty == A {
+                if instr_args.is_empty() && op_args.len() == 1 {
+                    return true;
+                }
+
+                if instr_args.len() == 1 && op_args.len() == 2 {
+                    return op_args[1].cmp(instr_args[0]); 
+                }
+            }
+        }
+
+        for i in 0..instr_args.len() {
+            if !op_args[i].cmp(instr_args[i]) {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn get_opcode(
+        instruction: &TokenRef, 
+        cb: bool, 
+        ops: Vec<(u8, u8, Vec<Arg>)>
+    ) -> Option<Self> {
+        let instr_children = instruction.children();
+
+        for op in ops {
+            let (len, code, op_args) = op;
+
+            if Self::cmp_args(&instr_children[1..], &op_args) {
+                let opcode = Self{ cb, code, len };
+
+                return Some(opcode);     
+            }
+        }
+
+        None
+    }
+
+}

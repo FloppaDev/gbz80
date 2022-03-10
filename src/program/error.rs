@@ -140,7 +140,7 @@ impl<'a> SplitErr<'a> {
 
 #[derive(Debug)]
 pub enum ParseErrType {
-    /// Number literals are either 1 or 2 bytes long. (255 or 65536 max value)
+    /// Number literals are either 1 or 2 bytes long. (255 or 65535 max value)
     HexOverflow,
     DecOverflow,
     BinOverflow,

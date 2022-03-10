@@ -11,7 +11,7 @@ use crate::{
         error::{ConstantsErr, ConstantsErrType},
         RECURSION_LIMIT,
     },
-    write::instructions::OpMap,
+    write::ops::OpMap,
 };
 
 use std::collections::HashMap;
@@ -250,7 +250,7 @@ impl<'a> Constants<'a> {
         match value {
             value if value <= 255 => 1,
 
-            value if (256..=65536).contains(&value) => 2,
+            value if (256..=65535).contains(&value) => 2,
 
             //TODO return Err
             _ => unreachable!("Exceeding number capacity.")

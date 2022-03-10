@@ -5,136 +5,21 @@
 //
 // Do no edit manually.
 use crate::{
-    parse::lex::TokenType::{self, *},
+    write::ops::{OpCode, Arg, Constant::*},
+    parse::lex::TokenType::*,
     token::{
         read::TokenRef,
     },
-    program::error::{OpErr, OpErrType},
 };
 
-use Constant::*;
+pub fn find(instruction: &TokenRef) -> Option<OpCode> {
+    assert_eq!(instruction.ty(), Instruction);
 
-use std::collections::HashMap;
+    let instr_ty = instruction.get(0).get(0).ty();
 
-pub enum Constant {
-    Byte,
-    Word,
-}
-
-enum Arg {
-    /// Address.
-    At(Box<Arg>),
-
-    /// Identified by a `TokenType`.
-    Token(TokenType),
-
-    /// Constant value.
-    Const(Constant),
-}
-
-impl Arg {
-
-    const fn cmp(token: &TokenRef) -> bool {
-        todo!()//TODO? 
-    }
-
-}
-
-pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
-
-impl<'a> OpMap<'a> {
-
-    pub fn get(&self, token: &TokenRef<'a>) -> &OpCode {
-        let Self(map) = self; 
-
-        map.get(token).unwrap()
-    }
-
-    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
-        let mut map = HashMap::new(); 
-        let mut errors = vec![];
-
-        Self::walk(ast, &mut map, &mut errors);
-
-        if !errors.is_empty() {
-            Err(errors)
-        }else {
-            Ok(Self(map))
-        }
-    }
-
-    fn walk(
-        ast: &'a TokenRef<'a>,
-        map: &mut HashMap<&TokenRef<'a>, OpCode>, 
-        errors: &mut Vec<OpErr<'a>>,
-    ) {
-        for token in ast.children() {
-            match token.ty() {
-                MacroCall => Self::walk(token, map, errors),
-
-                Instruction => {
-                    let opcode = OpCode::find(token);
-
-                    if opcode.is_none() {
-                        errors.push(
-                            OpErr::new(OpErrType::NotFound, token.into()));
-
-                        continue;
-                    }
-
-                    map.insert(token, opcode.unwrap());
-                }
-
-                _ => {}
-            }
-        }
-    }
-
-}
-
-pub struct OpCode {
-    pub cb: bool,
-    pub code: u8,
-    pub len: u8,
-}
-
-impl OpCode {
-
-    fn cmp_args(
-        instr_args: &[&TokenRef],
-        op_args: &[Arg],
-    ) -> bool {
-        todo!()//TODO
-    }
-
-    fn get_opcode(
-        instruction: &TokenRef, 
-        cb: bool, 
-        ops: Vec<(u8, u8, Vec<Arg>)>
-    ) -> Option<Self> {
-        let instr_children = instruction.children();
-
-        for op in ops {
-            let (len, code, op_args) = op;
-
-            if Self::cmp_args(&instr_children[1..], &op_args) {
-                let opcode = Self{ cb, code, len };
-
-                return Some(opcode);     
-            }
-        }
-
-        None
-    }
-
-    pub fn find(instruction: &TokenRef) -> Option<Self> {
-        assert_eq!(instruction.ty(), Instruction);
-
-        let instr_ty = instruction.get(0).get(0).ty();
-
-        match instr_ty {
+    match instr_ty {
             Adc => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x88, vec![Arg::Token(A), Arg::Token(B)]),
                     (1, 0x89, vec![Arg::Token(A), Arg::Token(FlagC)]),
                     (1, 0x8A, vec![Arg::Token(A), Arg::Token(D)]),
@@ -148,7 +33,7 @@ impl OpCode {
             }
 
             Add => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x09, vec![Arg::Token(Hl), Arg::Token(Bc)]),
                     (1, 0x19, vec![Arg::Token(Hl), Arg::Token(De)]),
                     (1, 0x29, vec![Arg::Token(Hl), Arg::Token(Hl)]),
@@ -167,7 +52,7 @@ impl OpCode {
             }
 
             And => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xA0, vec![Arg::Token(B)]),
                     (1, 0xA1, vec![Arg::Token(FlagC)]),
                     (1, 0xA2, vec![Arg::Token(D)]),
@@ -181,7 +66,7 @@ impl OpCode {
             }
 
             Call => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (3, 0xC4, vec![Arg::Token(FlagNz), Arg::Const(Word)]),
                     (3, 0xCC, vec![Arg::Token(FlagZ), Arg::Const(Word)]),
                     (3, 0xCD, vec![Arg::Const(Word)]),
@@ -191,13 +76,13 @@ impl OpCode {
             }
 
             Ccf => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x3F, vec![]),
                 ])
             }
 
             Cp => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xB8, vec![Arg::Token(B)]),
                     (1, 0xB9, vec![Arg::Token(FlagC)]),
                     (1, 0xBA, vec![Arg::Token(D)]),
@@ -211,19 +96,19 @@ impl OpCode {
             }
 
             Cpl => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x2F, vec![]),
                 ])
             }
 
             Daa => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x27, vec![]),
                 ])
             }
 
             Dec => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x05, vec![Arg::Token(B)]),
                     (1, 0x0B, vec![Arg::Token(Bc)]),
                     (1, 0x0D, vec![Arg::Token(FlagC)]),
@@ -240,25 +125,25 @@ impl OpCode {
             }
 
             Di => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xF3, vec![]),
                 ])
             }
 
             Ei => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xFB, vec![]),
                 ])
             }
 
             Halt => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x76, vec![]),
                 ])
             }
 
             Inc => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x03, vec![Arg::Token(Bc)]),
                     (1, 0x04, vec![Arg::Token(B)]),
                     (1, 0x0C, vec![Arg::Token(FlagC)]),
@@ -275,7 +160,7 @@ impl OpCode {
             }
 
             Jp => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (3, 0xC2, vec![Arg::Token(FlagNz), Arg::Const(Word)]),
                     (3, 0xC3, vec![Arg::Const(Word)]),
                     (3, 0xCA, vec![Arg::Token(FlagZ), Arg::Const(Word)]),
@@ -286,7 +171,7 @@ impl OpCode {
             }
 
             Jr => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (2, 0x18, vec![Arg::Const(Byte)]),
                     (2, 0x20, vec![Arg::Token(FlagNz), Arg::Const(Byte)]),
                     (2, 0x28, vec![Arg::Token(FlagZ), Arg::Const(Byte)]),
@@ -296,7 +181,7 @@ impl OpCode {
             }
 
             Ld => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (3, 0x01, vec![Arg::Token(Bc), Arg::Const(Word)]),
                     (1, 0x02, vec![Arg::At(Box::new(Arg::Token(Bc))), Arg::Token(A)]),
                     (2, 0x06, vec![Arg::Token(B), Arg::Const(Byte)]),
@@ -386,40 +271,40 @@ impl OpCode {
             }
 
             Ldd => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x32, vec![Arg::At(Box::new(Arg::Token(Hl))), Arg::Token(A)]),
                     (1, 0x3A, vec![Arg::Token(A), Arg::At(Box::new(Arg::Token(Hl)))]),
                 ])
             }
 
             Ldh => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (2, 0xE0, vec![Arg::At(Box::new(Arg::Const(Byte))), Arg::Token(A)]),
                     (2, 0xF0, vec![Arg::Token(A), Arg::At(Box::new(Arg::Const(Byte)))]),
                 ])
             }
 
             Ldhl => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (2, 0xF8, vec![Arg::Token(Hl), Arg::Token(Sp)]),
                 ])
             }
 
             Ldi => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x22, vec![Arg::At(Box::new(Arg::Token(Hl))), Arg::Token(A)]),
                     (1, 0x2A, vec![Arg::Token(A), Arg::At(Box::new(Arg::Token(Hl)))]),
                 ])
             }
 
             Nop => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x00, vec![]),
                 ])
             }
 
             Or => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xB0, vec![Arg::Token(B)]),
                     (1, 0xB1, vec![Arg::Token(FlagC)]),
                     (1, 0xB2, vec![Arg::Token(D)]),
@@ -433,7 +318,7 @@ impl OpCode {
             }
 
             Pop => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xC1, vec![Arg::Token(Bc)]),
                     (1, 0xD1, vec![Arg::Token(De)]),
                     (1, 0xE1, vec![Arg::Token(Hl)]),
@@ -442,7 +327,7 @@ impl OpCode {
             }
 
             Push => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xC5, vec![Arg::Token(Bc)]),
                     (1, 0xD5, vec![Arg::Token(De)]),
                     (1, 0xE5, vec![Arg::Token(Hl)]),
@@ -451,7 +336,7 @@ impl OpCode {
             }
 
             Ret => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xC0, vec![Arg::Token(FlagNz)]),
                     (1, 0xC8, vec![Arg::Token(FlagZ)]),
                     (1, 0xC9, vec![]),
@@ -461,37 +346,37 @@ impl OpCode {
             }
 
             Reti => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xD9, vec![]),
                 ])
             }
 
             Rla => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x17, vec![]),
                 ])
             }
 
             Rlca => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x07, vec![]),
                 ])
             }
 
             Rra => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x1F, vec![]),
                 ])
             }
 
             Rrca => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x0F, vec![]),
                 ])
             }
 
             Rst => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xC7, vec![Arg::Const(Word)]),
                     (1, 0xCF, vec![Arg::Const(Word)]),
                     (1, 0xD7, vec![Arg::Const(Word)]),
@@ -504,7 +389,7 @@ impl OpCode {
             }
 
             Sbc => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x98, vec![Arg::Token(A), Arg::Token(B)]),
                     (1, 0x99, vec![Arg::Token(A), Arg::Token(FlagC)]),
                     (1, 0x9A, vec![Arg::Token(A), Arg::Token(D)]),
@@ -518,19 +403,19 @@ impl OpCode {
             }
 
             Scf => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x37, vec![]),
                 ])
             }
 
             Stop => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (2, 0x10, vec![Arg::Const(Byte)]),
                 ])
             }
 
             Sub => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0x90, vec![Arg::Token(B)]),
                     (1, 0x91, vec![Arg::Token(FlagC)]),
                     (1, 0x92, vec![Arg::Token(D)]),
@@ -544,7 +429,7 @@ impl OpCode {
             }
 
             Xor => {
-                Self::get_opcode(instruction, false, vec![
+                OpCode::get_opcode(instruction, false, vec![
                     (1, 0xA8, vec![Arg::Token(B)]),
                     (1, 0xA9, vec![Arg::Token(FlagC)]),
                     (1, 0xAA, vec![Arg::Token(D)]),
@@ -560,7 +445,7 @@ impl OpCode {
             // CB instructions
 
             Bit => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x40, vec![Arg::Const(Byte), Arg::Token(B)]),
                     (2, 0x41, vec![Arg::Const(Byte), Arg::Token(FlagC)]),
                     (2, 0x42, vec![Arg::Const(Byte), Arg::Token(D)]),
@@ -629,7 +514,7 @@ impl OpCode {
             }
 
             Res => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x80, vec![Arg::Const(Byte), Arg::Token(B)]),
                     (2, 0x81, vec![Arg::Const(Byte), Arg::Token(FlagC)]),
                     (2, 0x82, vec![Arg::Const(Byte), Arg::Token(D)]),
@@ -698,7 +583,7 @@ impl OpCode {
             }
 
             Rl => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x10, vec![Arg::Token(B)]),
                     (2, 0x11, vec![Arg::Token(FlagC)]),
                     (2, 0x12, vec![Arg::Token(D)]),
@@ -711,7 +596,7 @@ impl OpCode {
             }
 
             Rlc => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x00, vec![Arg::Token(B)]),
                     (2, 0x01, vec![Arg::Token(FlagC)]),
                     (2, 0x02, vec![Arg::Token(D)]),
@@ -724,7 +609,7 @@ impl OpCode {
             }
 
             Rr => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x18, vec![Arg::Token(B)]),
                     (2, 0x19, vec![Arg::Token(FlagC)]),
                     (2, 0x1A, vec![Arg::Token(D)]),
@@ -737,7 +622,7 @@ impl OpCode {
             }
 
             Rrc => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x08, vec![Arg::Token(B)]),
                     (2, 0x09, vec![Arg::Token(FlagC)]),
                     (2, 0x0A, vec![Arg::Token(D)]),
@@ -750,7 +635,7 @@ impl OpCode {
             }
 
             Set => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0xC0, vec![Arg::Const(Byte), Arg::Token(B)]),
                     (2, 0xC1, vec![Arg::Const(Byte), Arg::Token(FlagC)]),
                     (2, 0xC2, vec![Arg::Const(Byte), Arg::Token(D)]),
@@ -819,7 +704,7 @@ impl OpCode {
             }
 
             Sla => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x20, vec![Arg::Token(B)]),
                     (2, 0x21, vec![Arg::Token(FlagC)]),
                     (2, 0x22, vec![Arg::Token(D)]),
@@ -832,7 +717,7 @@ impl OpCode {
             }
 
             Sra => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x28, vec![Arg::Token(B)]),
                     (2, 0x29, vec![Arg::Token(FlagC)]),
                     (2, 0x2A, vec![Arg::Token(D)]),
@@ -845,7 +730,7 @@ impl OpCode {
             }
 
             Srl => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x38, vec![Arg::Token(B)]),
                     (2, 0x39, vec![Arg::Token(FlagC)]),
                     (2, 0x3A, vec![Arg::Token(D)]),
@@ -858,7 +743,7 @@ impl OpCode {
             }
 
             Swap => {
-                Self::get_opcode(instruction, true, vec![
+                OpCode::get_opcode(instruction, true, vec![
                     (2, 0x30, vec![Arg::Token(B)]),
                     (2, 0x31, vec![Arg::Token(FlagC)]),
                     (2, 0x32, vec![Arg::Token(D)]),
@@ -872,6 +757,4 @@ impl OpCode {
 
             _ => unreachable!("Op not found"),
         }
-    }
-
 }
