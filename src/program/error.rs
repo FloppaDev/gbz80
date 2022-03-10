@@ -413,6 +413,7 @@ impl<'a> OpErr<'a> {
 pub enum ConstantsErrType {
     DuplicateKey,
     MisplacedMarker,
+    FileReadFailed,
 }
 
 #[derive(Debug)]
@@ -436,6 +437,9 @@ impl<'a> ConstantsErr<'a> {
             
             MisplacedMarker =>
                 "MisplacedMarker: The location of the marker does match its value.",
+
+            FileReadFailed =>
+                "FileReadFailed: The file to include could not be read.",
         }
     }
 

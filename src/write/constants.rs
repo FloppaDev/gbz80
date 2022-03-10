@@ -15,6 +15,8 @@ use crate::{
 };
 
 use std::collections::HashMap;
+use std::io::prelude::*;
+use std::fs::File;
 
 /// Holds the value of a constant or the token required to calculate it.
 #[derive(Copy, Clone)]
@@ -30,7 +32,8 @@ pub enum ConstExpr<'a> {
 }
 
 pub struct Constants<'a> {
-    map: HashMap<&'a str, ConstExpr<'a>>,
+    constants: HashMap<&'a str, ConstExpr<'a>>,
+    includes: HashMap<&'a str, Vec<u8>>,
 }
 
 impl<'a> Constants<'a> {
@@ -40,18 +43,28 @@ impl<'a> Constants<'a> {
         op_map: &OpMap<'a>,
     ) -> Result<Self, ConstantsErr<'a>> {
         let mut fail_safe = RECURSION_LIMIT;
-        let mut map = Self::get_constants(ast, HashMap::new(), &mut fail_safe)?; 
+        let mut constants = Self{ 
+            constants: HashMap::new(), 
+            includes: HashMap::new(),
+        };
 
-        Self::resolve(&mut map, op_map, ast)?;
+        constants = constants.get_constants(ast, &mut fail_safe)?; 
 
-        Ok(Self{ map })
+        let mut location = 0;
+
+        // Calculate the size of labels and validate markers.
+        for child in ast.children() {
+            constants.size_of_token(op_map, child, &mut location)?; 
+        }
+
+        Ok(constants)
     }
 
     fn get_constants(
+        mut self,
         ast: &'a TokenRef<'a>,
-        mut map: HashMap<&'a str, ConstExpr<'a>>,
         fail_safe: &mut usize,
-    ) -> Result<HashMap<&'a str, ConstExpr<'a>>, ConstantsErr<'a>> {
+    ) -> Result<Self, ConstantsErr<'a>> {
         *fail_safe -= 1;
 
         if *fail_safe == 0 {
@@ -64,7 +77,7 @@ impl<'a> Constants<'a> {
             let err = ConstantsErr::new(ConstantsErrType::DuplicateKey, token.into());
 
             match token.ty() {
-                MacroCall|MacroBody => map = Self::get_constants(token, map, fail_safe)?,
+                MacroCall|MacroBody => self = self.get_constants(token, fail_safe)?,
 
                 Marker => {
                     let child = token.get(0);
@@ -74,13 +87,13 @@ impl<'a> Constants<'a> {
                             let ident = child.value().as_str();
                             let value = ConstExpr::Mark;
 
-                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         NamedMark => {
                             let ident = child.value().as_str();
                             let value = ConstExpr::Value(*child.get(0).get(0).value());
-                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         _ => {}
@@ -94,22 +107,31 @@ impl<'a> Constants<'a> {
                     match child.ty() {
                         DefB => {
                             let value = ConstExpr::Value(Value::Usize(1));
-                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         DefW => {
                             let value = ConstExpr::Value(Value::Usize(2));
-                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         DefS => {
                             let len = child.get(0).value().as_str().len();
                             let value = ConstExpr::Value(Value::Usize(len));
-                            map.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         Include => {
-                            //TODO
+                            let path = child.get(0).get(0).value().as_str();
+                            
+                            if self.includes.get(path).is_none() {
+                                let mut buffer = vec![];
+                                let mut file = File::open(path).map_err(|_| ConstantsErr::new(
+                                    ConstantsErrType::FileReadFailed, child.into()))?;
+                                file.read_to_end(&mut buffer).map_err(|_| ConstantsErr::new(
+                                    ConstantsErrType::FileReadFailed, child.into()))?;
+                                self.includes.insert(path, buffer);
+                            }
                         }
 
                         _ => {}
@@ -120,29 +142,13 @@ impl<'a> Constants<'a> {
             }
         }
 
-        Ok(map)
-    }
-
-    /// Calculate values in expressions and labels.
-    fn resolve(
-        const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
-        op_map: &OpMap<'a>,
-        ast: &'a TokenRef<'a>,
-    ) -> Result<(), ConstantsErr<'a>> {
-        let mut location = 0;
-
-        // Calculate the size of labels and validate markers.
-        for child in ast.children() {
-            Self::size_of_token(const_map, op_map, child, &mut location)?; 
-        }
-
-        Ok(())
+        Ok(self)
     }
 
     /// Increases the current location by the size in bytes of a token.
-    //TODO rename, it assigns to location.
+    //TODO rename, it assigns to location and constants.
     fn size_of_token(
-        const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
+        &mut self,
         op_map: &OpMap<'a>,
         token: &'a TokenRef<'a>,
         location: &mut usize,
@@ -151,7 +157,7 @@ impl<'a> Constants<'a> {
             MacroCall => {
                 for child in token.children() {
                     if child.ty() == MacroBody {
-                        Self::size_of_token(const_map, op_map, child, location)?;
+                        self.size_of_token(op_map, child, location)?;
                         break;
                     }
                 }
@@ -163,12 +169,12 @@ impl<'a> Constants<'a> {
 
             Identifier => {
                 let ident = token.value().as_str();
-                *location += Self::size_of_ident(const_map, op_map, ident)?;
+                *location += self.size_of_ident(op_map, ident)?;
             }
 
             Label => {
                 let value = ConstExpr::Value(Value::Usize(*location));
-                *const_map.get_mut(token.value().as_str()).unwrap() = value;
+                *self.constants.get_mut(token.value().as_str()).unwrap() = value;
                 *location += 2;
             }
 
@@ -177,7 +183,7 @@ impl<'a> Constants<'a> {
 
                 if *location == marker_location {
                     let value = ConstExpr::Value(Value::Usize(*location));
-                    *const_map.get_mut(token.value().as_str()).unwrap() = value;
+                    *self.constants.get_mut(token.value().as_str()).unwrap() = value;
                 }
 
                 else {
@@ -188,6 +194,19 @@ impl<'a> Constants<'a> {
                 *location += 2;
             }
 
+            Directive => {
+                let dir = token.get(0);
+                
+                match dir.ty() {
+                    Include => {
+                        let path = dir.get(0).get(0).value().as_str();
+                        *location += self.includes.get(path).unwrap().len();
+                    }
+
+                     _ => {}
+                }
+            }
+
             _ => {}
         }
 
@@ -195,11 +214,11 @@ impl<'a> Constants<'a> {
     }
     
     fn size_of_ident(
-        const_map: &mut HashMap<&'a str, ConstExpr<'a>>,
+        &self,
         op_map: &OpMap<'a>,
         ident: &'a str,
     ) -> Result<usize, ConstantsErr<'a>> {
-        match const_map[ident] {
+        match self.constants[ident] {
             ConstExpr::Value(value) => {
                 match value {
                     Value::Usize(v) => Ok(Self::size_of_num(v)),
