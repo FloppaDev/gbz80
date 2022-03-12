@@ -21,8 +21,10 @@ pub struct Word<'a> {
 pub struct Split<'a> {
     /// String slice of a whole line.
     lines: Vec<&'a str>,
+
     /// Maps line indices to line numbers from the source file.
     line_numbers: Vec<usize>,
+
     /// Word slices along with their line index.
     words: Vec<Word<'a>>,
 }

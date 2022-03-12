@@ -22,6 +22,10 @@ pub enum Constant {
 impl Constant {
 
     fn cmp(&self, token: &TokenRef) -> bool {
+        if token.ty() == Identifier {
+            return true;
+        }
+
         match self {
             Byte => {
                 match token.ty() {
@@ -41,8 +45,6 @@ impl Constant {
 
             BitN(b) => (token.ty() == LitDec) && (token.value().as_usize() == *b)
         }
-
-        //TODO token.ty == Identifier 
     }
 
 }
@@ -125,12 +127,9 @@ impl<'a> OpMap<'a> {
                     let opcode = instructions::find(token);
 
                     if opcode.is_none() {
-                        println!("\x1b[33;40mErr: {} not found\x1b[0m", token.line().trim());
                         errors.push(OpErr::new(OpErrType::NotFound, token.into()));
                         continue;
                     }
-
-                    println!("\x1b[32;40mOp found\x1b[0m");
 
                     map.insert(token, opcode.unwrap());
                 }
@@ -173,7 +172,6 @@ impl OpCode {
 
         for i in 0..instr_args.len() {
             if !op_args[i].cmp(instr_args[i]) {
-                println!("{:?} != {:?}", instr_args[i].ty(), op_args[i]);
                 return false;
             }
         }

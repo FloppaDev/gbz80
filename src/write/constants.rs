@@ -102,20 +102,22 @@ impl<'a> Constants<'a> {
 
                 Directive => {
                     let child = token.get(0);
-                    let ident = child.get(0).value().as_str();
 
                     match child.ty() {
                         DefB => {
+                            let ident = child.get(0).value().as_str();
                             let value = ConstExpr::Value(Value::Usize(1));
                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         DefW => {
+                            let ident = child.get(0).value().as_str();
                             let value = ConstExpr::Value(Value::Usize(2));
                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         DefS => {
+                            let ident = child.get(0).value().as_str();
                             let len = child.get(0).value().as_str().len();
                             let value = ConstExpr::Value(Value::Usize(len));
                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
