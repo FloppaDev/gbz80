@@ -19,23 +19,10 @@ pub enum Constant {
     Word,
 }
 
-#[derive(Debug)]
-pub enum Arg {
-    /// Address.
-    At(Box<Arg>),
+impl Constant {
 
-    /// Identified by a \`TokenType\`.
-    Token(TokenType),
-
-    /// Constant value.
-    Const(Constant),
-}
-
-impl Arg {
-
-    fn cmp_const(constant: &Constant, token: &TokenRef) -> bool {
-        println!("{:?}", token.ty());
-        match constant {
+    fn cmp(&self, token: &TokenRef) -> bool {
+        match self {
             Byte => {
                 match token.ty() {
                     LitDec|LitHex|LitBin => token.value().as_usize() <= 255,
@@ -58,26 +45,32 @@ impl Arg {
         //TODO token.ty == Identifier 
     }
 
-    fn leaf<'a>(token: &'a TokenRef<'a>) -> &'a TokenRef<'a> {
-        let mut current = token;
+}
 
-        while let Some(child) = current.try_get(0) {
-            current = child;
-        }
+#[derive(Debug)]
+pub enum Arg {
+    /// Address.
+    At(Box<Arg>),
 
-        current
-    }
+    /// Identified by a \`TokenType\`.
+    Token(TokenType),
+
+    /// Constant value.
+    Const(Constant),
+}
+
+impl Arg {
 
     //TODO Return Result.
     fn cmp(&self, token: &TokenRef) -> bool {
         match self {
             Arg::At(arg) if token.ty() == At => {
                 match &**arg {
-                    Arg::Token(ty) => *ty == Self::leaf(token).ty(),
+                    Arg::Token(ty) => *ty == token.leaf().ty(),
 
                     Arg::Const(constant) => {
                         if token.ty() == At {
-                            return Self::cmp_const(&constant, Self::leaf(token));
+                            return constant.cmp(token.leaf());
                         }
 
                         false
@@ -87,9 +80,9 @@ impl Arg {
                 }
             }
 
-            Arg::Token(ty) => Self::leaf(token).ty() == *ty,
+            Arg::Token(ty) => token.leaf().ty() == *ty,
                 
-            Arg::Const(constant) => Self::cmp_const(&constant, Self::leaf(token)),
+            Arg::Const(constant) => constant.cmp(token.leaf()),
 
             _ => false
         }
@@ -103,7 +96,6 @@ impl<'a> OpMap<'a> {
 
     pub fn get(&self, token: &TokenRef<'a>) -> &OpCode {
         let Self(map) = self; 
-
         map.get(token).unwrap()
     }
 
@@ -134,9 +126,7 @@ impl<'a> OpMap<'a> {
 
                     if opcode.is_none() {
                         println!("\x1b[33;40mErr: {} not found\x1b[0m", token.line().trim());
-                        errors.push(
-                            OpErr::new(OpErrType::NotFound, token.into()));
-
+                        errors.push(OpErr::new(OpErrType::NotFound, token.into()));
                         continue;
                     }
 
@@ -160,10 +150,7 @@ pub struct OpCode {
 
 impl OpCode {
 
-    fn cmp_args(
-        instr_args: &[&TokenRef],
-        op_args: &[Arg],
-    ) -> bool {
+    fn cmp_args(instr_args: &[&TokenRef], op_args: &[Arg],) -> bool {
         if instr_args.len() > op_args.len() {
             return false;
         }

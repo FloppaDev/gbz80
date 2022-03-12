@@ -3,7 +3,7 @@ use crate::{
     token::Value,
     parse::{
         text::{CheckedStr, charset},
-        lex::{self, TokenType::{self, *}},
+        lex::TokenType::{self, *},
         split::Split,
     },
     program::error::{ ErrCtx, ParseErr, ParseErrType::{self, *} },
@@ -82,7 +82,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseErrType> 
     let (ty, str_value) = word; 
 
     // There is no value to extract.
-    if !lex::has_value(ty) {
+    if !ty.has_value() {
         return Ok((ty, Value::Void));
     }
 
@@ -158,7 +158,7 @@ fn identify(
 
     // Find token type by name.
     // Works with registers and instruction names.
-    if let Some(ty) = lex::get_by_word(word) {
+    if let Some(ty) = TokenType::get_by_word(word) {
         return Ok(vec![ (ty, charset::no_check("")) ]);
     }
 
@@ -166,7 +166,7 @@ fn identify(
     let last = word.chars().last().unwrap();
 
     // Find token type by prefix.
-    if lex::has_prefix(c) {
+    if TokenType::has_prefix(c) {
         match c {
             '&' => {
                 // &6762:

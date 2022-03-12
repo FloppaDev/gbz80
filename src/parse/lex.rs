@@ -123,129 +123,133 @@ pub enum TokenType {
     Unknown, 
 }
 
-/// Returns the parent of a type.
-pub const fn parent_type(ty: TokenType) -> TokenType {
-    match ty {
-        Root|Instruction|Directive|Marker|Repeat|MacroCall|Unknown => Root,
+impl TokenType {
 
-        InstrName|Argument => Instruction,
+    /// Returns the parent of a type.
+    pub const fn parent_type(&self) -> TokenType {
+        match self {
+            Root|Instruction|Directive|Marker|Repeat|MacroCall|Unknown => Root,
 
-        Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|
-        Ld|Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|
-        Rrc|Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|
-        Reti|Rlca|Nop => InstrName,
+            InstrName|Argument => Instruction,
 
-        Register|Lit|At|Flag|Expr|Identifier => Argument,
+            Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|
+            Ld|Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|
+            Rrc|Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|
+            Reti|Rlca|Nop => InstrName,
 
-        A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp => Register,
+            Register|Lit|At|Flag|Expr|Identifier => Argument,
 
-        LitBin|LitHex|LitDec|LitStr => Lit,
+            A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp => Register,
 
-        At0|At1 => At,
+            LitBin|LitHex|LitDec|LitStr => Lit,
 
-        FlagZ|FlagNz|FlagC|FlagNc => Flag,
+            At0|At1 => At,
 
-        BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
-        BinXor|BinPow|UnNot|UnNeg => Expr,
+            FlagZ|FlagNz|FlagC|FlagNc => Flag,
 
-        DefB|DefW|DefS|Include|Macro => Directive,
+            BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
+            BinXor|BinPow|UnNot|UnNeg => Expr,
 
-        MacroIdent|MacroArg|MacroBody => Macro,
+            DefB|DefW|DefS|Include|Macro => Directive,
 
-        NamedMark|AnonMark|Label => Marker,
+            MacroIdent|MacroArg|MacroBody => Macro,
+
+            NamedMark|AnonMark|Label => Marker,
+        }
     }
-}
 
-/// Can this token type hold a value?
-pub const fn has_value(ty: TokenType) -> bool {
-    matches!(ty,
-        NamedMark|MacroArg|Label|Repeat|MacroIdent|Identifier|LitBin|
-        LitHex|LitDec|LitStr)
-}
-
-/// Is it one the tokens that end on a newline?
-pub const fn ends_on_newline(ty: TokenType) -> bool {
-    matches!(ty,
-        Instruction|Argument|MacroCall|Directive|Marker|DefB|DefW|DefS|
-        Include|Macro|NamedMark|AnonMark|Label)
-}
-
-/// Find a token type that can be identified from a word.
-pub fn get_by_word(name: &str) -> Option<TokenType> {
-    match name {
-        "adc" => Some(Adc),
-        "add" => Some(Add),
-        "and" => Some(And),
-        "bit" => Some(Bit),
-        "call" => Some(Call),
-        "ccf" => Some(Ccf),
-        "cp" => Some(Cp),
-        "cpl" => Some(Cpl),
-        "daa" => Some(Daa),
-        "dec" => Some(Dec),
-        "di" => Some(Di),
-        "ei" => Some(Ei),
-        "halt" => Some(Halt),
-        "inc" => Some(Inc),
-        "jp" => Some(Jp),
-        "jr" => Some(Jr),
-        "ld" => Some(Ld),
-        "ldh" => Some(Ldh),
-        "ldi" => Some(Ldi),
-        "ldd" => Some(Ldd),
-        "ldhl" => Some(Ldhl),
-        "or" => Some(Or),
-        "pop" => Some(Pop),
-        "push" => Some(Push),
-        "res" => Some(Res),
-        "ret" => Some(Ret),
-        "rl" => Some(Rl),
-        "rla" => Some(Rla),
-        "rlc" => Some(Rlc),
-        "rld" => Some(Rld),
-        "rr" => Some(Rr),
-        "rra" => Some(Rra),
-        "rrc" => Some(Rrc),
-        "rrca" => Some(Rrca),
-        "rrd" => Some(Rrd),
-        "rst" => Some(Rst),
-        "sbc" => Some(Sbc),
-        "scf" => Some(Scf),
-        "set" => Some(Set),
-        "sla" => Some(Sla),
-        "sll" => Some(Sll),
-        "sra" => Some(Sra),
-        "srl" => Some(Srl),
-        "stop" => Some(Stop),
-        "sub" => Some(Sub),
-        "swap" => Some(Swap),
-        "xor" => Some(Xor),
-        "reti" => Some(Reti),
-        "rlca" => Some(Rlca),
-        "nop" => Some(Nop),
-        "a" => Some(A),
-        "b" => Some(B),
-        "c" => Some(C),
-        "d" => Some(D),
-        "e" => Some(E),
-        "h" => Some(H),
-        "l" => Some(L),
-        "af" => Some(Af),
-        "bc" => Some(Bc),
-        "de" => Some(De),
-        "hl" => Some(Hl),
-        "sp" => Some(Sp),
-        "(" => Some(At0),
-        ")" => Some(At1),
-        "Z" => Some(FlagZ),
-        "NZ" => Some(FlagNz),
-        "C" => Some(FlagC),
-        "NC" => Some(FlagNc),
-        _ => None
+    /// Can this token type hold a value?
+    pub const fn has_value(&self) -> bool {
+        matches!(self,
+            NamedMark|MacroArg|Label|Repeat|MacroIdent|Identifier|LitBin|
+            LitHex|LitDec|LitStr)
     }
-}
 
-/// Is there any type that starts with this prefix character?
-pub const fn has_prefix(prefix: char) -> bool {
-    matches!(prefix, '&'|'#'|'%'|'"'|'.'|':')
+    /// Is it one the tokens that end on a newline?
+    pub const fn ends_on_newline(&self) -> bool {
+        matches!(self,
+            Instruction|Argument|MacroCall|Directive|Marker|DefB|DefW|DefS|
+            Include|Macro|NamedMark|AnonMark|Label)
+    }
+
+    /// Find a token type that can be identified from a word.
+    pub fn get_by_word(name: &str) -> Option<TokenType> {
+        match name {
+            "adc" => Some(Adc),
+            "add" => Some(Add),
+            "and" => Some(And),
+            "bit" => Some(Bit),
+            "call" => Some(Call),
+            "ccf" => Some(Ccf),
+            "cp" => Some(Cp),
+            "cpl" => Some(Cpl),
+            "daa" => Some(Daa),
+            "dec" => Some(Dec),
+            "di" => Some(Di),
+            "ei" => Some(Ei),
+            "halt" => Some(Halt),
+            "inc" => Some(Inc),
+            "jp" => Some(Jp),
+            "jr" => Some(Jr),
+            "ld" => Some(Ld),
+            "ldh" => Some(Ldh),
+            "ldi" => Some(Ldi),
+            "ldd" => Some(Ldd),
+            "ldhl" => Some(Ldhl),
+            "or" => Some(Or),
+            "pop" => Some(Pop),
+            "push" => Some(Push),
+            "res" => Some(Res),
+            "ret" => Some(Ret),
+            "rl" => Some(Rl),
+            "rla" => Some(Rla),
+            "rlc" => Some(Rlc),
+            "rld" => Some(Rld),
+            "rr" => Some(Rr),
+            "rra" => Some(Rra),
+            "rrc" => Some(Rrc),
+            "rrca" => Some(Rrca),
+            "rrd" => Some(Rrd),
+            "rst" => Some(Rst),
+            "sbc" => Some(Sbc),
+            "scf" => Some(Scf),
+            "set" => Some(Set),
+            "sla" => Some(Sla),
+            "sll" => Some(Sll),
+            "sra" => Some(Sra),
+            "srl" => Some(Srl),
+            "stop" => Some(Stop),
+            "sub" => Some(Sub),
+            "swap" => Some(Swap),
+            "xor" => Some(Xor),
+            "reti" => Some(Reti),
+            "rlca" => Some(Rlca),
+            "nop" => Some(Nop),
+            "a" => Some(A),
+            "b" => Some(B),
+            "c" => Some(C),
+            "d" => Some(D),
+            "e" => Some(E),
+            "h" => Some(H),
+            "l" => Some(L),
+            "af" => Some(Af),
+            "bc" => Some(Bc),
+            "de" => Some(De),
+            "hl" => Some(Hl),
+            "sp" => Some(Sp),
+            "(" => Some(At0),
+            ")" => Some(At1),
+            "Z" => Some(FlagZ),
+            "NZ" => Some(FlagNz),
+            "C" => Some(FlagC),
+            "NC" => Some(FlagNc),
+            _ => None
+        }
+    }
+
+    /// Is there any type that starts with this prefix character?
+    pub const fn has_prefix(prefix: char) -> bool {
+        matches!(prefix, '&'|'#'|'%'|'"'|'.'|':')
+    }
+
 }

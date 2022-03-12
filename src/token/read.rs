@@ -131,5 +131,16 @@ impl<'a> TokenRef<'a> {
         self.children.iter().collect::<Vec<_>>()
     }
 
+    /// Recursively finds the first child until there is no child.
+    pub fn leaf(&self) -> &Self {
+        let mut current = self;
+
+        while let Some(child) = current.try_get(0) {
+            current = child;
+        }
+
+        current
+    }
+
 }
 

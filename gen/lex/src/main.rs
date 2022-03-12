@@ -35,28 +35,28 @@ fn build(tree: &Tree) {
     let mut parent_type = String::new();
     let root = &tree.nodes[types.children[0]];
     fmt_parents(tree, root, &mut parent_type, &mut 0);
-    parent_type = tab(2, &parent_type);
+    parent_type = tab(3, &parent_type);
 
     let has_value = tree.find("has_value");
     let mut has_value_str = String::new();
     fmt_match_true(tree, has_value, &mut has_value_str, &mut 0);
-    has_value_str = tab(2, &has_value_str);
+    has_value_str = tab(3, &has_value_str);
 
     let ends_on_newline = tree.find("ends_on_newline");
     let mut ends_on_newline_str = String::new();
     fmt_match_true(tree, ends_on_newline, &mut ends_on_newline_str, &mut 0);
-    ends_on_newline_str = tab(2, &ends_on_newline_str);
+    ends_on_newline_str = tab(3, &ends_on_newline_str);
 
     let are_words = tree.find("are_words");
     let word_pairs = tree.find("word_pairs");
     let mut words = String::new();
     fmt_words(tree, are_words, word_pairs, &mut words);
-    words = tab(2, &words);
+    words = tab(3, &words);
 
     let prefixes = tree.find("prefixes");
     let mut prefixes_str = String::new();
     fmt_prefixes(tree, prefixes, &mut prefixes_str);
-    prefixes_str = tab(2, &prefixes_str);
+    prefixes_str = tab(3, &prefixes_str);
 
     let result = template
         .replace(&key("no_touchy"), NO_TOUCHY)

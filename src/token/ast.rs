@@ -1,7 +1,7 @@
 
 use crate::{
     parse::{
-        lex::{self, TokenType::{self, *}},
+        lex::TokenType::{self, *},
         prepare::ParsedToken,
     },
     token::{
@@ -108,7 +108,7 @@ impl<'a> Ast<'a> {
 
             fail_safe -= 1;
 
-            if lex::ends_on_newline(sel_ty) {
+            if sel_ty.ends_on_newline() {
                 match sel_ty {
                     // If it's a macro declaration, add a new macro body.
                     Macro => {
@@ -156,7 +156,7 @@ impl<'a> Ast<'a> {
         let err_ctx: ErrCtx = (&token).into();
 
         // Match parent type of the token.
-        match lex::parent_type(token.ty) {
+        match token.ty.parent_type() {
             p @ InstrName => {
                 *selection = self.cascade(*selection, &[Instruction, p], token);
             }

@@ -188,7 +188,7 @@ impl<'a> Split<'a> {
             // Push the line if any word was pushed.
             if splitter.push_line {
                 splitter.line_numbers.push(l_i + 1);
-                splitter.lines.push(line);
+                splitter.lines.push(line.trim());
 
                 splitter.push_line = false;
             }
