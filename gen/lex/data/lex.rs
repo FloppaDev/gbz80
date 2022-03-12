@@ -42,5 +42,11 @@ impl TokenType {
     pub const fn has_prefix(prefix: char) -> bool {
         //[[prefixes]]
     }
+    
+    /// Returns a `TokenType` from an index.
+    #[cfg(test)]
+    pub const fn at(index: usize) -> Self {
+        //[[at]]
+    }
 
 }

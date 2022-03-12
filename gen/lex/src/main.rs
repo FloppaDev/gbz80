@@ -58,6 +58,16 @@ fn build(tree: &Tree) {
     fmt_prefixes(tree, prefixes, &mut prefixes_str);
     prefixes_str = tab(3, &prefixes_str);
 
+    let mut at_str = String::new(); 
+    let mut at_arms = String::new();
+    let mut len = 0;
+    fmt_at(tree, root, &mut at_arms, &mut len);
+    at_str.push_str(&format!("const COUNT: usize = {};\n\n", len));
+    at_str.push_str("match index % COUNT {\n");
+    at_str.push_str(&at_arms);
+    at_str.push('}');
+    at_str = tab(2, &at_str);
+
     let result = template
         .replace(&key("no_touchy"), NO_TOUCHY)
         .replace(&key("types"), types_str.trim_end())
@@ -65,7 +75,8 @@ fn build(tree: &Tree) {
         .replace(&key("has_value"), has_value_str.trim_end())
         .replace(&key("ends_on_newline"), ends_on_newline_str.trim_end())
         .replace(&key("get_by_word"), words.trim_end())
-        .replace(&key("prefixes"), prefixes_str.trim_end());
+        .replace(&key("prefixes"), prefixes_str.trim_end())
+        .replace(&key("at"), at_str.trim_end());
 
     println!("{}", result);
 
@@ -181,11 +192,7 @@ fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
     }
 }
 
-pub fn fmt_prefixes(
-    tree: &Tree, 
-    node: &Node, 
-    out: &mut String
-) {
+pub fn fmt_prefixes(tree: &Tree, node: &Node, out: &mut String) {
     out.push_str("matches!(prefix, ");
 
     for (i, index) in node.children.iter().enumerate() {
@@ -198,4 +205,14 @@ pub fn fmt_prefixes(
     }
 
     out.push(')');
+}
+
+pub fn fmt_at(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
+    for index in &node.children {
+        let child = &tree.nodes[*index];
+        out.push_str(&format!("    {} => {},\n", *len, child.value));
+        *len += 1; 
+
+        fmt_at(tree, child, out, len);
+    }
 }
