@@ -34,54 +34,28 @@ pub enum Arg {
 impl Arg {
 
     fn cmp_const(constant: &Constant, token: &TokenRef) -> bool {
-        match token.ty() {
-            Lit => {
-                match constant {
-                    Byte => {
-                        match token.get(0).ty() {
-                            LitDec|LitHex|LitBin => {
-                                return token.get(0).value().as_usize() <= 255;
-                            }
-
-                            LitStr => {
-                                return token.get(0).value().as_str().len() == 1;
-                            }
-
-                            _ => unreachable!()
-                        }
-                    }
-
-                    Word => {
-                        match token.get(0).ty() {
-                            LitDec|LitHex|LitBin => {
-                                return token.get(0).value().as_usize() <= 65535;
-                            }
-
-                            LitStr => {
-                                return token.get(0).value().as_str().len() == 1;
-                            }
-
-                            _ => unreachable!()
-                        }
-                    }
-
-                    BitN(b) => {
-                        if token.get(0).ty() == LitDec {
-                            return token.get(0).value().as_usize() == *b;
-                        }
-
-                        return false;
-                    }
+        println!("{:?}", token.ty());
+        match constant {
+            Byte => {
+                match token.ty() {
+                    LitDec|LitHex|LitBin => token.value().as_usize() <= 255,
+                    LitStr => token.value().as_str().len() == 1,
+                    _ => false
                 }
             }
 
-            Identifier => {
-                //TODO
-                return true;
+            Word => {
+                match token.ty() {
+                    LitDec|LitHex|LitBin => token.value().as_usize() <= 65535,
+                    LitStr => token.value().as_str().len() == 1,
+                    _ => false
+                }
             }
 
-            _ => false
+            BitN(b) => (token.ty() == LitDec) && (token.value().as_usize() == *b)
         }
+
+        //TODO token.ty == Identifier 
     }
 
     fn leaf<'a>(token: &'a TokenRef<'a>) -> &'a TokenRef<'a> {
@@ -101,7 +75,13 @@ impl Arg {
                 match &**arg {
                     Arg::Token(ty) => *ty == Self::leaf(token).ty(),
 
-                    Arg::Const(constant) => Self::cmp_const(&constant, token),
+                    Arg::Const(constant) => {
+                        if token.ty() == At {
+                            return Self::cmp_const(&constant, Self::leaf(token));
+                        }
+
+                        false
+                    }
 
                     _ => unreachable!()
                 }
@@ -109,7 +89,7 @@ impl Arg {
 
             Arg::Token(ty) => Self::leaf(token).ty() == *ty,
                 
-            Arg::Const(constant) => Self::cmp_const(&constant, token),
+            Arg::Const(constant) => Self::cmp_const(&constant, Self::leaf(token)),
 
             _ => false
         }
