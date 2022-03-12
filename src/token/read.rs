@@ -16,6 +16,7 @@ use std::hash::{Hash, Hasher};
 
 /// Read-only reference to a token.
 /// Includes the AST for navigating the hierarchy.
+#[derive(Debug)]
 pub struct TokenRef<'a> {
     ast: &'a Ast<'a>,
     token: &'a Token<'a>,

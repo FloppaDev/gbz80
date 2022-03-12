@@ -19,6 +19,7 @@ use crate::program::title;
 
 /// Abstract Token Tree.
 /// The whole hierarchy of parsed tokens from the source file.
+#[derive(Debug)]
 pub struct Ast<'a> {
     pub tokens: Vec<Token<'a>>,
 }

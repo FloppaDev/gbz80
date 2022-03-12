@@ -68,7 +68,7 @@
 :Font
     #include "font.bin"
 :FontEnd
-    ld a (X)
+    ld a b
     add Font
 
 #macro db. .b

@@ -12,12 +12,14 @@ use Constant::*;
 
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub enum Constant {
     BitN(usize),
     Byte,
     Word,
 }
 
+#[derive(Debug)]
 pub enum Arg {
     /// Address.
     At(Box<Arg>),
@@ -82,12 +84,22 @@ impl Arg {
         }
     }
 
+    fn leaf<'a>(token: &'a TokenRef<'a>) -> &'a TokenRef<'a> {
+        let mut current = token;
+
+        while let Some(child) = current.try_get(0) {
+            current = child;
+        }
+
+        current
+    }
+
     //TODO Return Result.
     fn cmp(&self, token: &TokenRef) -> bool {
         match self {
             Arg::At(arg) if token.ty() == At => {
                 match &**arg {
-                    Arg::Token(ty) => *ty == token.ty(),
+                    Arg::Token(ty) => *ty == Self::leaf(token).ty(),
 
                     Arg::Const(constant) => Self::cmp_const(&constant, token),
 
@@ -95,7 +107,7 @@ impl Arg {
                 }
             }
 
-            Arg::Token(ty) => token.ty() == *ty,
+            Arg::Token(ty) => Self::leaf(token).ty() == *ty,
                 
             Arg::Const(constant) => Self::cmp_const(&constant, token),
 
@@ -141,11 +153,14 @@ impl<'a> OpMap<'a> {
                     let opcode = instructions::find(token);
 
                     if opcode.is_none() {
+                        println!("\x1b[33;40mErr: {} not found\x1b[0m", token.line().trim());
                         errors.push(
                             OpErr::new(OpErrType::NotFound, token.into()));
 
                         continue;
                     }
+
+                    println!("\x1b[32;40mOp found\x1b[0m");
 
                     map.insert(token, opcode.unwrap());
                 }
@@ -191,6 +206,7 @@ impl OpCode {
 
         for i in 0..instr_args.len() {
             if !op_args[i].cmp(instr_args[i]) {
+                println!("{:?} != {:?}", instr_args[i].ty(), op_args[i]);
                 return false;
             }
         }
