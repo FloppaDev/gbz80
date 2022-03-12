@@ -126,7 +126,7 @@ pub enum TokenType {
 impl TokenType {
 
     /// Returns the parent of a type.
-    pub const fn parent_type(&self) -> TokenType {
+    pub const fn parent_type(self) -> Self {
         match self {
             Root|Instruction|Directive|Marker|Repeat|MacroCall|Unknown => Root,
 
@@ -159,21 +159,21 @@ impl TokenType {
     }
 
     /// Can this token type hold a value?
-    pub const fn has_value(&self) -> bool {
+    pub const fn has_value(self) -> bool {
         matches!(self,
             NamedMark|MacroArg|Label|Repeat|MacroIdent|Identifier|LitBin|
             LitHex|LitDec|LitStr)
     }
 
     /// Is it one the tokens that end on a newline?
-    pub const fn ends_on_newline(&self) -> bool {
+    pub const fn ends_on_newline(self) -> bool {
         matches!(self,
             Instruction|Argument|MacroCall|Directive|Marker|DefB|DefW|DefS|
             Include|Macro|NamedMark|AnonMark|Label)
     }
 
     /// Find a token type that can be identified from a word.
-    pub fn get_by_word(name: &str) -> Option<TokenType> {
+    pub fn get_by_word(name: &str) -> Option<Self> {
         match name {
             "adc" => Some(Adc),
             "add" => Some(Add),

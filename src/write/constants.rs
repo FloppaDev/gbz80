@@ -199,13 +199,9 @@ impl<'a> Constants<'a> {
             Directive => {
                 let dir = token.get(0);
                 
-                match dir.ty() {
-                    Include => {
-                        let path = dir.get(0).get(0).value().as_str();
-                        *location += self.includes.get(path).unwrap().len();
-                    }
-
-                     _ => {}
+                if dir.ty() == Include {
+                    let path = dir.get(0).get(0).value().as_str();
+                    *location += self.includes.get(path).unwrap().len();
                 }
             }
 

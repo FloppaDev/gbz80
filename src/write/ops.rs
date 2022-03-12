@@ -22,6 +22,7 @@ pub enum Constant {
 impl Constant {
 
     fn cmp(&self, token: &TokenRef) -> bool {
+        //TODO verifiy that the value has the correct len, it's not convenient here.
         if token.ty() == Identifier {
             return true;
         }
