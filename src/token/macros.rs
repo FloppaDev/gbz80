@@ -201,8 +201,6 @@ impl<'a, 'b> Macros {
         offset: usize,
         src: usize,
         dest: usize,
-
-        //TODO HashMap?
         arg_names: &[&str],
         arg_tokens: &[&'b Token<'a>],
 

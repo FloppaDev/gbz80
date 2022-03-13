@@ -54,7 +54,7 @@ impl<'a> Constants<'a> {
 
         // Calculate the size of labels and validate markers.
         for child in ast.children() {
-            constants.size_of_token(op_map, child, &mut location)?; 
+            constants.set_location(op_map, child, &mut location)?; 
         }
 
         Ok(constants)
@@ -148,8 +148,7 @@ impl<'a> Constants<'a> {
     }
 
     /// Increases the current location by the size in bytes of a token.
-    //TODO rename, it assigns to location and constants.
-    fn size_of_token(
+    fn set_location(
         &mut self,
         op_map: &OpMap<'a>,
         token: &'a TokenRef<'a>,
@@ -159,7 +158,7 @@ impl<'a> Constants<'a> {
             MacroCall => {
                 for child in token.children() {
                     if child.ty() == MacroBody {
-                        self.size_of_token(op_map, child, location)?;
+                        self.set_location(op_map, child, location)?;
                         break;
                     }
                 }
