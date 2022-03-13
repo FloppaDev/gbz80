@@ -7,5 +7,5 @@ pub mod constants;
 
 pub mod ops;
 
-//pub mod encode;
+pub mod encode;
 

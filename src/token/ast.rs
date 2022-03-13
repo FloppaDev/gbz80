@@ -229,8 +229,10 @@ impl<'a> Ast<'a> {
                     self.push(marker, token);
                 }
 
-                _ => unreachable!(
-                    &format!("Unhandled token type '{:?}'.", token.ty))
+                _ => {
+                    let e = AstErr::new(AstErrType::Unknown, err_ctx);
+                    errors.push(e);
+                }
             }
         }
     }

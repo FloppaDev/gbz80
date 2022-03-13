@@ -280,6 +280,7 @@ pub enum AstErrType {
     InvalidExprLhs(TokenType),
     NoExprLhs,
     UnhandledNewline(TokenType),
+    Unknown,
 }
 
 #[derive(Debug)]
@@ -321,6 +322,9 @@ impl<'a> AstErr<'a> {
 
             UnhandledNewline(_) =>
                 "UnhandledNewline: Internal error on new line",
+
+            Unknown =>
+                "Unknown error",
         }
     }
 }

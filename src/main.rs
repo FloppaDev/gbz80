@@ -71,6 +71,9 @@ mod token;
 
 mod write;
 
+#[cfg(test)]
+mod tests;
+
 //====================================================================
 
 //TODO memory banks.
