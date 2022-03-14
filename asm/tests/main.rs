@@ -65,6 +65,8 @@
 
     mul. a 10
 
+#db FONT_LEN FontEnd - Font
+
 :Font
     #include "font.bin"
 :FontEnd

@@ -6,6 +6,8 @@ pub mod read;
 
 pub mod ast;
 
+pub mod expr;
+
 use crate::{
     parse::{
         lex::TokenType,
