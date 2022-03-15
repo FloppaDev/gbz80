@@ -22,7 +22,7 @@
 
                     Expr {
                         BinAdd BinSub BinMul BinDiv BinMod BinShr 
-                        BinShl BinAnd BinOr BinXor BinPow UnNot UnNeg 
+                        BinShl BinAnd BinOr BinXor UnNot UnNeg 
                     }
 
                     Identifier
@@ -47,21 +47,34 @@
     }
 
     // Those are identified by their name lowercased.
-    are_words { InstrName> Register> }
+    are_words { ..InstrName ..Register }
 
     // Those are identified by the contained word.
     word_pairs {
-        At0 { ( }
-        At1 { ) }
         FlagZ { Z }
         FlagNz { NZ }
         FlagC { C }
         FlagNc { NC }
     }
 
+    char_words {
+        At0 { ( }
+        At1 { ) }
+        UnNot { ! }
+        BinMul { * }
+        BinDiv { / }
+        BinMod { % }
+        BinAdd { + }
+        BinShl { << }
+        BinShr { >> }
+        BinAnd { & }
+        BinXor { ^ }
+        BinOr { | }
+    }
+
     prefixes {
         & // LitHex AnonMark NamedMark
-        # // Directive>
+        # // ..Directive
         % // LitBin
         " // LitStr
         . // MacroArg
@@ -71,13 +84,13 @@
     // These types can hold a value.
     has_value { 
         NamedMark MacroArg Label Repeat MacroIdent Identifier
-        Lit> 
+        ..Lit
     }
 
     // These tokens are closed on a newline.
     ends_on_newline { 
         Instruction Argument MacroCall Directive Marker 
-        Directive> Marker> 
+        ..Directive ..Marker 
     }
 
 }

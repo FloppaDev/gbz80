@@ -115,8 +115,8 @@ impl Tree {
     fn expand(&self, word: &str) -> Vec<String> {
         let mut exp = vec![];
 
-        if word.ends_with('>') {
-            let node = self.find(word.get(..word.len()-1).unwrap());
+        if word.starts_with("..") {
+            let node = self.find(word.get(2..).unwrap());
 
             for index in &node.children {
                 exp.push(self.nodes[*index].value.clone());
