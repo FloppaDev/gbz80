@@ -7,6 +7,13 @@
 
 use TokenType::*;
 
+pub const fn is_char_word(c: char) -> bool {
+    match c {
+        '('|')'|'!'|'*'|'/'|'%'|'+'|'<'|'>'|'&'|'^'|'|' => true, 
+        _ => false
+    }
+}
+
 /// All the different token types than can be identified.
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum TokenType {
@@ -101,7 +108,6 @@ pub enum TokenType {
                 BinAnd,
                 BinOr,
                 BinXor,
-                BinPow,
                 UnNot,
                 UnNeg,
             Identifier,
@@ -148,7 +154,7 @@ impl TokenType {
             FlagZ|FlagNz|FlagC|FlagNc => Flag,
 
             BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
-            BinXor|BinPow|UnNot|UnNeg => Expr,
+            BinXor|UnNot|UnNeg => Expr,
 
             DefB|DefW|DefS|Include|Macro => Directive,
 
@@ -237,12 +243,22 @@ impl TokenType {
             "de" => Some(De),
             "hl" => Some(Hl),
             "sp" => Some(Sp),
-            "(" => Some(At0),
-            ")" => Some(At1),
             "Z" => Some(FlagZ),
             "NZ" => Some(FlagNz),
             "C" => Some(FlagC),
             "NC" => Some(FlagNc),
+            "(" => Some(At0),
+            ")" => Some(At1),
+            "!" => Some(UnNot),
+            "*" => Some(BinMul),
+            "/" => Some(BinDiv),
+            "%" => Some(BinMod),
+            "+" => Some(BinAdd),
+            "<" => Some(BinShl),
+            ">" => Some(BinShr),
+            "&" => Some(BinAnd),
+            "^" => Some(BinXor),
+            "|" => Some(BinOr),
             _ => None
         }
     }
@@ -255,7 +271,7 @@ impl TokenType {
     /// Returns a `TokenType` from an index.
     #[cfg(test)]
     pub const fn at(index: usize) -> Self {
-        const COUNT: usize = 110;
+        const COUNT: usize = 109;
 
         match index % COUNT {
             0 => Instruction,
@@ -348,26 +364,25 @@ impl TokenType {
             87 => BinAnd,
             88 => BinOr,
             89 => BinXor,
-            90 => BinPow,
-            91 => UnNot,
-            92 => UnNeg,
-            93 => Identifier,
-            94 => Directive,
-            95 => DefB,
-            96 => DefW,
-            97 => DefS,
-            98 => Include,
-            99 => Macro,
-            100 => MacroIdent,
-            101 => MacroArg,
-            102 => MacroBody,
-            103 => Marker,
-            104 => NamedMark,
-            105 => AnonMark,
-            106 => Label,
-            107 => Repeat,
-            108 => MacroCall,
-            109 => Unknown,
+            90 => UnNot,
+            91 => UnNeg,
+            92 => Identifier,
+            93 => Directive,
+            94 => DefB,
+            95 => DefW,
+            96 => DefS,
+            97 => Include,
+            98 => Macro,
+            99 => MacroIdent,
+            100 => MacroArg,
+            101 => MacroBody,
+            102 => Marker,
+            103 => NamedMark,
+            104 => AnonMark,
+            105 => Label,
+            106 => Repeat,
+            107 => MacroCall,
+            108 => Unknown,
             _ => unreachable!()
         }
     }

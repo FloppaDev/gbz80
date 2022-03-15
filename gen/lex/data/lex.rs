@@ -3,6 +3,13 @@
 
 use TokenType::*;
 
+pub const fn is_char_word(c: char) -> bool {
+    match c {
+        //[[is_char_word]] 
+        _ => false
+    }
+}
+
 /// All the different token types than can be identified.
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum TokenType {

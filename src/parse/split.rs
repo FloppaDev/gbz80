@@ -1,6 +1,9 @@
 
 use crate::{
-    parse::text::charset,
+    parse::{
+        text::charset,
+        lex,
+    },
     program::error::{SplitErr, SplitErrType},
 };
 
@@ -122,13 +125,13 @@ impl<'a> Split<'a> {
                     else {
                         errors.push(SplitErr::new(
                             SplitErrType::MisplacedDirective, line, l_i + 1));
-                        break
+                        break;
                     }
                 }
 
                 if splitter.process || dir_line {
-                    // Those are always treated as words '(' ')' '+' '-'
-                    if charset::is_char_expr(ch) {
+                    // Those are always treated as words, regardless of spaces.
+                    if lex::is_char_word(ch) {
                         // Push current word.
                         if has_word { 
                             if let Some(word) = line.get(word_start..c_i) {

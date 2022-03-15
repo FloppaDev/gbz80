@@ -2,15 +2,30 @@
 use crate::{
     token::ast::Ast,
     token::Token,
+    parse::lex::TokenType::{self, *},
 };
 
-// Precedence from strongest to weakest:
-// unary -
-// * / %
-// + -
-// << >>
-// & ^ |
+//TODO << >> for shifts, for now a single char is more convenient.
+
+/// Precedence from strongest to weakest.
+/// unary ! -
+/// * / %
+/// + -
+/// < >
+/// & ^ |
+const PRECEDENCE: [TokenType; 12] = [
+    UnNot, UnNeg,
+    BinMul, BinDiv, BinMod,
+    BinAdd, BinSub,
+    BinShl, BinShr,
+    BinAnd, BinXor, BinOr
+];
 
 pub fn build<'a>(ast: &'a Ast<'a>, token: &'a Token<'a>) -> &'a Token<'a> {
-    todo!()
+    for index in &token.children {
+        let child = &ast.tokens[*index];
+
+    }
+
+    todo!();
 }

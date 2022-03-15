@@ -47,10 +47,12 @@ fn build(tree: &Tree) {
     fmt_match_true(tree, ends_on_newline, &mut ends_on_newline_str, &mut 0);
     ends_on_newline_str = tab(3, &ends_on_newline_str);
 
+    let char_words = tree.find("char_words");
+    
     let are_words = tree.find("are_words");
     let word_pairs = tree.find("word_pairs");
     let mut words = String::new();
-    fmt_words(tree, are_words, word_pairs, &mut words);
+    fmt_words(tree, are_words, word_pairs, char_words, &mut words);
     words = tab(3, &words);
 
     let prefixes = tree.find("prefixes");
@@ -68,6 +70,10 @@ fn build(tree: &Tree) {
     at_str.push_str("    _ => unreachable!()\n}");
     at_str = tab(2, &at_str);
 
+    let mut char_words_str = String::new();
+    fmt_char_words(tree, char_words, &mut char_words_str);
+    char_words_str = tab(2, &char_words_str);
+
     let result = template
         .replace(&key("no_touchy"), NO_TOUCHY)
         .replace(&key("types"), types_str.trim_end())
@@ -76,7 +82,8 @@ fn build(tree: &Tree) {
         .replace(&key("ends_on_newline"), ends_on_newline_str.trim_end())
         .replace(&key("get_by_word"), words.trim_end())
         .replace(&key("prefixes"), prefixes_str.trim_end())
-        .replace(&key("at"), at_str.trim_end());
+        .replace(&key("at"), at_str.trim_end())
+        .replace(&key("is_char_word"), char_words_str.trim_end());
 
     println!("{}", result);
 
@@ -106,12 +113,7 @@ fn tab(n: usize, s: &str) -> String {
     result
 }
 
-pub fn fmt_types(
-    tree: &Tree, 
-    node: &Node, 
-    indent: usize, 
-    out: &mut String
-) {
+pub fn fmt_types(tree: &Tree, node: &Node, indent: usize, out: &mut String) {
     let tab = (0..indent).map(|_| "    ").collect::<String>();
 
     for index in &node.children {
@@ -123,12 +125,7 @@ pub fn fmt_types(
     }
 }
 
-fn fmt_parents(
-    tree: &Tree, 
-    node: &Node, 
-    out: &mut String, 
-    ln_start: &mut usize
-) {
+fn fmt_parents(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usize) {
     if node.children.is_empty() {
         return;
     }
@@ -155,12 +152,7 @@ fn fmt_parents(
     }
 }
 
-fn fmt_match_true(
-    tree: &Tree, 
-    node: &Node, 
-    out: &mut String, 
-    ln_start: &mut usize
-) {
+fn fmt_match_true(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usize) {
     for (i, index) in node.children.iter().enumerate() {
         if out.len() - *ln_start >= 60 {
             out.push('\n'); 
@@ -177,7 +169,7 @@ fn fmt_match_true(
     out.push(')');
 }
 
-fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
+fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, chars: &Node, out: &mut String) {
     for index in &words.children {
         let value = &tree.nodes[*index].value;
         let arm = format!("\"{}\" => Some({}),\n", value.to_lowercase(), value);
@@ -185,6 +177,13 @@ fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, out: &mut String) {
     }
 
     for index in &pairs.children {
+        let child = &tree.nodes[*index];
+        let word = &tree.nodes[child.children[0]].value;
+        let arm = format!("\"{}\" => Some({}),\n", word, child.value);
+        out.push_str(&arm);
+    }
+
+    for index in &chars.children {
         let child = &tree.nodes[*index];
         let word = &tree.nodes[child.children[0]].value;
         let arm = format!("\"{}\" => Some({}),\n", word, child.value);
@@ -215,4 +214,27 @@ pub fn fmt_at(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
 
         fmt_at(tree, child, out, len);
     }
+}
+
+fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
+    let mut ln = 0;
+
+    for (i, index) in node.children.iter().enumerate() {
+        let child = &tree.nodes[*index];
+        let word = &tree.nodes[child.children[0]].value;
+        let arm = format!("'{}'", word);
+        out.push_str(&arm);
+
+        if i != node.children.len() - 1 {
+            out.push('|');
+
+            if ln > 60 {
+                out.push('\n');
+            }
+        }
+
+        ln += arm.len()
+    }
+
+    out.push_str(" => true,");
 }

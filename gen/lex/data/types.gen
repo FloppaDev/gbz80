@@ -65,8 +65,8 @@
         BinDiv { / }
         BinMod { % }
         BinAdd { + }
-        BinShl { << }
-        BinShr { >> }
+        BinShl { < }
+        BinShr { > }
         BinAnd { & }
         BinXor { ^ }
         BinOr { | }
