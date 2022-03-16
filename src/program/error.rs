@@ -8,7 +8,7 @@ use crate::{
         Token, 
         read::TokenRef
     },
-    program::SourceCtx,
+    program::{SourceCtx, color},
 };
 
 use std::fmt;
@@ -21,6 +21,11 @@ pub mod stage {
     pub const CLARGS: fn () -> String = | | color::strip()
         .err("Compilation Failed. ")
         .info("Invalid command line arguments.")
+        .end();
+
+    pub const SPLIT: fn () -> String = | | color::strip()
+        .err("Compilation Failed. ")
+        .info("Could not recognize words in source file.")
         .end();
 
 }
@@ -79,6 +84,14 @@ impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 
 }
 
+fn ln_if(text: &str) -> String {
+    return if text.is_empty() {
+        "".into()
+    }else {
+        format!("\n{}", text)
+    };
+}
+
 //TODO impl fmt properly
 
 #[derive(Debug, Copy, Clone)]
@@ -93,12 +106,6 @@ pub enum ClargsErrType {
 pub struct ClargsErr<'a> {
     ty: ClargsErrType,
     msg: &'a str,
-}
-
-impl<'a> fmt::Display for ClargsErr<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({:?}) {}:\n{}", self.ty, self.description(), self.msg)
-    }
 }
 
 impl<'a> ClargsErr<'a> {
@@ -127,6 +134,17 @@ impl<'a> ClargsErr<'a> {
 
 }
 
+impl<'a> fmt::Display for ClargsErr<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = color::strip()
+            .info(&format!("({:?}) ", self.ty))
+            .base(&format!("{}{}", self.description(), ln_if(self.msg)))
+            .end();
+
+        write!(f, "{}", text)
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum SplitErrType {
     MisplacedDirective,
@@ -147,7 +165,7 @@ impl<'a> SplitErr<'a> {
         Self { ty, line, line_number }
     }
 
-    pub const fn fmt(&self) -> &'static str {
+    pub const fn description(&self) -> &'static str {
         use SplitErrType::*;
 
         match self.ty {
@@ -162,6 +180,19 @@ impl<'a> SplitErr<'a> {
         }
     }
 
+}
+
+//TODO split returns a vec of errors.
+impl<'a> fmt::Display for SplitErr<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = color::strip()
+            .info(&format!("({:?}) ", self.ty))
+            .base(&format!(
+                "{}\nl{}:    {}", self.description(), self.line_number, self.line))
+            .end();
+
+        write!(f, "{}", text)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
