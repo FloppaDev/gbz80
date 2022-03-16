@@ -5,7 +5,7 @@ use crate::{
     token::{
         read::TokenRef,
     },
-    program::error::{OpErr, OpErrType},
+    program::error::{OpErr, OpErrType::*},
 };
 
 use Constant::*;
@@ -128,7 +128,7 @@ impl<'a> OpMap<'a> {
                     let opcode = instructions::find(token);
 
                     if opcode.is_none() {
-                        errors.push(OpErr::new(OpErrType::NotFound, token.into()));
+                        errors.push(err!(OpErr, NotFound, token.into()));
                         continue;
                     }
 

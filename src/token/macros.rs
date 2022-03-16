@@ -7,7 +7,7 @@ use crate::{
         Token,
         ast::Ast,
     },
-    program::error::{ MacroErr, MacroErrType },
+    program::error::{ MacroErr, MacroErrType::{self, *} },
 };
 
 pub struct Macros {
@@ -35,12 +35,12 @@ impl<'a, 'b> Macros {
             // First child must be the macro identifier.
             if let Some(decl_ident) = token.children.get(0) {
                 if ast.tokens[*decl_ident].ty != MacroIdent {
-                    errors.push(MacroErr::new(MacroErrType::NoDeclIdent, err_ctx));
+                    errors.push(err!(MacroErr, NoDeclIdent, err_ctx));
                 }
             }
 
             else {
-                errors.push(MacroErr::new(MacroErrType::InvalidDecl, err_ctx));
+                errors.push(err!(MacroErr, InvalidDecl, err_ctx));
                 continue;
             }
 
@@ -48,14 +48,14 @@ impl<'a, 'b> Macros {
             let body = ast.tokens[*macro_decl].children.last().unwrap();
 
             if ast.tokens[*body].ty != MacroBody {
-                errors.push(MacroErr::new(MacroErrType::NoDeclBody, err_ctx));
+                errors.push(err!(MacroErr, NoDeclBody, err_ctx));
             }
 
             // All other tokens must be macro arguments.
             if let Some(args) = token.children.get(1..token.children.len()-1) {
                 for arg in args {
                     if ast.tokens[*arg].ty != MacroArg {
-                        errors.push(MacroErr::new(MacroErrType::InvalidDeclToken, err_ctx)); 
+                        errors.push(err!(MacroErr, InvalidDeclToken, err_ctx)); 
                     }
                 }
             }
@@ -84,7 +84,7 @@ impl<'a, 'b> Macros {
             let call_ident = token.children.get(0); 
 
             if call_ident.is_none() {
-                errors.push(MacroErr::new(MacroErrType::NoCallIdent, token.into()));
+                errors.push(err!(MacroErr, NoCallIdent, token.into()));
                 continue;
             }
 
@@ -104,7 +104,7 @@ impl<'a, 'b> Macros {
 
             // Macro declaration not found.
             if decl_index.is_none() {
-                errors.push(MacroErr::new(MacroErrType::DeclNotFound, token.into()));
+                errors.push(err!(MacroErr, DeclNotFound, token.into()));
                 continue;
             }
 
@@ -147,7 +147,7 @@ impl<'a, 'b> Macros {
         let call_args = call_children.get(1..call_children.len()-1).unwrap();
 
         if decl_args.len() != call_args.len() {
-            errors.push(MacroErr::new(MacroErrType::ArgCountMismatch, call.into()));
+            errors.push(err!(MacroErr, ArgCountMismatch, call.into()));
             return;
         }
 

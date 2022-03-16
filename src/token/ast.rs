@@ -10,7 +10,7 @@ use crate::{
     },
     program::{
         RECURSION_LIMIT,
-        error::{ErrCtx, AstErr, AstErrType},
+        error::{ErrCtx, AstErr, AstErrType::*},
     },
 };
 
@@ -36,7 +36,7 @@ impl<'a> Ast<'a> {
         macros: &mut Macros,
     ) -> Result<Self, Vec<AstErr<'a>>> {
         if tokens.is_empty() {
-            let e = AstErr::new(AstErrType::NoTokens, ErrCtx::new(0, "", ""));
+            let e = err!(AstErr, NoTokens, ErrCtx::new(0, "", ""));
             return Err(vec![e]);
         }
 
@@ -100,7 +100,7 @@ impl<'a> Ast<'a> {
             let sel_ty = self.type_of(*selection);
 
             if fail_safe == 0 {
-                let e = AstErr::new(AstErrType::UnhandledNewline(sel_ty), err_ctx);
+                let e = err!(AstErr, UnhandledNewline(sel_ty), err_ctx);
                 errors.push(e);
 
                 return Err(());
@@ -119,13 +119,13 @@ impl<'a> Ast<'a> {
                     }
 
                     At => {
-                        let e = AstErr::new(AstErrType::UnmatchedParen, err_ctx);
+                        let e = err!(AstErr, UnmatchedParen, err_ctx);
                         errors.push(e);
                         *selection = self.parent_of(*selection);
                     }
                     
                     NamedMark|AnonMark if self.tokens[*selection].children.is_empty() => {
-                        let e = AstErr::new(AstErrType::MarkWithoutLiteral, err_ctx);
+                        let e = err!(AstErr, MarkWithoutLiteral, err_ctx);
                         errors.push(e);
                         *selection = self.parent_of(*selection);
                     }
@@ -230,7 +230,7 @@ impl<'a> Ast<'a> {
                 }
 
                 _ => {
-                    let e = AstErr::new(AstErrType::Unknown, err_ctx);
+                    let e = err!(AstErr, UnknownError, err_ctx);
                     errors.push(e);
                 }
             }

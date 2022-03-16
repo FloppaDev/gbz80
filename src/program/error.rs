@@ -8,7 +8,15 @@ use crate::{
         Token, 
         read::TokenRef
     },
+    program::SourceCtx,
 };
+
+macro_rules! err {
+    // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
+    ($ty:ty, $e:expr, $ctx:expr) => {
+        <$ty>::new($e, $ctx, source!())
+    }
+}
 
 /// Provides context for an error in the parsed source file.
 #[derive(Debug, Copy, Clone)]
@@ -59,7 +67,7 @@ impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 
 //TODO impl fmt properly
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ClargsErrType {
     NoSource,
     NoOutput,
@@ -101,7 +109,7 @@ impl<'a> ClargsErr<'a> {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum SplitErrType {
     MisplacedDirective,
     InvalidDirective,
@@ -138,7 +146,7 @@ impl<'a> SplitErr<'a> {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ParseErrType {
     /// Number literals are either 1 or 2 bytes long. (255 or 65535 max value)
     HexOverflow,
@@ -179,12 +187,17 @@ pub enum ParseErrType {
 pub struct ParseErr<'a> {
     ty: ParseErrType,
     err_ctx: ErrCtx<'a>,
+    source_ctx: SourceCtx,
 }
 
 impl<'a> ParseErr<'a> {
 
-    pub const fn new(ty: ParseErrType, err_ctx: ErrCtx<'a>) -> Self {
-        Self { ty, err_ctx }
+    pub const fn new(
+        ty: ParseErrType, 
+        err_ctx: ErrCtx<'a>, 
+        source_ctx: SourceCtx,
+    ) -> Self {
+        Self { ty, err_ctx, source_ctx }
     }
 
     pub const fn fmt(&self) -> &'static str {
@@ -270,7 +283,7 @@ impl<'a> ParseErr<'a> {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum AstErrType {
     NoTokens,
     UnmatchedParen,
@@ -280,19 +293,24 @@ pub enum AstErrType {
     InvalidExprLhs(TokenType),
     NoExprLhs,
     UnhandledNewline(TokenType),
-    Unknown,
+    UnknownError,
 }
 
 #[derive(Debug)]
 pub struct AstErr<'a> {
     ty: AstErrType,
     err_ctx: ErrCtx<'a>,
+    source_ctx: SourceCtx,
 }
 
 impl<'a> AstErr<'a> {
 
-    pub const fn new(ty: AstErrType, err_ctx: ErrCtx<'a>) -> Self {
-        Self { ty, err_ctx }
+    pub const fn new(
+        ty: AstErrType, 
+        err_ctx: ErrCtx<'a>, 
+        source_ctx: SourceCtx,
+    ) -> Self {
+        Self { ty, err_ctx, source_ctx }
     }
 
     pub const fn fmt(&self) -> &'static str {
@@ -323,13 +341,13 @@ impl<'a> AstErr<'a> {
             UnhandledNewline(_) =>
                 "UnhandledNewline: Internal error on new line",
 
-            Unknown =>
+            UnknownError =>
                 "Unknown error",
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum MacroErrType {
     NoDeclIdent,
     InvalidDecl,
@@ -345,12 +363,17 @@ pub enum MacroErrType {
 pub struct MacroErr<'a> {
     ty: MacroErrType,
     err_ctx: ErrCtx<'a>,
+    source_ctx: SourceCtx,
 }
 
 impl<'a> MacroErr<'a> {
 
-    pub const fn new(ty: MacroErrType, err_ctx: ErrCtx<'a>) -> Self {
-        Self { ty, err_ctx }
+    pub const fn new(
+        ty: MacroErrType, 
+        err_ctx: ErrCtx<'a>, 
+        source_ctx: SourceCtx,
+    ) -> Self {
+        Self { ty, err_ctx, source_ctx }
     }
 
     pub const fn fmt(&self) -> &'static str {
@@ -385,7 +408,7 @@ impl<'a> MacroErr<'a> {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum OpErrType {
     NotFound,
 }
@@ -394,12 +417,17 @@ pub enum OpErrType {
 pub struct OpErr<'a> {
     ty: OpErrType,
     err_ctx: ErrCtx<'a>,
+    source_ctx: SourceCtx,
 }
 
 impl<'a> OpErr<'a> {
 
-    pub const fn new(ty: OpErrType, err_ctx: ErrCtx<'a>) -> Self {
-        Self { ty, err_ctx }
+    pub const fn new(
+        ty: OpErrType, 
+        err_ctx: ErrCtx<'a>, 
+        source_ctx: SourceCtx,
+    ) -> Self {
+        Self { ty, err_ctx, source_ctx }
     }
 
     pub const fn fmt(&self) -> &'static str {
@@ -413,7 +441,7 @@ impl<'a> OpErr<'a> {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ConstantsErrType {
     DuplicateKey,
     MisplacedMarker,
@@ -424,12 +452,17 @@ pub enum ConstantsErrType {
 pub struct ConstantsErr<'a> {
     ty: ConstantsErrType,
     err_ctx: ErrCtx<'a>,
+    source_ctx: SourceCtx,
 }
 
 impl<'a> ConstantsErr<'a> {
 
-    pub const fn new(ty: ConstantsErrType, err_ctx: ErrCtx<'a>) -> Self {
-        Self { ty, err_ctx }
+    pub const fn new(
+        ty: ConstantsErrType, 
+        err_ctx: ErrCtx<'a>, 
+        source_ctx: SourceCtx,
+    ) -> Self {
+        Self { ty, err_ctx, source_ctx }
     }
 
     pub const fn fmt(&self) -> &'static str {

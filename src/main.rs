@@ -62,9 +62,10 @@
 
 //====================================================================
             
-mod parse;
-
+#[macro_use]
 mod program;
+
+mod parse;
 
 /// Constructs the hierarchy of tokens.
 mod token;

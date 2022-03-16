@@ -35,7 +35,7 @@ pub fn parse<'a>(
                 split.line(word.line_index),
                 word.value);
 
-            let err = ParseErr::new(err_type, err_ctx);
+            let err = err!(ParseErr, err_type, err_ctx);
             errors.push(err);
 
             continue;
@@ -51,7 +51,7 @@ pub fn parse<'a>(
                     split.line(word.line_index), 
                     word_str.as_str());
 
-                let err = ParseErr::new(err_type, err_ctx);
+                let err = err!(ParseErr, err_type, err_ctx);
                 errors.push(err);
 
                 continue;

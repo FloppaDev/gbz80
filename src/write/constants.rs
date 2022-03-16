@@ -8,7 +8,7 @@ use crate::{
         read::TokenRef,
     },
     program::{
-        error::{ConstantsErr, ConstantsErrType},
+        error::{ConstantsErr, ConstantsErrType::*},
         RECURSION_LIMIT,
     },
     write::ops::OpMap,
@@ -74,7 +74,7 @@ impl<'a> Constants<'a> {
         let nil = Some(ConstExpr::Nil);
 
         for token in ast.children() {
-            let err = ConstantsErr::new(ConstantsErrType::DuplicateKey, token.into());
+            let err = err!(ConstantsErr, DuplicateKey, token.into());
 
             match token.ty() {
                 MacroCall|MacroBody => self = self.get_constants(token, fail_safe)?,
@@ -128,10 +128,10 @@ impl<'a> Constants<'a> {
                             
                             if self.includes.get(path).is_none() {
                                 let mut buffer = vec![];
-                                let mut file = File::open(path).map_err(|_| ConstantsErr::new(
-                                    ConstantsErrType::FileReadFailed, child.into()))?;
-                                file.read_to_end(&mut buffer).map_err(|_| ConstantsErr::new(
-                                    ConstantsErrType::FileReadFailed, child.into()))?;
+                                let mut file = File::open(path).map_err(|_| err!(
+                                    ConstantsErr, FileReadFailed, child.into()))?;
+                                file.read_to_end(&mut buffer).map_err(|_| err!(
+                                    ConstantsErr, FileReadFailed, child.into()))?;
                                 self.includes.insert(path, buffer);
                             }
                         }
@@ -188,9 +188,7 @@ impl<'a> Constants<'a> {
                 }
 
                 else {
-                    return Err(ConstantsErr::new(
-                        ConstantsErrType::MisplacedMarker, token.into()));
-                }
+                    return Err(err!(ConstantsErr, MisplacedMarker, token.into())); }
 
                 *location += 2;
             }

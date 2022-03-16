@@ -1,5 +1,6 @@
 
 /// Provide all error types needed throughout the compilation.
+#[macro_use]
 pub mod error;
 
 use crate::{
@@ -79,4 +80,22 @@ pub fn clargs(args: &[String]) -> Result<Clargs, ClargsErr> {
 pub fn title(title: &str) {
     let decoration = "=".repeat(79);
     println!("\n{}\n\t\t\t\t{}\n{}\n", decoration, title, decoration);
+}
+
+macro_rules! source {
+    () => {
+        crate::program::SourceCtx{ 
+            file: file!(),
+            line: line!(),
+            column: column!(),
+        }
+    }
+}
+
+/// Stores a location in the source code.
+#[derive(Debug)]
+pub struct SourceCtx {
+    pub file: &'static str,
+    pub line: u32,
+    pub column: u32,
 }
