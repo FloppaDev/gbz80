@@ -100,24 +100,38 @@ use crate::{
         ops::OpMap,
         constants::Constants,
     },
-    program::clargs,
+    program::{
+        clargs,
+        error::stage::*,
+    },
 };
 
-use std::fs;
+use std::{
+    fs,
+    fmt,
+};
 
-fn main() -> Result<(), ()> {
+fn log_err<E: fmt::Display>(msg: &str, err: E) {
+    eprintln!("{}\n{}", msg, err);
+}
+
+macro_rules! stage {
+    ($stage:expr) => {
+        |e| log_err(&$stage(), e)
+    }
+}
+
+fn main() {
+    match run() {
+        Ok(_) => (),
+        Err(_) => ()
+    }
+}
+
+fn run() -> Result<(), ()> {
     // Command line arguments.
     let args = std::env::args().collect::<Vec<_>>();
-    let clargs = clargs(&args);
-
-    if let Err(err) = clargs {
-        eprintln!("Could not parse arguments");
-        eprintln!("{:?}", err);
-
-        return Err(())
-    }
-
-    let clargs = clargs.unwrap();
+    let clargs = clargs(&args).map_err(stage!(CLARGS))?;
 
     // Get source file.
     let input = fs::read_to_string(clargs.path); 

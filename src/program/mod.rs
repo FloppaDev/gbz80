@@ -4,7 +4,7 @@
 pub mod error;
 
 use crate::{
-    program::error::{ ClargsErr, ClargsErrType },
+    program::error::{ ClargsErr, ClargsErrType::* },
 };
 
 pub const RECURSION_LIMIT: usize = 1000;
@@ -33,7 +33,7 @@ pub fn clargs(args: &[String]) -> Result<Clargs, ClargsErr> {
     }
 
     else { 
-        return Err(ClargsErr::new(ClargsErrType::NoSource, ""))
+        return Err(ClargsErr::new(NoSource, ""))
     }
 
     // No more arguments.
@@ -57,12 +57,12 @@ pub fn clargs(args: &[String]) -> Result<Clargs, ClargsErr> {
                         if clargs.output.is_none() {
                             clargs.output = Some(arg);
                         }else{
-                            return Err(ClargsErr::new(ClargsErrType::TooManyParams, arg))
+                            return Err(ClargsErr::new(TooManyParams, arg))
                         }
                     }
 
                     Ty::Unknown => {
-                        return Err(ClargsErr::new(ClargsErrType::UnknownArg, arg))
+                        return Err(ClargsErr::new(UnknownArg, arg))
                     }
                 }
             }
@@ -70,7 +70,7 @@ pub fn clargs(args: &[String]) -> Result<Clargs, ClargsErr> {
     }
 
     if clargs.output.is_none() {
-        return Err(ClargsErr::new(ClargsErrType::NoOutput, ""))
+        return Err(ClargsErr::new(NoOutput, ""))
     }
 
     Ok(clargs)
@@ -99,3 +99,68 @@ pub struct SourceCtx {
     pub line: u32,
     pub column: u32,
 }
+
+pub mod color {
+
+    #[cfg(target_family="unix")]
+    mod values {
+        pub const BASE: &'static str = "\x1b[0m";
+        pub const OK: &'static str = "\x1b[32m";
+        pub const ERR: &'static str = "\x1b[31m";
+        pub const INFO: &'static str = "\x1b[93m";
+    }
+
+    #[cfg(not(target_family="unix"))]
+    mod values {
+        pub const BASE: &'static str = "";
+        pub const OK: &'static str = "";
+        pub const ERR: &'static str = "";
+        pub const INFO: &'static str = "";
+    }
+
+    pub fn strip() -> Strip {
+        Strip{ value: "".into() }
+    }
+
+    pub struct Strip {
+        value: String,
+    }
+
+    impl Strip {
+
+        pub fn base(mut self, text: &str) -> Self {
+            self.value.push_str(text);
+            self
+        }
+
+        pub fn ok(mut self, text: &str) -> Self {
+            self.value.push_str(values::OK);
+            self.value.push_str(text);
+            self.value.push_str(values::BASE);
+            self
+        }
+
+        pub fn err(mut self, text: &str) -> Self {
+            self.value.push_str(values::ERR);
+            self.value.push_str(text);
+            self.value.push_str(values::BASE);
+            self
+        }
+
+        pub fn info(mut self, text: &str) -> Self {
+            self.value.push_str(values::INFO);
+            self.value.push_str(text);
+            self.value.push_str(values::BASE);
+            self
+        }
+
+        pub fn end(mut self) -> String {
+            self.value
+        }
+
+
+    }
+
+}
+
+

@@ -11,6 +11,20 @@ use crate::{
     program::SourceCtx,
 };
 
+use std::fmt;
+
+
+pub mod stage {
+    
+    use crate::program::color;
+
+    pub const CLARGS: fn () -> String = | | color::strip()
+        .err("Compilation Failed. ")
+        .info("Invalid command line arguments.")
+        .end();
+
+}
+
 macro_rules! err {
     // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
     ($ty:ty, $e:expr, $ctx:expr) => {
@@ -81,29 +95,33 @@ pub struct ClargsErr<'a> {
     msg: &'a str,
 }
 
+impl<'a> fmt::Display for ClargsErr<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({:?}) {}:\n{}", self.ty, self.description(), self.msg)
+    }
+}
+
 impl<'a> ClargsErr<'a> {
 
     pub const fn new(ty: ClargsErrType, msg: &'a str) -> Self {
         Self { ty, msg }
     }
 
-    pub const fn fmt(&self) -> &'static str {
+    pub const fn description(&self) -> &'static str {
         use ClargsErrType::*;
 
         match self.ty {
-
             NoSource =>
-                "NoSource: No source file specified",
+                "No source file specified",
 
             NoOutput =>
-                "NoOutput: No output file specified",
+                "No output file specified",
 
             TooManyParams =>
-                "TooManyParams: Too many parameters in argument",
+                "Too many parameters in argument",
 
             UnknownArg =>
-                "UnknownArg: Unknown argument",
-
+                "Unknown argument",
         }
     }
 
