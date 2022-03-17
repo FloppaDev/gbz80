@@ -16,7 +16,7 @@ fn hex_to_byte(hex: &str) -> u8 {
 
 pub fn build(
     path: &str,
-    ast: TokenRef, 
+    ast: &TokenRef, 
     op_map: &OpMap, 
     constants: &Constants
 ) {

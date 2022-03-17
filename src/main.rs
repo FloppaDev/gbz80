@@ -74,12 +74,13 @@ mod write;
 mod tests;
 
 use crate::program::run;
+use std::process::exit;
 
 fn main() {
     //TODO return
     match run() {
-        Ok(_) => (),
-        Err(_) => ()
+        Ok(_) => exit(0),
+        Err(_) => exit(1)
     }
 }
 

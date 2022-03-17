@@ -8,10 +8,8 @@
 use TokenType::*;
 
 pub const fn is_char_word(c: char) -> bool {
-    match c {
-        '('|')'|'!'|'*'|'/'|'%'|'+'|'<'|'>'|'&'|'^'|'|' => true, 
-        _ => false
-    }
+    matches!(c,
+        '('|')'|'!'|'*'|'/'|'%'|'+'|'<'|'>'|'&'|'^'|'|')
 }
 
 /// All the different token types than can be identified.

@@ -9,19 +9,19 @@ pub fn title(title: &str) {
 #[cfg(target_family="unix")]
 /// Ansi escapes for colors.
 mod values {
-    pub const BASE: &'static str = "\x1b[0m";
-    pub const OK: &'static str = "\x1b[32m";
-    pub const ERR: &'static str = "\x1b[31m";
-    pub const INFO: &'static str = "\x1b[93m";
+    pub const BASE: &str = "\x1b[0m";
+    pub const OK: &str = "\x1b[32m";
+    pub const ERR: &str = "\x1b[31m";
+    pub const INFO: &str = "\x1b[93m";
 }
 
 #[cfg(not(target_family="unix"))]
 /// Assumes that colors will not work.
 mod values {
-    pub const BASE: &'static str = "";
-    pub const OK: &'static str = "";
-    pub const ERR: &'static str = "";
-    pub const INFO: &'static str = "";
+    pub const BASE: &str = "";
+    pub const OK: &str = "";
+    pub const ERR: &str = "";
+    pub const INFO: &str = "";
 }
 
 /// Creates a `Strip` object.
@@ -67,6 +67,8 @@ impl Strip {
     }
 
     /// Drops the `Strip` and returns its `String` value.
+    // "constant functions cannot evaluate destructors"
+    #[allow(clippy::missing_const_for_fn)]
     pub fn end(mut self) -> String {
         self.value
     }

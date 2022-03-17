@@ -236,5 +236,5 @@ fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
         ln += arm.len()
     }
 
-    out.push_str(" => true,");
+    out.push(')');
 }

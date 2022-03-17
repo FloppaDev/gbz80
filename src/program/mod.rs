@@ -23,7 +23,9 @@ use crate::{
         ops::OpMap,
         constants::Constants,
     },
-    program::error::stage::*,
+    program::error::stage::{
+        CLARGS,
+    },
 };
 
 use std::{

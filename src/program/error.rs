@@ -70,7 +70,7 @@ pub struct SourceCtx {
 /// Arguments:
 /// - Error struct type
 /// - Variant from the corresponding enum type
-/// - ErrCtx object
+/// - `ErrCtx` object
 macro_rules! err {
     // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
     ($ty:ty, $e:expr, $ctx:expr) => {
