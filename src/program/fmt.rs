@@ -1,4 +1,6 @@
 
+#![allow(dead_code)]
+
 #[cfg(debug_assertions)]
 /// Prints the title for compilation stage.
 pub fn title(title: &str) {
@@ -69,7 +71,7 @@ impl Strip {
     /// Drops the `Strip` and returns its `String` value.
     // "constant functions cannot evaluate destructors"
     #[allow(clippy::missing_const_for_fn)]
-    pub fn end(mut self) -> String {
+    pub fn end(self) -> String {
         self.value
     }
 

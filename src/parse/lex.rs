@@ -123,8 +123,7 @@ pub enum TokenType {
         AnonMark,
         Label,
     Repeat,
-    MacroCall,
-    Unknown, 
+    MacroCall, 
 }
 
 impl TokenType {
@@ -132,7 +131,7 @@ impl TokenType {
     /// Returns the parent of a type.
     pub const fn parent_type(self) -> Self {
         match self {
-            Root|Instruction|Directive|Marker|Repeat|MacroCall|Unknown => Root,
+            Root|Instruction|Directive|Marker|Repeat|MacroCall => Root,
 
             InstrName|Argument => Instruction,
 
@@ -269,7 +268,7 @@ impl TokenType {
     /// Returns a `TokenType` from an index.
     #[cfg(test)]
     pub const fn at(index: usize) -> Self {
-        const COUNT: usize = 109;
+        const COUNT: usize = 108;
 
         match index % COUNT {
             0 => Instruction,
@@ -380,7 +379,6 @@ impl TokenType {
             105 => Label,
             106 => Repeat,
             107 => MacroCall,
-            108 => Unknown,
             _ => unreachable!()
         }
     }

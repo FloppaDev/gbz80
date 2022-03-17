@@ -1,4 +1,6 @@
 
+#![allow(unused_mut, unused_variables, dead_code)] //TODO
+
 use crate::{
     write::{
         ops::OpMap,

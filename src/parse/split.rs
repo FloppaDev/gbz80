@@ -1,9 +1,6 @@
 
 use crate::{
-    parse::{
-        text::charset,
-        lex,
-    },
+    parse::lex,
     program::error::{SplitErr, SplitErrType},
 };
 
@@ -59,7 +56,6 @@ impl<'a> Split<'a> {
         let mut dir_line = false;
 
         let mut splitter = Splitter {
-            input,
             lines: vec![],
             line_numbers: vec![],
             words: vec![],
@@ -156,7 +152,7 @@ impl<'a> Split<'a> {
                         }
                     }
 
-                    else if charset::is_space(ch) {
+                    else if ch.is_whitespace() {
                         if has_word { 
                             if let Some(word) = line.get(word_start..c_i) {
                                 splitter.push(word, line, l_i);
@@ -257,7 +253,6 @@ impl<'a> Split<'a> {
 }
 
 struct Splitter<'a> {
-    input: &'a str,
     words: Vec<Word<'a>>,
     lines : Vec<&'a str>,
     line_numbers: Vec<usize>,

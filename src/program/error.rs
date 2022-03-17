@@ -1,4 +1,6 @@
 
+#![allow(unused_mut, unused_variables, dead_code)] //TODO
+
 use crate::{
     parse::{
         lex::TokenType,
@@ -388,8 +390,6 @@ pub enum AstErrType {
     PlusWithoutRhs,
     MinusWithoutRhs,
     MarkWithoutLiteral,
-    InvalidExprLhs(TokenType),
-    NoExprLhs,
     UnhandledNewline(TokenType),
     UnknownError,
 }
@@ -430,12 +430,6 @@ impl<'a> AstErr<'a> {
 
             MarkWithoutLiteral => 
                 "MarkWithoutLiteral: marker expected a literal",
-
-            InvalidExprLhs(_) =>
-                "InvalidExprLhs: Invalid token for binary operation's left-hand side",
-
-            NoExprLhs =>
-                "NoExprLhs: There is no token preceding this binary operation",
 
             UnhandledNewline(_) =>
                 "UnhandledNewline: Internal error on new line",

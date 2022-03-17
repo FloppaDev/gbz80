@@ -130,7 +130,7 @@ pub fn run() -> Result<(), ()> {
     }
 
     let op_map = op_map.unwrap();
-    let constants = Constants::new(&ast_ref, &op_map);
+    let _constants = Constants::new(&ast_ref, &op_map);
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);

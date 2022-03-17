@@ -169,7 +169,7 @@ impl<'a> Ast<'a> {
                 self.cascade(*selection, &[p], token);
             }
 
-            p @ Macro => {
+            Macro => {
                 // Is it a macro call? 
                 if token.ty == MacroIdent && self.type_of(*selection) != Macro {
                     *selection = self.cascade(*selection, &[MacroCall], token);
@@ -245,7 +245,7 @@ impl<'a> Ast<'a> {
     fn push(&mut self, dest: usize, token: ParsedToken<'a>) -> usize {
         // Create the Token
         let index = self.tokens.len();
-        let mut token = Token::new(token, index, dest);
+        let token = Token::new(token, index, dest);
 
         // Push the token and it index.
         self.tokens.push(token);
@@ -292,6 +292,7 @@ impl<'a> Ast<'a> {
     }
 
     /// Index of the token sharing the same parent that was added before this one.
+    #[allow(dead_code)]//TODO expr types miht need it.
     fn older_sibling_of(&self, index: usize) -> Option<usize> {
         let siblings = &self.tokens[self.tokens[index].parent].children;
         let mut alone = true;
@@ -314,6 +315,7 @@ impl<'a> Ast<'a> {
     }
 
     /// Move a token into another.
+    #[allow(dead_code)]//TODO expr types miht need it.
     pub fn move_into(&mut self, index: usize, dest: usize) {
         // Remove index from its current parent's 'children' vec.
         let current_parent = self.tokens[index].parent;

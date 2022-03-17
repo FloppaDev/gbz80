@@ -14,7 +14,7 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum Constant {
-    BitN(usize),
+    BitN(usize), //TODO bits are using Byte rn.
     Byte,
     Word,
 }

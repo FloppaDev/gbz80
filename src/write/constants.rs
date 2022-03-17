@@ -173,7 +173,7 @@ impl<'a> Constants<'a> {
 
             Identifier => {
                 let ident = token.value().as_str();
-                *location += self.size_of_ident(op_map, ident)?;
+                *location += self.size_of_ident(ident)?;
             }
 
             Label => {
@@ -211,11 +211,7 @@ impl<'a> Constants<'a> {
         Ok(())
     }
     
-    fn size_of_ident(
-        &self,
-        op_map: &OpMap<'a>,
-        ident: &'a str,
-    ) -> Result<usize, ConstantsErr<'a>> {
+    fn size_of_ident(&self, ident: &'a str) -> Result<usize, ConstantsErr<'a>> {
         match self.constants[ident] {
             ConstExpr::Value(value) => {
                 match value {

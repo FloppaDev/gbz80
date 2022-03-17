@@ -1,13 +1,13 @@
 
 use crate::{
     parse::{
-        lex::{ TokenType::* },
+        lex::{TokenType::*},
     },
     token::{ 
         Token,
         ast::Ast,
     },
-    program::error::{ MacroErr, MacroErrType::{self, *} },
+    program::error::{MacroErr, MacroErrType::*},
 };
 
 pub struct Macros {
@@ -249,21 +249,6 @@ impl<'a, 'b> Macros {
         }
 
         call_ast
-    }
-
-    /// Return token reference that corresponds to the specified name.
-    fn get_arg_by_name(
-        name: &'a str, 
-        arg_names: &[&str],
-        arg_tokens: &[&'b Token<'a>],
-    ) -> Result<&'b Token<'a>, MacroErrType> {
-        for (i, arg_name) in arg_names.iter().enumerate() {
-            if *arg_name == name {
-                return Ok(arg_tokens[i])
-            }
-        }
-
-        Err(MacroErrType::ArgNotFound)
     }
 
 }

@@ -64,7 +64,7 @@ impl<'a> TokenRef<'a> {
         for child in &current.token.children {
             *fail_safe -= 1;
             let token = &ast.tokens[*child];
-            let mut token_ref = Self{ 
+            let token_ref = Self{ 
                 ast, token, parent: current, children: vec![]
             };
 

@@ -58,7 +58,7 @@
     clippy::match_wildcard_for_single_variants,
 )]
 
-#![allow(unused_mut, unused_variables, dead_code)] //TODO
+//#![allow(unused_mut, unused_variables, dead_code)] //TODO
 
 #[macro_use]
 mod program;
@@ -77,7 +77,6 @@ use crate::program::run;
 use std::process::exit;
 
 fn main() {
-    //TODO return
     match run() {
         Ok(_) => exit(0),
         Err(_) => exit(1)
