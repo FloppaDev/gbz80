@@ -7,9 +7,7 @@ use crate::{
         Token, Value,
         ast::Ast,
     },
-    program::{
-        RECURSION_LIMIT,
-    }
+    program::error::ITERATION_LIMIT,
 };
 
 use std::hash::{Hash, Hasher};
@@ -46,7 +44,7 @@ impl<'a> TokenRef<'a> {
 
     /// Creates a `TokenRef` from the root token of an `Ast`.
     pub fn new(ast: &'a Ast) -> Self {
-        let mut fail_safe = RECURSION_LIMIT;
+        let mut fail_safe = ITERATION_LIMIT;
         let root = ast.get_root();
         let mut current = Self{ 
             ast, token: root, parent: std::ptr::null(), children: vec![]

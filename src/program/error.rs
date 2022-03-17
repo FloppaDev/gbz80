@@ -8,25 +8,38 @@ use crate::{
         Token, 
         read::TokenRef
     },
-    program::{SourceCtx, color},
+    program::fmt,
 };
-
-use std::fmt;
 
 /// Used mostly in recursion fail-safes.
 pub const ITERATION_LIMIT: usize = 1000;
 
 /// Contains errors messages for the main compilation stages.
+#[macro_use]
 pub mod stage {
     
-    use crate::program::color;
+    use crate::program::fmt;
 
-    pub const CLARGS: fn () -> String = | | color::strip()
+    /// Prints an error from the assembler.
+    pub fn log_err<E: std::fmt::Display>(msg: &str, err: E) {
+        eprintln!("{}\n{}", msg, err);
+    }
+
+    /// Prints the error message for a specific stage.
+    /// Arguments:
+    /// - the stage constant
+    macro_rules! stage_err {
+        ($stage:expr) => {
+            |e| crate::program::error::stage::log_err(&$stage(), e)
+        }
+    }
+
+    pub const CLARGS: fn () -> String = | | fmt::strip()
         .err("Compilation Failed. ")
         .info("Invalid command line arguments.")
         .end();
 
-    pub const SPLIT: fn () -> String = | | color::strip()
+    pub const SPLIT: fn () -> String = | | fmt::strip()
         .err("Compilation Failed. ")
         .info("Could not recognize words in source file.")
         .end();
@@ -37,7 +50,7 @@ pub mod stage {
 /// No arguments.
 macro_rules! source {
     () => {
-        crate::program::SourceCtx{ 
+        crate::program::error::SourceCtx{ 
             file: file!(),
             line: line!(),
             column: column!(),
@@ -165,9 +178,9 @@ impl<'a> ClargsErr<'a> {
 
 }
 
-impl<'a> fmt::Display for ClargsErr<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let text = color::strip()
+impl<'a> std::fmt::Display for ClargsErr<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = fmt::strip()
             .info(&format!("({:?}) ", self.ty))
             .base(&format!("{}{}", self.description(), ln_if(self.msg)))
             .end();
@@ -216,9 +229,9 @@ impl<'a> SplitErr<'a> {
 }
 
 //TODO split returns a vec of errors.
-impl<'a> fmt::Display for SplitErr<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let text = color::strip()
+impl<'a> std::fmt::Display for SplitErr<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = fmt::strip()
             .info(&format!("({:?}) ", self.ty))
             .base(&format!(
                 "{}\nl{}:    {}", self.description(), self.line_number, self.line))

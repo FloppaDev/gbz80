@@ -1,4 +1,8 @@
 
+use crate::{
+    program::error::{ClargsErr, ClargsErrType::*},
+};
+
 #[derive(Default)]
 /// Contains the parsed arguments.
 pub struct Clargs<'a> {
@@ -9,11 +13,11 @@ pub struct Clargs<'a> {
 
 /// Get CLI arguments into a struct.
 ///
-/// List of options:
-///
+/// List of arguments:
+/// source file
 /// -o                      Output file
-/// -D [SYMBOLS]            Defined symbols
-pub fn clargs(args: &[String]) -> Result<Clargs, ClargsErr> {
+/// -D [SYMBOLS]            Defined symbols, optional.
+pub fn parse(args: &[String]) -> Result<Clargs, ClargsErr> {
     enum Ty { Unknown, Define, Output }
 
     let mut clargs = Clargs::default();

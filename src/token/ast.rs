@@ -9,13 +9,17 @@ use crate::{
         macros::Macros,
     },
     program::{
-        RECURSION_LIMIT,
-        error::{ErrCtx, AstErr, AstErrType::*},
+        error::{
+            ErrCtx, 
+            AstErr, 
+            AstErrType::*,
+            ITERATION_LIMIT,
+        },
     },
 };
 
 #[cfg(debug_assertions)]
-use crate::program::title;
+use crate::program::fmt::title;
 
 /// Abstract Token Tree.
 /// The whole hierarchy of parsed tokens from the source file.
@@ -93,7 +97,7 @@ impl<'a> Ast<'a> {
         let token = &self.tokens[*selection];
         let Token{ line_number, line, word, .. } = *token;
         let err_ctx = token.into();
-        let mut fail_safe = RECURSION_LIMIT;
+        let mut fail_safe = ITERATION_LIMIT;
 
         // Check for tokens that end on a new line and close them.
         loop {

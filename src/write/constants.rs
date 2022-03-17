@@ -8,8 +8,11 @@ use crate::{
         read::TokenRef,
     },
     program::{
-        error::{ConstantsErr, ConstantsErrType::*},
-        RECURSION_LIMIT,
+        error::{
+            ConstantsErr, 
+            ConstantsErrType::*,
+            ITERATION_LIMIT,
+        },
     },
     write::ops::OpMap,
 };
@@ -42,7 +45,7 @@ impl<'a> Constants<'a> {
         ast: &'a TokenRef<'a>,
         op_map: &OpMap<'a>,
     ) -> Result<Self, ConstantsErr<'a>> {
-        let mut fail_safe = RECURSION_LIMIT;
+        let mut fail_safe = ITERATION_LIMIT;
         let mut constants = Self{ 
             constants: HashMap::new(), 
             includes: HashMap::new(),

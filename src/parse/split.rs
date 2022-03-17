@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[cfg(debug_assertions)]
-use crate::program::title;
+use crate::program::fmt::title;
 
 #[derive(Copy, Clone)]
 pub struct LineIndex {
