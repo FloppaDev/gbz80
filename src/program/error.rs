@@ -13,7 +13,10 @@ use crate::{
 
 use std::fmt;
 
+/// Used mostly in recursion fail-safes.
+pub const ITERATION_LIMIT: usize = 1000;
 
+/// Contains errors messages for the main compilation stages.
 pub mod stage {
     
     use crate::program::color;
@@ -30,6 +33,31 @@ pub mod stage {
 
 }
 
+/// Creates a `SourceCtx` containing its location in the source code.
+/// No arguments.
+macro_rules! source {
+    () => {
+        crate::program::SourceCtx{ 
+            file: file!(),
+            line: line!(),
+            column: column!(),
+        }
+    }
+}
+
+#[derive(Debug)]
+/// Stores a location in the source code.
+pub struct SourceCtx {
+    pub file: &'static str,
+    pub line: u32,
+    pub column: u32,
+}
+
+/// Creates an error for one of the types that expect an `ErrCtx`.
+/// Arguments:
+/// - Error struct type
+/// - Variant from the corresponding enum type
+/// - ErrCtx object
 macro_rules! err {
     // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
     ($ty:ty, $e:expr, $ctx:expr) => {
@@ -84,6 +112,7 @@ impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 
 }
 
+/// Prepends a newline if text is not empty.
 fn ln_if(text: &str) -> String {
     return if text.is_empty() {
         "".into()
@@ -95,6 +124,7 @@ fn ln_if(text: &str) -> String {
 //TODO impl fmt properly
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when parsing command line arguments.
 pub enum ClargsErrType {
     NoSource,
     NoOutput,
@@ -103,6 +133,7 @@ pub enum ClargsErrType {
 }
 
 #[derive(Debug)]
+/// Command line arguments error.
 pub struct ClargsErr<'a> {
     ty: ClargsErrType,
     msg: &'a str,
@@ -146,6 +177,7 @@ impl<'a> fmt::Display for ClargsErr<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when reading word from the source file.
 pub enum SplitErrType {
     MisplacedDirective,
     InvalidDirective,
@@ -153,6 +185,7 @@ pub enum SplitErrType {
 }
 
 #[derive(Debug)]
+/// Error when reading words from the source file.
 pub struct SplitErr<'a> {
     ty: SplitErrType,
     line: &'a str,
@@ -196,6 +229,7 @@ impl<'a> fmt::Display for SplitErr<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when parsing values from the source file.
 pub enum ParseErrType {
     /// Number literals are either 1 or 2 bytes long. (255 or 65535 max value)
     HexOverflow,
@@ -233,6 +267,7 @@ pub enum ParseErrType {
 }
 
 #[derive(Debug)]
+/// Error when parsing values from the source file.
 pub struct ParseErr<'a> {
     ty: ParseErrType,
     err_ctx: ErrCtx<'a>,
@@ -333,6 +368,7 @@ impl<'a> ParseErr<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when building the AST.
 pub enum AstErrType {
     NoTokens,
     UnmatchedParen,
@@ -346,6 +382,7 @@ pub enum AstErrType {
 }
 
 #[derive(Debug)]
+/// Error when building the AST.
 pub struct AstErr<'a> {
     ty: AstErrType,
     err_ctx: ErrCtx<'a>,
@@ -397,6 +434,7 @@ impl<'a> AstErr<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when expanding macros.
 pub enum MacroErrType {
     NoDeclIdent,
     InvalidDecl,
@@ -409,6 +447,7 @@ pub enum MacroErrType {
 }
 
 #[derive(Debug)]
+/// Error when expanding macros.
 pub struct MacroErr<'a> {
     ty: MacroErrType,
     err_ctx: ErrCtx<'a>,
@@ -458,11 +497,13 @@ impl<'a> MacroErr<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when looking for an opcode.
 pub enum OpErrType {
     NotFound,
 }
 
 #[derive(Debug)]
+/// Error when looking for an opcode.
 pub struct OpErr<'a> {
     ty: OpErrType,
     err_ctx: ErrCtx<'a>,
@@ -491,6 +532,7 @@ impl<'a> OpErr<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Error variants when calculating constant values.
 pub enum ConstantsErrType {
     DuplicateKey,
     MisplacedMarker,
@@ -498,6 +540,7 @@ pub enum ConstantsErrType {
 }
 
 #[derive(Debug)]
+/// Error when calculating constant values.
 pub struct ConstantsErr<'a> {
     ty: ConstantsErrType,
     err_ctx: ErrCtx<'a>,

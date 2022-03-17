@@ -111,16 +111,6 @@ use std::{
     fmt,
 };
 
-fn log_err<E: fmt::Display>(msg: &str, err: E) {
-    eprintln!("{}\n{}", msg, err);
-}
-
-macro_rules! stage {
-    ($stage:expr) => {
-        |e| log_err(&$stage(), e)
-    }
-}
-
 fn main() {
     match run() {
         Ok(_) => (),
@@ -128,10 +118,10 @@ fn main() {
     }
 }
 
-fn run() -> Result<(), ()> {
+pub fn run() -> Result<(), ()> {
     // Command line arguments.
     let args = std::env::args().collect::<Vec<_>>();
-    let clargs = clargs(&args).map_err(stage!(CLARGS))?;
+    let clargs = clargs(&args).map_err(stage_err!(CLARGS))?;
 
     // Get source file.
     let input = fs::read_to_string(clargs.path); 
