@@ -5,7 +5,7 @@ use crate::{
     token::{
         read::TokenRef,
     },
-    program::error::{
+    error::asm::{
         AsmErr,
         OpMsg::{self, *},
     },

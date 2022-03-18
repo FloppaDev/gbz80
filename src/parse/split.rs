@@ -1,7 +1,7 @@
 
 use crate::{
     parse::lex,
-    program::error::{SplitErr, SplitErrType},
+    error::init::{SplitErr, SplitErrType},
 };
 
 #[cfg(debug_assertions)]

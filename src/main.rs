@@ -56,9 +56,13 @@
     clippy::cast_possible_truncation,
     clippy::non_ascii_literal,
     clippy::match_wildcard_for_single_variants,
+    clippy::module_name_repetitions,
 )]
 
 //#![allow(unused_mut, unused_variables, dead_code)] //TODO
+
+#[macro_use]
+mod error;
 
 #[macro_use]
 mod program;

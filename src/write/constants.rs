@@ -7,11 +7,11 @@ use crate::{
         Value,
         read::TokenRef,
     },
-    program::{
-        error::{
+    error::{
+        ITERATION_LIMIT,
+        asm::{
             AsmErr, 
             ConstantsMsg::{self, *},
-            ITERATION_LIMIT,
         },
     },
     write::ops::OpMap,

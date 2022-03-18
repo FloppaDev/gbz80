@@ -6,7 +6,13 @@ use crate::{
         lex::TokenType::{self, *},
         split::Split,
     },
-    program::error::{ ErrCtx, AsmErr, ParseMsg::{self, *} },
+    error::{
+        ErrCtx,
+        asm::{
+            AsmErr,
+            ParseMsg::{self, *}
+        },
+    },
 };
 
 /// Output of the parser. Contains the type and the key to the data.

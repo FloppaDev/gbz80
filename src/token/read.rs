@@ -7,7 +7,7 @@ use crate::{
         Token, Value,
         ast::Ast,
     },
-    program::error::ITERATION_LIMIT,
+    error::ITERATION_LIMIT,
 };
 
 use std::hash::{Hash, Hasher};

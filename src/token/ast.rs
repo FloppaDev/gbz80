@@ -8,12 +8,12 @@ use crate::{
         Token, Value,
         macros::Macros,
     },
-    program::{
-        error::{
-            ErrCtx, 
+    error::{
+        ErrCtx, 
+        ITERATION_LIMIT,
+        asm::{
             AsmErr,
             AstMsg::{self, *},
-            ITERATION_LIMIT,
         },
     },
 };

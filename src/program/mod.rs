@@ -1,8 +1,4 @@
 
-/// Provides all error types needed throughout the compilation.
-#[macro_use]
-pub mod error;
-
 /// Parses command line arguments.
 pub mod clargs;
 
@@ -23,8 +19,8 @@ use crate::{
         ops::OpMap,
         constants::Constants,
     },
-    program::error::stage::{
-        CLARGS,
+    error::stage::{
+        CLARGS, SPLIT,
     },
 };
 
@@ -74,7 +70,7 @@ pub fn run() -> Result<(), ()> {
             errors.len());
 
         for err in errors {
-            eprintln!("{:?}", err);
+            eprintln!("{}", err);
         }
 
         return Err(())

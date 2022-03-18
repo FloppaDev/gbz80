@@ -7,7 +7,7 @@ use crate::{
         Token,
         ast::Ast,
     },
-    program::error::{
+    error::asm::{
         AsmErr,
         MacroMsg::{self, *}
     },

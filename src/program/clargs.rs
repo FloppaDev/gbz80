@@ -1,6 +1,6 @@
 
 use crate::{
-    program::error::{ClargsErr, ClargsErrType::*},
+    error::init::{ClargsErr, ClargsErrType::*},
 };
 
 #[derive(Default)]
