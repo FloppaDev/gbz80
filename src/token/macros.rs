@@ -7,7 +7,10 @@ use crate::{
         Token,
         ast::Ast,
     },
-    program::error::{MacroErr, MacroErrType::*},
+    program::error::{
+        AsmErr,
+        MacroMsg::{self, *}
+    },
 };
 
 pub struct Macros {
@@ -24,7 +27,7 @@ impl<'a, 'b> Macros {
     fn check_macro_decls(
         &self, 
         ast: &Ast<'a>,
-        errors: &mut Vec<MacroErr<'a>>
+        errors: &mut Vec<AsmErr<'a, MacroMsg>>
     ) -> bool {
         let err_count = errors.len(); 
 
@@ -35,12 +38,12 @@ impl<'a, 'b> Macros {
             // First child must be the macro identifier.
             if let Some(decl_ident) = token.children.get(0) {
                 if ast.tokens[*decl_ident].ty != MacroIdent {
-                    errors.push(err!(MacroErr, NoDeclIdent, err_ctx));
+                    errors.push(err!(MacroMsg, NoDeclIdent, err_ctx));
                 }
             }
 
             else {
-                errors.push(err!(MacroErr, InvalidDecl, err_ctx));
+                errors.push(err!(MacroMsg, InvalidDecl, err_ctx));
                 continue;
             }
 
@@ -48,14 +51,14 @@ impl<'a, 'b> Macros {
             let body = ast.tokens[*macro_decl].children.last().unwrap();
 
             if ast.tokens[*body].ty != MacroBody {
-                errors.push(err!(MacroErr, NoDeclBody, err_ctx));
+                errors.push(err!(MacroMsg, NoDeclBody, err_ctx));
             }
 
             // All other tokens must be macro arguments.
             if let Some(args) = token.children.get(1..token.children.len()-1) {
                 for arg in args {
                     if ast.tokens[*arg].ty != MacroArg {
-                        errors.push(err!(MacroErr, InvalidDeclToken, err_ctx)); 
+                        errors.push(err!(MacroMsg, InvalidDeclToken, err_ctx)); 
                     }
                 }
             }
@@ -68,7 +71,7 @@ impl<'a, 'b> Macros {
     pub fn expand(
         &self,
         ast: &'b mut Ast<'a>,
-    ) -> Result<(), Vec<MacroErr<'a>>> {
+    ) -> Result<(), Vec<AsmErr<'a, MacroMsg>>> {
         let mut errors = vec![];
 
         // Cannot continue if macro declarations are unreliable.
@@ -84,7 +87,7 @@ impl<'a, 'b> Macros {
             let call_ident = token.children.get(0); 
 
             if call_ident.is_none() {
-                errors.push(err!(MacroErr, NoCallIdent, token.into()));
+                errors.push(err!(MacroMsg, NoCallIdent, token.into()));
                 continue;
             }
 
@@ -104,7 +107,7 @@ impl<'a, 'b> Macros {
 
             // Macro declaration not found.
             if decl_index.is_none() {
-                errors.push(err!(MacroErr, DeclNotFound, token.into()));
+                errors.push(err!(MacroMsg, DeclNotFound, token.into()));
                 continue;
             }
 
@@ -129,7 +132,7 @@ impl<'a, 'b> Macros {
         ast: &'b mut Ast<'a>, 
         macro_decl: usize,
         macro_call: usize,
-        errors: &mut Vec<MacroErr<'a>>,
+        errors: &mut Vec<AsmErr<'a, MacroMsg>>,
     ) {
         // Add the call's `MacroBody` as a child.
         let call_body_index = ast.tokens.len();
@@ -147,7 +150,7 @@ impl<'a, 'b> Macros {
         let call_args = call_children.get(1..call_children.len()-1).unwrap();
 
         if decl_args.len() != call_args.len() {
-            errors.push(err!(MacroErr, ArgCountMismatch, call.into()));
+            errors.push(err!(MacroMsg, ArgCountMismatch, call.into()));
             return;
         }
 

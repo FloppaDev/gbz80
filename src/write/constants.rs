@@ -9,8 +9,8 @@ use crate::{
     },
     program::{
         error::{
-            ConstantsErr, 
-            ConstantsErrType::*,
+            AsmErr, 
+            ConstantsMsg::{self, *},
             ITERATION_LIMIT,
         },
     },
@@ -44,7 +44,7 @@ impl<'a> Constants<'a> {
     pub fn new(
         ast: &'a TokenRef<'a>,
         op_map: &OpMap<'a>,
-    ) -> Result<Self, ConstantsErr<'a>> {
+    ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         let mut fail_safe = ITERATION_LIMIT;
         let mut constants = Self{ 
             constants: HashMap::new(), 
@@ -67,7 +67,7 @@ impl<'a> Constants<'a> {
         mut self,
         ast: &'a TokenRef<'a>,
         fail_safe: &mut usize,
-    ) -> Result<Self, ConstantsErr<'a>> {
+    ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         *fail_safe -= 1;
 
         if *fail_safe == 0 {
@@ -77,7 +77,7 @@ impl<'a> Constants<'a> {
         let nil = Some(ConstExpr::Nil);
 
         for token in ast.children() {
-            let err = err!(ConstantsErr, DuplicateKey, token.into());
+            let err = err!(ConstantsMsg, DuplicateKey, token.into());
 
             match token.ty() {
                 MacroCall|MacroBody => self = self.get_constants(token, fail_safe)?,
@@ -132,9 +132,9 @@ impl<'a> Constants<'a> {
                             if self.includes.get(path).is_none() {
                                 let mut buffer = vec![];
                                 let mut file = File::open(path).map_err(|_| err!(
-                                    ConstantsErr, FileReadFailed, child.into()))?;
+                                    ConstantsMsg, FileReadFailed, child.into()))?;
                                 file.read_to_end(&mut buffer).map_err(|_| err!(
-                                    ConstantsErr, FileReadFailed, child.into()))?;
+                                    ConstantsMsg, FileReadFailed, child.into()))?;
                                 self.includes.insert(path, buffer);
                             }
                         }
@@ -156,7 +156,7 @@ impl<'a> Constants<'a> {
         op_map: &OpMap<'a>,
         token: &'a TokenRef<'a>,
         location: &mut usize,
-    ) -> Result<(), ConstantsErr<'a>> {
+    ) -> Result<(), AsmErr<'a, ConstantsMsg>> {
         match token.ty() {
             MacroCall => {
                 for child in token.children() {
@@ -191,7 +191,7 @@ impl<'a> Constants<'a> {
                 }
 
                 else {
-                    return Err(err!(ConstantsErr, MisplacedMarker, token.into())); }
+                    return Err(err!(ConstantsMsg, MisplacedMarker, token.into())); }
 
                 *location += 2;
             }
@@ -211,7 +211,7 @@ impl<'a> Constants<'a> {
         Ok(())
     }
     
-    fn size_of_ident(&self, ident: &'a str) -> Result<usize, ConstantsErr<'a>> {
+    fn size_of_ident(&self, ident: &'a str) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
         match self.constants[ident] {
             ConstExpr::Value(value) => {
                 match value {

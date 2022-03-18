@@ -6,7 +6,7 @@ use crate::{
         lex::TokenType::{self, *},
         split::Split,
     },
-    program::error::{ ErrCtx, ParseErr, ParseErrType::{self, *} },
+    program::error::{ ErrCtx, AsmErr, ParseMsg::{self, *} },
 };
 
 /// Output of the parser. Contains the type and the key to the data.
@@ -21,7 +21,7 @@ pub struct ParsedToken<'a> {
 /// Map words to token types and extract their data.
 pub fn parse<'a>(
     split: &Split<'a>,
-) -> Result<Vec<ParsedToken<'a>>, Vec<ParseErr<'a>>> {
+) -> Result<Vec<ParsedToken<'a>>, Vec<AsmErr<'a, ParseMsg>>> {
     let mut parsed_tokens = vec![];
     let mut errors = vec![];
 
@@ -35,7 +35,7 @@ pub fn parse<'a>(
                 split.line(word.line_index),
                 word.value);
 
-            let err = err!(ParseErr, err_type, err_ctx);
+            let err = err!(ParseMsg, err_type, err_ctx);
             errors.push(err);
 
             continue;
@@ -51,7 +51,7 @@ pub fn parse<'a>(
                     split.line(word.line_index), 
                     word_str.as_str());
 
-                let err = err!(ParseErr, err_type, err_ctx);
+                let err = err!(ParseMsg, err_type, err_ctx);
                 errors.push(err);
 
                 continue;
@@ -78,7 +78,7 @@ pub fn parse<'a>(
 }
 
 /// Extract the data from a word.
-fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseErrType> {
+fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
     let (ty, str_value) = word; 
 
     // There is no value to extract.
@@ -144,16 +144,14 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseErrType> 
             Ok((ty, Value::Str(str_value)))
         }
 
-        _ => Err(ParseErrType::UnhandledType)
+        _ => Err(ParseMsg::UnhandledType)
     }
 }
 
 /// Get token type(s) and value(s) from word.
-fn identify(
-    word: &str
-) -> Result<Vec<(TokenType, CheckedStr)>, ParseErrType> {
+fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
     if word.is_empty() {
-        return Err(ParseErrType::EmptyStr);
+        return Err(ParseMsg::EmptyStr);
     }
 
     // Find token type by name.
@@ -218,7 +216,7 @@ fn identify(
                     "ds" => Ok(vec![ (DefS, text::no_check("")) ]),
                     "include" => Ok(vec![ (Include, text::no_check("")) ]),
                     "macro" => Ok(vec![ (Macro, text::no_check("")) ]),
-                    _ => Err(ParseErrType::InvalidDirectiveIdent)
+                    _ => Err(ParseMsg::InvalidDirectiveIdent)
                 };
             }
 
@@ -236,7 +234,7 @@ fn identify(
             }
 
             // Search by prefix gave a wrong result
-            _ => return Err(ParseErrType::UnexpectedPrefix),
+            _ => return Err(ParseMsg::UnexpectedPrefix),
         }
     }
 
@@ -281,5 +279,5 @@ fn identify(
     }
 
     // Could not parse word.
-    Err(ParseErrType::Invalid)
+    Err(ParseMsg::Invalid)
 }

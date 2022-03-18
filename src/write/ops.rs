@@ -5,7 +5,10 @@ use crate::{
     token::{
         read::TokenRef,
     },
-    program::error::{OpErr, OpErrType::*},
+    program::error::{
+        AsmErr,
+        OpMsg::{self, *},
+    },
 };
 
 use Constant::*;
@@ -102,7 +105,7 @@ impl<'a> OpMap<'a> {
         map.get(token).unwrap()
     }
 
-    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<OpErr<'a>>> {
+    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<AsmErr<'a, OpMsg>>> {
         let mut map = HashMap::new(); 
         let mut errors = vec![];
 
@@ -118,7 +121,7 @@ impl<'a> OpMap<'a> {
     fn walk(
         ast: &'a TokenRef<'a>,
         map: &mut HashMap<&TokenRef<'a>, OpCode>, 
-        errors: &mut Vec<OpErr<'a>>,
+        errors: &mut Vec<AsmErr<'a, OpMsg>>,
     ) {
         for token in ast.children() {
             match token.ty() {
@@ -128,7 +131,7 @@ impl<'a> OpMap<'a> {
                     let opcode = instructions::find(token);
 
                     if opcode.is_none() {
-                        errors.push(err!(OpErr, NotFound, token.into()));
+                        errors.push(err!(OpMsg, NotFound, token.into()));
                         continue;
                     }
 

@@ -11,8 +11,8 @@ use crate::{
     program::{
         error::{
             ErrCtx, 
-            AstErr, 
-            AstErrType::*,
+            AsmErr,
+            AstMsg::{self, *},
             ITERATION_LIMIT,
         },
     },
@@ -38,9 +38,9 @@ impl<'a> Ast<'a> {
     pub fn new(
         tokens: Vec<ParsedToken<'a>>,
         macros: &mut Macros,
-    ) -> Result<Self, Vec<AstErr<'a>>> {
+    ) -> Result<Self, Vec<AsmErr<'a, AstMsg>>> {
         if tokens.is_empty() {
-            let e = err!(AstErr, NoTokens, ErrCtx::new(0, "", ""));
+            let e = err!(AstMsg, NoTokens, ErrCtx::new(0, "", ""));
             return Err(vec![e]);
         }
 
@@ -92,7 +92,7 @@ impl<'a> Ast<'a> {
     fn newline(
         &mut self,
         selection: &mut usize,
-        errors: &mut Vec<AstErr<'a>>,
+        errors: &mut Vec<AsmErr<'a, AstMsg>>,
     ) -> Result<(), ()> {
         let token = &self.tokens[*selection];
         let Token{ line_number, line, word, .. } = *token;
@@ -104,7 +104,7 @@ impl<'a> Ast<'a> {
             let sel_ty = self.type_of(*selection);
 
             if fail_safe == 0 {
-                let e = err!(AstErr, UnhandledNewline(sel_ty), err_ctx);
+                let e = err!(AstMsg, UnhandledNewline, err_ctx);
                 errors.push(e);
 
                 return Err(());
@@ -123,13 +123,13 @@ impl<'a> Ast<'a> {
                     }
 
                     At => {
-                        let e = err!(AstErr, UnmatchedParen, err_ctx);
+                        let e = err!(AstMsg, UnmatchedParen, err_ctx);
                         errors.push(e);
                         *selection = self.parent_of(*selection);
                     }
                     
                     NamedMark|AnonMark if self.tokens[*selection].children.is_empty() => {
-                        let e = err!(AstErr, MarkWithoutLiteral, err_ctx);
+                        let e = err!(AstMsg, MarkWithoutLiteral, err_ctx);
                         errors.push(e);
                         *selection = self.parent_of(*selection);
                     }
@@ -154,7 +154,7 @@ impl<'a> Ast<'a> {
         token: ParsedToken<'a>,
         selection: &mut usize,
         macros: &mut Macros,
-        errors: &mut Vec<AstErr<'a>>,
+        errors: &mut Vec<AsmErr<'a, AstMsg>>,
     ) {
         let ParsedToken{ line_number, line, word, .. } = token;
         let err_ctx: ErrCtx = (&token).into();
@@ -234,7 +234,7 @@ impl<'a> Ast<'a> {
                 }
 
                 _ => {
-                    let e = err!(AstErr, UnknownError, err_ctx);
+                    let e = err!(AstMsg, UnknownError, err_ctx);
                     errors.push(e);
                 }
             }

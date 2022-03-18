@@ -75,18 +75,6 @@ impl std::fmt::Display for SourceCtx {
     }
 }
 
-/// Creates an error for one of the types that expect an `ErrCtx`.
-/// Arguments:
-/// - Error struct type
-/// - Variant from the corresponding enum type
-/// - `ErrCtx` object
-macro_rules! err {
-    // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
-    ($ty:ty, $e:expr, $ctx:expr) => {
-        <$ty>::new($e, $ctx, source!())
-    }
-}
-
 /// Provides context for an error in the parsed source file.
 #[derive(Debug, Copy, Clone)]
 pub struct ErrCtx<'a> {
@@ -250,9 +238,52 @@ impl<'a> std::fmt::Display for SplitErr<'a> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+pub trait AsmMsg: Sized + std::fmt::Debug {
+    fn msg(&self) -> &'static str;
+}
+
+/// Error when parsing values from the source file.
+#[derive(Debug)]
+pub struct AsmErr<'a, T: AsmMsg> {
+    pub ty: T,
+    pub err_ctx: ErrCtx<'a>,
+    pub source_ctx: SourceCtx,
+}
+
+impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let ErrCtx{ line_number, line, word } = self.err_ctx;
+
+        let text = fmt::strip()
+            .debug(&format!("{}", self.source_ctx)) 
+            .info(&format!("({:?}) ", self.ty))
+            .base(&format!("{}\n", self.ty.msg()))
+            .faint(&format!("l{}:", line_number ))
+            .bold(&format!("{}    ", word))
+            .base(line)
+            .read();
+
+        write!(f, "{}", text)
+    }
+
+}
+
+/// Creates an error for one of the types that expect an `ErrCtx`.
+/// Arguments:
+/// - Error enum type
+/// - Variant value
+/// - `ErrCtx` object
+macro_rules! err {
+    // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
+    ($ty:ty, $e:expr, $ctx:expr) => {
+        crate::program::error::AsmErr::<$ty>{ ty: $e, err_ctx: $ctx, source_ctx: source!() }
+    }
+}
+
 /// Error variants when parsing values from the source file.
-pub enum ParseErrType {
+#[derive(Debug, Copy, Clone)]
+pub enum ParseMsg {
     /// Number literals are either 1 or 2 bytes long. (255 or 65535 max value)
     HexOverflow,
     DecOverflow,
@@ -288,29 +319,12 @@ pub enum ParseErrType {
     UnexpectedPrefix,
 }
 
-//TODO AsmErr<ErrType>
-#[derive(Debug)]
-/// Error when parsing values from the source file.
-pub struct ParseErr<'a> {
-    ty: ParseErrType,
-    err_ctx: ErrCtx<'a>,
-    source_ctx: SourceCtx,
-}
+impl AsmMsg for ParseMsg {
 
-impl<'a> ParseErr<'a> {
+    fn msg(&self) -> &'static str {
+        use ParseMsg::*;
 
-    pub const fn new(
-        ty: ParseErrType, 
-        err_ctx: ErrCtx<'a>, 
-        source_ctx: SourceCtx,
-    ) -> Self {
-        Self { ty, err_ctx, source_ctx }
-    }
-
-    pub const fn description(&self) -> &'static str {
-        use ParseErrType::*;
-
-        match self.ty {
+        match self {
             HexOverflow => 
                 "Hexadecimal literal overflow",
 
@@ -390,57 +404,26 @@ impl<'a> ParseErr<'a> {
 
 }
 
-impl<'a> std::fmt::Display for ParseErr<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ErrCtx{ line_number, line, word } = self.err_ctx;
-
-        let text = fmt::strip()
-            .debug(&format!("{}", self.source_ctx)) 
-            .info(&format!("({:?}) ", self.ty))
-            .base(&format!("{}\n", self.description()))
-            .faint(&format!("l{}:", line_number ))
-            .bold(&format!("{}    ", word))
-            .base(line)
-            .read();
-
-        write!(f, "{}", text)
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
 /// Error variants when building the AST.
-pub enum AstErrType {
+#[derive(Debug, Copy, Clone)]
+pub enum AstMsg {
     NoTokens,
     UnmatchedParen,
     PlusWithoutRhs,
     MinusWithoutRhs,
     MarkWithoutLiteral,
-    UnhandledNewline(TokenType),
+    //TODO assembler bug
+    UnhandledNewline,
+    //TODO assembler bug
     UnknownError,
 }
 
-#[derive(Debug)]
-/// Error when building the AST.
-pub struct AstErr<'a> {
-    ty: AstErrType,
-    err_ctx: ErrCtx<'a>,
-    source_ctx: SourceCtx,
-}
+impl AsmMsg for AstMsg {
 
-impl<'a> AstErr<'a> {
+    fn msg(&self) -> &'static str {
+        use AstMsg::*;
 
-    pub const fn new(
-        ty: AstErrType, 
-        err_ctx: ErrCtx<'a>, 
-        source_ctx: SourceCtx,
-    ) -> Self {
-        Self { ty, err_ctx, source_ctx }
-    }
-
-    pub const fn description(&self) -> &'static str {
-        use AstErrType::*;
-
-        match self.ty {
+        match self {
             NoTokens =>
                 "No tokens were provided",
 
@@ -456,7 +439,7 @@ impl<'a> AstErr<'a> {
             MarkWithoutLiteral => 
                 "marker expected a literal",
 
-            UnhandledNewline(_) =>
+            UnhandledNewline =>
                 "Internal error on new line",
 
             UnknownError =>
@@ -465,9 +448,9 @@ impl<'a> AstErr<'a> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
 /// Error variants when expanding macros.
-pub enum MacroErrType {
+#[derive(Debug, Copy, Clone)]
+pub enum MacroMsg {
     NoDeclIdent,
     InvalidDecl,
     NoDeclBody,
@@ -478,28 +461,12 @@ pub enum MacroErrType {
     ArgNotFound,
 }
 
-#[derive(Debug)]
-/// Error when expanding macros.
-pub struct MacroErr<'a> {
-    ty: MacroErrType,
-    err_ctx: ErrCtx<'a>,
-    source_ctx: SourceCtx,
-}
+impl AsmMsg for MacroMsg {
 
-impl<'a> MacroErr<'a> {
+    fn msg(&self) -> &'static str {
+        use MacroMsg::*;
 
-    pub const fn new(
-        ty: MacroErrType, 
-        err_ctx: ErrCtx<'a>, 
-        source_ctx: SourceCtx,
-    ) -> Self {
-        Self { ty, err_ctx, source_ctx }
-    }
-
-    pub const fn description(&self) -> &'static str {
-        use MacroErrType::*;
-
-        match self.ty {
+        match self {
             NoDeclIdent =>
                 "Declaration has no identifier",
 
@@ -528,34 +495,18 @@ impl<'a> MacroErr<'a> {
 
 }
 
-#[derive(Debug, Copy, Clone)]
 /// Error variants when looking for an opcode.
-pub enum OpErrType {
+#[derive(Debug, Copy, Clone)]
+pub enum OpMsg {
     NotFound,
 }
 
-#[derive(Debug)]
-/// Error when looking for an opcode.
-pub struct OpErr<'a> {
-    ty: OpErrType,
-    err_ctx: ErrCtx<'a>,
-    source_ctx: SourceCtx,
-}
+impl AsmMsg for OpMsg {
 
-impl<'a> OpErr<'a> {
+    fn msg(&self) -> &'static str {
+        use OpMsg::*;
 
-    pub const fn new(
-        ty: OpErrType, 
-        err_ctx: ErrCtx<'a>, 
-        source_ctx: SourceCtx,
-    ) -> Self {
-        Self { ty, err_ctx, source_ctx }
-    }
-
-    pub const fn description(&self) -> &'static str {
-        use OpErrType::*;
-
-        match self.ty {
+        match self {
             NotFound =>
                 "Could not find the corresponding opcode",
         }
@@ -563,36 +514,20 @@ impl<'a> OpErr<'a> {
 
 }
 
-#[derive(Debug, Copy, Clone)]
 /// Error variants when calculating constant values.
-pub enum ConstantsErrType {
+#[derive(Debug, Copy, Clone)]
+pub enum ConstantsMsg {
     DuplicateKey,
     MisplacedMarker,
     FileReadFailed,
 }
 
-#[derive(Debug)]
-/// Error when calculating constant values.
-pub struct ConstantsErr<'a> {
-    ty: ConstantsErrType,
-    err_ctx: ErrCtx<'a>,
-    source_ctx: SourceCtx,
-}
+impl AsmMsg for ConstantsMsg {
 
-impl<'a> ConstantsErr<'a> {
+    fn msg(&self) -> &'static str {
+        use ConstantsMsg::*;
 
-    pub const fn new(
-        ty: ConstantsErrType, 
-        err_ctx: ErrCtx<'a>, 
-        source_ctx: SourceCtx,
-    ) -> Self {
-        Self { ty, err_ctx, source_ctx }
-    }
-
-    pub const fn fmt(&self) -> &'static str {
-        use ConstantsErrType::*;
-
-        match self.ty {
+        match self {
             DuplicateKey =>
                 "Constant's key already existed.",
             
