@@ -56,8 +56,6 @@ impl<'a> Ast<'a> {
         let mut current_line = 0;
 
         for token in tokens {
-            let ParsedToken{ line_number, line, word, .. } = token;
-
             // `NamedMark` and `AnonMark` need one child.
             if matches!(ast.type_of(selection), AnonMark|NamedMark)
             && ast.tokens[selection].children.len() == 1 {
@@ -95,7 +93,7 @@ impl<'a> Ast<'a> {
         errors: &mut Vec<AsmErr<'a, AstMsg>>,
     ) -> Result<(), ()> {
         let token = &self.tokens[*selection];
-        let Token{ line_number, line, word, .. } = *token;
+        let Token{ line_number, line, .. } = *token;
         let err_ctx = token.into();
         let mut fail_safe = ITERATION_LIMIT;
 
@@ -156,7 +154,7 @@ impl<'a> Ast<'a> {
         macros: &mut Macros,
         errors: &mut Vec<AsmErr<'a, AstMsg>>,
     ) {
-        let ParsedToken{ line_number, line, word, .. } = token;
+        let ParsedToken{ line_number, line, .. } = token;
         let err_ctx: ErrCtx = (&token).into();
 
         // Match parent type of the token.
@@ -376,7 +374,7 @@ impl<'a> Ast<'a> {
 
             for child_index in &token.children {
                 let child = &ast.tokens[*child_index];
-                let Token{ ty, line_number, line, .. } = *child;
+                let Token{ ty, line_number, .. } = *child;
 
                 let mut n = line_number.to_string();
 

@@ -3,7 +3,6 @@
 
 use crate::{
     parse::{
-        lex::TokenType,
         prepare::ParsedToken,
     },
     token::{
@@ -275,7 +274,8 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
 /// - Variant value
 /// - `ErrCtx` object
 macro_rules! err {
-    // err!(SomeErr, SomeErrType::NoWorky, err_ctx)
+    // T: AsmMsg + Debug
+    // err!(T, T::NoWorky, err_ctx)
     ($ty:ty, $e:expr, $ctx:expr) => {
         crate::program::error::AsmErr::<$ty>{ ty: $e, err_ctx: $ctx, source_ctx: source!() }
     }
@@ -312,10 +312,8 @@ pub enum ParseMsg {
     InvalidAnonMark,
     InvalidAnonMarkHex,
 
-    /// Those mean errors in Rust code.
-    /// Parser cannot handle this type.
+    //TODO those are bugs
     UnhandledType,
-    /// Lexicon identified word prefix wrong.
     UnexpectedPrefix,
 }
 

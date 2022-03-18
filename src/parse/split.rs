@@ -73,7 +73,7 @@ impl<'a> Split<'a> {
                     // Push current word, or the string literal that just ended.
                     if has_word {
                         if let Some(word) = line.get(word_start..c_i) {
-                            splitter.push(word, line, l_i);
+                            splitter.push(word, l_i);
                             has_word = false;
                         }
 
@@ -90,7 +90,7 @@ impl<'a> Split<'a> {
                     }
 
                     else if let Some(word) = line.get(word_start..c_i) {
-                        splitter.push(word, line, l_i);
+                        splitter.push(word, l_i);
                     }
 
                     else {
@@ -131,7 +131,7 @@ impl<'a> Split<'a> {
                         // Push current word.
                         if has_word { 
                             if let Some(word) = line.get(word_start..c_i) {
-                                splitter.push(word, line, l_i);
+                                splitter.push(word, l_i);
                                 has_word = false;
                             }
 
@@ -143,7 +143,7 @@ impl<'a> Split<'a> {
 
                         // Push character.
                         if let Some(word) = line.get(c_i..=c_i) {
-                            splitter.push(word, line, l_i);
+                            splitter.push(word, l_i);
                         }
 
                         else {
@@ -155,7 +155,7 @@ impl<'a> Split<'a> {
                     else if ch.is_whitespace() {
                         if has_word { 
                             if let Some(word) = line.get(word_start..c_i) {
-                                splitter.push(word, line, l_i);
+                                splitter.push(word, l_i);
                                 has_word = false;
                             }
 
@@ -176,7 +176,7 @@ impl<'a> Split<'a> {
             // End of the line, push the current word.
             if has_word { 
                 if let Some(word) = line.get(word_start..) {
-                    splitter.push(word, line, l_i);
+                    splitter.push(word, l_i);
                     has_word = false;
                 }
 
@@ -265,7 +265,7 @@ struct Splitter<'a> {
 
 impl<'a> Splitter<'a> {
 
-    fn push(&mut self, value: &'a str, line: &'a str, line_index: usize) {
+    fn push(&mut self, value: &'a str, line_index: usize) {
         // Directive will be processed once the line has ended.
         if !self.directive.is_empty() || matches!(value, "#if"|"#else"|"#endif") {
             self.directive.push(value);
