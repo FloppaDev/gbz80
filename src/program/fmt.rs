@@ -12,13 +12,15 @@ pub fn title(title: &str) {
 /// Ansi escapes for colors.
 mod values {
     pub const BASE: &str = "\x1b[0m";
-    pub const OK: &str = "\x1b[32m";
-    pub const ERR: &str = "\x1b[31m";
-    pub const INFO: &str = "\x1b[93m";
+    pub const OK: &str = "\x1b[32;1m";
+    pub const ERR: &str = "\x1b[31;1m";
+    pub const INFO: &str = "\x1b[93;1m";
+    pub const FAINT: &str = "\x1b[2m";
+    pub const BOLD: &str = "\x1b[1m";
 }
 
 #[cfg(not(target_family="unix"))]
-/// Assumes that colors will not work.
+/// Assumes that these will not work.
 mod values {
     pub const BASE: &str = "";
     pub const OK: &str = "";
@@ -41,6 +43,7 @@ impl Strip {
     /// Colors text in white.
     pub fn base(mut self, text: &str) -> Self {
         self.value.push_str(text);
+
         self
     }
 
@@ -49,6 +52,7 @@ impl Strip {
         self.value.push_str(values::OK);
         self.value.push_str(text);
         self.value.push_str(values::BASE);
+
         self
     }
 
@@ -57,6 +61,7 @@ impl Strip {
         self.value.push_str(values::ERR);
         self.value.push_str(text);
         self.value.push_str(values::BASE);
+
         self
     }
 
@@ -65,13 +70,41 @@ impl Strip {
         self.value.push_str(values::INFO);
         self.value.push_str(text);
         self.value.push_str(values::BASE);
+
         self
     }
 
-    /// Drops the `Strip` and returns its `String` value.
+    /// Appends text when in debug mode, with base color.
+    pub fn debug(mut self, text: &str) -> Self {
+        if cfg!(debug_assertions) {
+            self.value.push_str(text);
+        }
+
+        self
+    }
+
+    /// Appends dimmed text.
+    pub fn faint(mut self, text: &str) -> Self {
+        self.value.push_str(values::FAINT);
+        self.value.push_str(text);
+        self.value.push_str(values::BASE);
+
+        self
+    }
+
+    /// Appends bold text.
+    pub fn bold(mut self, text: &str) -> Self {
+        self.value.push_str(values::BOLD);
+        self.value.push_str(text);
+        self.value.push_str(values::BASE);
+
+        self
+    }
+
+    /// Consumes the `Strip` and returns its `String` value.
     // "constant functions cannot evaluate destructors"
     #[allow(clippy::missing_const_for_fn)]
-    pub fn end(self) -> String {
+    pub fn read(self) -> String {
         self.value
     }
 

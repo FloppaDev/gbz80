@@ -55,7 +55,7 @@ pub enum Arg {
     /// Address.
     At(Box<Arg>),
 
-    /// Identified by a \`TokenType\`.
+    /// Identified by a `TokenType`.
     Token(TokenType),
 
     /// Constant value.

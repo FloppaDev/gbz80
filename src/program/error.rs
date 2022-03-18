@@ -39,12 +39,12 @@ pub mod stage {
     pub const CLARGS: fn () -> String = | | fmt::strip()
         .err("Compilation Failed. ")
         .info("Invalid command line arguments.")
-        .end();
+        .read();
 
     pub const SPLIT: fn () -> String = | | fmt::strip()
         .err("Compilation Failed. ")
         .info("Could not recognize words in source file.")
-        .end();
+        .read();
 
 }
 
@@ -66,6 +66,13 @@ pub struct SourceCtx {
     pub file: &'static str,
     pub line: u32,
     pub column: u32,
+}
+
+impl std::fmt::Display for SourceCtx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self{ file, line, column } = self;
+        write!(f, "{}", format!("{}:{}:{}", file, line, column))
+    }
 }
 
 /// Creates an error for one of the types that expect an `ErrCtx`.
@@ -185,7 +192,7 @@ impl<'a> std::fmt::Display for ClargsErr<'a> {
         let text = fmt::strip()
             .info(&format!("({:?}) ", self.ty))
             .base(&format!("{}{}", self.description(), ln_if(self.msg)))
-            .end();
+            .read();
 
         write!(f, "{}", text)
     }
@@ -218,13 +225,13 @@ impl<'a> SplitErr<'a> {
 
         match self.ty {
             MisplacedDirective =>
-                "MisplacedDirective: Directives must be placed at the start of a line",
+                "Directives must be placed at the start of a line",
 
             InvalidDirective =>
-                "InvalidDirective: Invalid directive name",
+                "Invalid directive name",
 
             InvalidWord =>
-                "InvalidWord: Could not read word",
+                "Could not read word",
         }
     }
 
@@ -237,7 +244,7 @@ impl<'a> std::fmt::Display for SplitErr<'a> {
             .info(&format!("({:?}) ", self.ty))
             .base(&format!(
                 "{}\nl{}:    {}", self.description(), self.line_number, self.line))
-            .end();
+            .read();
 
         write!(f, "{}", text)
     }
@@ -281,6 +288,7 @@ pub enum ParseErrType {
     UnexpectedPrefix,
 }
 
+//TODO AsmErr<ErrType>
 #[derive(Debug)]
 /// Error when parsing values from the source file.
 pub struct ParseErr<'a> {
@@ -299,87 +307,104 @@ impl<'a> ParseErr<'a> {
         Self { ty, err_ctx, source_ctx }
     }
 
-    pub const fn fmt(&self) -> &'static str {
+    pub const fn description(&self) -> &'static str {
         use ParseErrType::*;
 
         match self.ty {
             HexOverflow => 
-                "HexOverflow: Hexadecimal literal overflow",
+                "Hexadecimal literal overflow",
 
             BinOverflow => 
-                "BinOverflow: Binary literal overflow",
+                "Binary literal overflow",
 
             DecOverflow => 
-                "DecOverflow: Decimal literal overflow",
+                "Decimal literal overflow",
 
             EmptyStr => 
-                "EmptryStr: Empty string",
+                "Empty string",
 
             Invalid => 
-                "Invalid: Invalid as any type",
+                "Invalid as any type",
 
             InvalidHex => 
-                "InvalidHex: Invalid as hexadecimal literal",
+                "Invalid as hexadecimal literal",
 
             InvalidBin => 
-                "InvalidBin: Invalid as binary literal",
+                "Invalid as binary literal",
 
             InvalidDec => 
-                "InvalidDec: Invalid as decimal literal",
+                "Invalid as decimal literal",
 
             InvalidStr => 
-                "InvalidStr: Invalid as string literal",
+                "Invalid as string literal",
 
             InvalidDirective => 
-                "InvalidDirective: Invalid as directive",
+                "Invalid as directive",
 
             InvalidDirectiveIdent => 
-                "InvalidDirectiveIdent: Invalid as directive identifier",
+                "Invalid as directive identifier",
 
             InvalidMacroArgIdent => 
-                "InvalidMacroArgIdent: Invalid as macro argument's identifier",
+                "Invalid as macro argument's identifier",
 
             InvalidMacroArg => 
-                "InvalidMacroArg: Invalid as macro argument",
+                "Invalid as macro argument",
 
             InvalidMacroIdent => 
-                "InvalidMacroCallIdent: Invalid as macro call's identifier",
+                "Invalid as macro call's identifier",
 
             InvalidLabel =>
-                "InvalidLabel: Invalid as label",
+                "Invalid as label",
 
             InvalidLabelIdent =>
-                "InvalidLabelIdent: Invalid as label's identifier",
+                "Invalid as label's identifier",
 
             InvalidNamedMark => 
-                "InvalidNamedMark: Invalid as named marker",
+                "Invalid as named marker",
 
             InvalidNamedMarkLabel => 
-                "InvalidNamedMarkLabel: Invalid as named marker's label",
+                "Invalid as named marker's label",
 
             InvalidNamedMarkLabelIdent => 
-                "InvalidNamedMarkLabelIdent: Invalid as named marker label's identifier",
+                "Invalid as named marker label's identifier",
 
             InvalidNamedMarkHex => 
-                "InvalidNamedMarkHex: Invalid as named marker's hexadecimal literal",
+                "Invalid as named marker's hexadecimal literal",
 
             InvalidAnonMark =>
-                "InvalidAnonMark: Invalid as anonymous marker",
+                "Invalid as anonymous marker",
 
             InvalidAnonMarkHex =>
-                "InvalidAnonMarkHex: Invalid as anonymous marker's hexadecimal literal",
+                "Invalid as anonymous marker's hexadecimal literal",
 
             InvalidIdent => 
-                "InvalidIdent: Invalid as identifier",
+                "Invalid as identifier",
 
             UnhandledType => 
-                "UnhandledType: Parser could not handle the token type",
+                "Parser could not handle the token type",
 
             UnexpectedPrefix => 
-                "UnexpectedPrefix: Wrong type identified from prefix",
+                "Wrong type identified from prefix",
         }
     }
 
+}
+
+impl<'a> std::fmt::Display for ParseErr<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let ErrCtx{ line_number, line, word } = self.err_ctx;
+
+        let text = fmt::strip()
+            .debug(&format!("{}", self.source_ctx)) 
+            .info(&format!("({:?}) ", self.ty))
+            .base(&format!("{}\n", self.description()))
+            .faint(&format!("l{}:", line_number ))
+            .bold(&format!("{}    ", word))
+            .base(line)
+            .read();
+
+        write!(f, "{}", text)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -412,27 +437,27 @@ impl<'a> AstErr<'a> {
         Self { ty, err_ctx, source_ctx }
     }
 
-    pub const fn fmt(&self) -> &'static str {
+    pub const fn description(&self) -> &'static str {
         use AstErrType::*;
 
         match self.ty {
             NoTokens =>
-                "NoTokens: No tokens were provided",
+                "No tokens were provided",
 
             UnmatchedParen =>
-                "UnmatchedParen: Parens must come in pair",
+                "Parens must come in pair",
 
             PlusWithoutRhs =>
-                "PlusWithoutRhs: Plus operation expects a right-hand side operand",
+                "Plus operation expects a right-hand side operand",
 
             MinusWithoutRhs =>
-                "MinusWithoutRhs: Minus operation expects a right-hand side operand",
+                "Minus operation expects a right-hand side operand",
 
             MarkWithoutLiteral => 
-                "MarkWithoutLiteral: marker expected a literal",
+                "marker expected a literal",
 
             UnhandledNewline(_) =>
-                "UnhandledNewline: Internal error on new line",
+                "Internal error on new line",
 
             UnknownError =>
                 "Unknown error",
@@ -471,33 +496,33 @@ impl<'a> MacroErr<'a> {
         Self { ty, err_ctx, source_ctx }
     }
 
-    pub const fn fmt(&self) -> &'static str {
+    pub const fn description(&self) -> &'static str {
         use MacroErrType::*;
 
         match self.ty {
             NoDeclIdent =>
-                "NoDeclIdent: Declaration has no identifier",
+                "Declaration has no identifier",
 
             InvalidDecl =>
-                "InvalidDecl: Declaration is invalid",
+                "Declaration is invalid",
 
             NoDeclBody =>
-                "NoDeclBody: Declaration has no body",
+                "Declaration has no body",
 
             InvalidDeclToken =>
-                "InvalidDeclToken: Unexpected token in macro declaration",
+                "Unexpected token in macro declaration",
 
             NoCallIdent =>
-                "NoCallIdent: Macro call has no identifier",
+                "Macro call has no identifier",
 
             DeclNotFound =>
-                "DeclNotFound: Declaration not found",
+                "Declaration not found",
 
             ArgCountMismatch =>
-                "ArgCountMismatch: Argument count in the call does not match the declaration",
+                "Argument count in the call does not match the declaration",
 
             ArgNotFound =>
-                "ArgNotFound: Argument not found in declaration",
+                "Argument not found in declaration",
         }
     }
 
@@ -527,12 +552,12 @@ impl<'a> OpErr<'a> {
         Self { ty, err_ctx, source_ctx }
     }
 
-    pub const fn fmt(&self) -> &'static str {
+    pub const fn description(&self) -> &'static str {
         use OpErrType::*;
 
         match self.ty {
             NotFound =>
-                "NotFound: Could not find the corresponding opcode",
+                "Could not find the corresponding opcode",
         }
     }
 
@@ -569,13 +594,13 @@ impl<'a> ConstantsErr<'a> {
 
         match self.ty {
             DuplicateKey =>
-                "DuplicateKey: Constant's key already existed.",
+                "Constant's key already existed.",
             
             MisplacedMarker =>
-                "MisplacedMarker: The location of the marker does match its value.",
+                "The location of the marker does match its value.",
 
             FileReadFailed =>
-                "FileReadFailed: The file to include could not be read.",
+                "The file to include could not be read.",
         }
     }
 
