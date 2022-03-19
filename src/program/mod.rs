@@ -34,98 +34,29 @@ pub fn run() -> Result<(), ()> {
     let clargs = clargs::parse(&args).map_err(stage_err!(CLARGS))?;
 
     // Get source file.
-    let input = fs::read_to_string(clargs.path); 
-
-    if let Err(err) = input {
-        eprintln!("Failed compilation trying to read source file.");
-        eprintln!("{:?}", err);
-
-        return Err(())
-    }
-
-    let input = input.unwrap();
+    let input = fs::read_to_string(clargs.path).map_err(stage_err!(SOURCE))?; 
 
     // Split source file into words.
-    let split = Split::new(&input, &clargs.symbols);
-
-    if let Err(errors) = split {
-        eprintln!("Failed compilation with {} errors at stage 'split'", errors.len());
-
-        for err in errors {
-            eprintln!("{:?}", err);
-        }
-
-        return Err(())
-    }
-
-    let split = split.unwrap();
+    let split = Split::new(&input, &clargs.symbols)
+        .map_err(|e| e.iter().for_each(stage_err!(SPLIT)))?;
     #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.
-    let parsed_tokens = parse(&split);
-
-    if let Err(errors) = parsed_tokens {
-        eprintln!(
-            "Failed compilation with {} errors at stage 'parse'", 
-            errors.len());
-
-        for err in errors {
-            eprintln!("{}", err);
-        }
-
-        return Err(())
-    }
+    let parsed_tokens = parse(&split).map_err(|e| e.iter().for_each(stage_err!(PARSE)))?;
 
     // Build the token tree.
     let mut macros = Macros::new();
-    let ast = Ast::new(parsed_tokens.unwrap(), &mut macros);
-
-    if let Err(errors) = ast {
-        eprintln!(
-            "Failed compilation with {} errors at stage 'ast build'", 
-            errors.len());
-
-        for err in errors {
-            eprintln!("{:?}", err);
-        }
-
-        return Err(())
-    }
-
-    let mut ast = ast.unwrap();
+    let ast = Ast::new(parsed_tokens, &mut macros)
+        .map_err(|e| e.iter().for_each(stage_err!(AST)))?;
     #[cfg(debug_assertions)] ast.debug();
 
     // Expand macro calls.
-    if let Err(errors) = macros.expand(&mut ast) {
-        eprintln!(
-            "Failed compilation with {} errors at stage 'macros expansion'", 
-            errors.len());
-
-        for err in errors {
-            eprintln!("{:?}", err);
-        }
-
-        return Err(())
-    }
-
+    macros.expand(&mut ast).map_err(|e| e.iter().for_each(stage_err!(MACROS)))?;
     #[cfg(debug_assertions)] ast.debug();
 
     let ast_ref = TokenRef::new(&ast);
-    let op_map = OpMap::new(&ast_ref);
+    let op_map = OpMap::new(&ast_ref).map_err(|e| e.iter().for_each(stage_err!(OPS)))?;
 
-    if let Err(errors) = op_map {
-        eprintln!(
-            "Failed compilation with {} errors at stage 'ops map build'", 
-            errors.len());
-
-        for err in errors {
-            eprintln!("{:?}", err);
-        }
-
-        return Err(())
-    }
-
-    let op_map = op_map.unwrap();
     let _constants = Constants::new(&ast_ref, &op_map);
 
     // let instructions = opcodes::get_instructions();
