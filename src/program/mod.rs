@@ -19,9 +19,7 @@ use crate::{
         ops::OpMap,
         constants::Constants,
     },
-    error::stage::{
-        CLARGS, SPLIT,
-    },
+    error::stage,
 };
 
 use std::{
@@ -31,31 +29,29 @@ use std::{
 pub fn run() -> Result<(), ()> {
     // Command line arguments.
     let args = std::env::args().collect::<Vec<_>>();
-    let clargs = clargs::parse(&args).map_err(stage_err!(CLARGS))?;
+    let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
     // Get source file.
-    let input = fs::read_to_string(clargs.path).map_err(stage_err!(SOURCE))?; 
+    let input = fs::read_to_string(clargs.path).map_err(stage::source)?; 
 
     // Split source file into words.
-    let split = Split::new(&input, &clargs.symbols)
-        .map_err(|e| e.iter().for_each(stage_err!(SPLIT)))?;
+    let split = Split::new(&input, &clargs.symbols).map_err(stage::split)?;
     #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.
-    let parsed_tokens = parse(&split).map_err(|e| e.iter().for_each(stage_err!(PARSE)))?;
+    let parsed_tokens = parse(&split).map_err(stage::parse)?;
 
     // Build the token tree.
     let mut macros = Macros::new();
-    let ast = Ast::new(parsed_tokens, &mut macros)
-        .map_err(|e| e.iter().for_each(stage_err!(AST)))?;
+    let mut ast = Ast::new(parsed_tokens, &mut macros).map_err(stage::ast)?;
     #[cfg(debug_assertions)] ast.debug();
 
     // Expand macro calls.
-    macros.expand(&mut ast).map_err(|e| e.iter().for_each(stage_err!(MACROS)))?;
+    macros.expand(&mut ast).map_err(stage::macros)?;
     #[cfg(debug_assertions)] ast.debug();
 
     let ast_ref = TokenRef::new(&ast);
-    let op_map = OpMap::new(&ast_ref).map_err(|e| e.iter().for_each(stage_err!(OPS)))?;
+    let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
 
     let _constants = Constants::new(&ast_ref, &op_map);
 

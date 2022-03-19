@@ -1,26 +1,40 @@
 
 use crate::program::fmt;
 
-/// Prints an error from the assembler.
-pub fn log_err<E: std::fmt::Display>(msg: &str, err: E) {
-    eprintln!("{}\n{}", msg, err);
+fn stage_err<E: std::fmt::Display + Sized>(e: E, msg: &str) {
+    let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
+    eprintln!("{}\n{}", msg, e);
 }
 
-/// Prints the error message for a specific stage.
-/// Arguments:
-/// - the stage constant
-macro_rules! stage_err {
-    ($stage:expr) => {
-        |e| crate::error::stage::log_err(&$stage(), e)
-    }
+fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
+    let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
+    eprintln!("{}\n{}", msg, ev.iter().map(|e| format!("{}\n", e)).collect::<String>());
 }
 
-pub const CLARGS: fn () -> String = | | fmt::strip()
-    .err("Compilation Failed. ")
-    .info("Invalid command line arguments.")
-    .read();
+pub fn clargs<E: std::fmt::Display + Sized>(e: E) {
+    stage_err(e, "Invalid command line arguments.");
+}
 
-pub const SPLIT: fn () -> String = | | fmt::strip()
-    .err("Compilation Failed. ")
-    .info("Could not recognize words in source file.")
-    .read();
+pub fn source<E: std::fmt::Display + Sized>(e: E) {
+    stage_err(e, "Could not read source file.");
+}
+
+pub fn split<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+    stage_err_vec(ev, "Could not split words from source file.");
+}
+
+pub fn parse<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+    stage_err_vec(ev, "Could not parse words.");
+}
+
+pub fn ast<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+    stage_err_vec(ev, "Could not build the token tree.");
+}
+
+pub fn macros<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+    stage_err_vec(ev, "Could not expand macros.");
+}
+
+pub fn ops<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+    stage_err_vec(ev, "Could not find instructions.");
+}
