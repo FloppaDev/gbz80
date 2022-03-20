@@ -62,13 +62,12 @@
         UnNot { ! }
         BinMul { * }
         BinDiv { / }
-        BinMod { % }
         BinAdd { + }
         BinShl { < }
         BinShr { > }
-        BinAnd { & }
         BinXor { ^ }
         BinOr { | }
+        // UnNeg, BinMod and BinAnd would conflict.
     }
 
     prefixes {

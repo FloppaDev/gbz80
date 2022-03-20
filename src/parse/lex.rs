@@ -9,7 +9,7 @@ use TokenType::*;
 
 pub const fn is_char_word(c: char) -> bool {
     matches!(c,
-        '('|')'|'!'|'*'|'/'|'%'|'+'|'<'|'>'|'&'|'^'|'|')
+        '('|')'|'!'|'*'|'/'|'+'|'<'|'>'|'^'|'|')
 }
 
 /// All the different token types than can be identified.
@@ -249,11 +249,9 @@ impl TokenType {
             "!" => Some(UnNot),
             "*" => Some(BinMul),
             "/" => Some(BinDiv),
-            "%" => Some(BinMod),
             "+" => Some(BinAdd),
             "<" => Some(BinShl),
             ">" => Some(BinShr),
-            "&" => Some(BinAnd),
             "^" => Some(BinXor),
             "|" => Some(BinOr),
             _ => None

@@ -1,4 +1,6 @@
 
+#![allow(clippy::needless_pass_by_value)]
+
 use crate::program::fmt;
 
 fn stage_err<E: std::fmt::Display + Sized>(e: E, msg: &str) {

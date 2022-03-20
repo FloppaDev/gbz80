@@ -280,6 +280,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
 
     // Decimal literal ?
     if text::is_char_num(c) {
+        //TODO err! macro in identify, it is useless in extract.
         let dec = text::check_dec(word).ok_or(InvalidDec)?;
         return Ok(vec![ (LitDec, dec) ]);
     }
