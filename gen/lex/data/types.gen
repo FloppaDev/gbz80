@@ -54,20 +54,23 @@
         FlagNz { NZ }
         FlagC { C }
         FlagNc { NC }
+        BinMod { mod }
+        BinAnd { and }
+        BinOr { or }
+        BinXor { xor }
+        UnNot { not }
     }
 
+    // UnNeg would conflict with BinSub.
+    // BinMod and BinAnd would conflict with literals.
     char_words {
         At0 { ( }
         At1 { ) }
-        UnNot { ! }
         BinMul { * }
         BinDiv { / }
         BinAdd { + }
         BinShl { < }
         BinShr { > }
-        BinXor { ^ }
-        BinOr { | }
-        // UnNeg, BinMod and BinAnd would conflict.
     }
 
     prefixes {
