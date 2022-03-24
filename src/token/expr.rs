@@ -23,13 +23,49 @@ const PRECEDENCE: [TokenType; 12] = [
     BinAnd, BinXor, BinOr
 ];
 
+fn expr<'a>(token: &Token<'a>) -> Token<'a> {
+    let Token{ line_number, line, word, value, .. } = *token;
+
+    Token{ 
+        ty: Expr, 
+        line_number, 
+        line, 
+        word, 
+        value, 
+        index: 0, 
+        parent: 0, 
+        children: vec![] 
+    }
+}
+
+fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
+    let Token{ line_number, line, word, value, .. } = *parent;
+    let parent = parent.index;
+
+    Token{ ty, line_number, line, word, value, index, parent, children: vec![] }
+}
+
 pub fn build<'a>(ast: &'a Ast<'a>, token: &'a Token<'a>) -> &'a Token<'a> {
-    // - get scopes from parens.
-    // - iter all for each operator in precedence order
+    let mut tokens = vec![expr(token)];
+    let mut selection = vec![0];
 
     for index in &token.children {
         let child = &ast.tokens[*index];
 
+        match child.ty {
+            At0 => {
+                let index = tokens.len();
+                selection.push(index);
+                let at = op_token(At, index, &tokens[*selection.last().unwrap()]);
+                tokens.push(at);
+            }
+
+            At1 => {
+                selection.pop();
+            }
+
+            _ => {}
+        }
     }
 
     todo!();
