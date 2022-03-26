@@ -89,7 +89,7 @@
 
     // These tokens are closed on a newline.
     ends_on_newline { 
-        Instruction Argument MacroCall Directive Marker 
+        Instruction Argument MacroCall Directive Marker Expr
         ..Directive ..Marker 
     }
 

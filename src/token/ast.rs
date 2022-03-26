@@ -7,6 +7,7 @@ use crate::{
     token::{
         Token, Value,
         macros::Macros,
+        expr,
     },
     error::{
         ErrCtx, 
@@ -132,6 +133,11 @@ impl<'a> Ast<'a> {
                         *selection = self.parent_of(*selection);
                     }
 
+                    Expr => {
+                        expr::build(self, *selection);
+                        *selection = self.parent_of(*selection);
+                    }
+
                     _ => {
                         *selection = self.parent_of(*selection);
                     }
@@ -182,6 +188,11 @@ impl<'a> Ast<'a> {
             _ => match token.ty {
                 Identifier => {
                     self.cascade(*selection, &[], token);
+                    
+                    if matches!(self.type_of(*selection), DefB|DefW|DefS) {
+                        let t = Self::empty(Expr, line_number, line);
+                        *selection = self.push(*selection, t);
+                    }
                 }
 
                 // Open parenthesis.
@@ -232,8 +243,7 @@ impl<'a> Ast<'a> {
                 }
 
                 _ => {
-                    let e = err!(AstMsg, UnknownError, err_ctx);
-                    errors.push(e);
+                    self.push(*selection, token);
                 }
             }
         }

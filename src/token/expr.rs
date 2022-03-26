@@ -45,28 +45,20 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
     Token{ ty, line_number, line, word, value, index, parent, children: vec![] }
 }
 
-pub fn build<'a>(ast: &'a Ast<'a>, token: &'a Token<'a>) -> &'a Token<'a> {
-    let mut tokens = vec![expr(token)];
-    let mut selection = vec![0];
+pub fn build(ast: &mut Ast, expr_index: usize) {
+    //let mut selection = vec![0];
 
-    for index in &token.children {
-        let child = &ast.tokens[*index];
+    //for prec in PRECEDENCE {
+        //for token in &tokens {
+            //if token.ty == prec {
+                // '-' is used for BinSub and UnNeg.
+                // It is UnNeg if the token on the left is nothing or an operator.
+                //if prec == BinSub {
 
-        match child.ty {
-            At0 => {
-                let index = tokens.len();
-                selection.push(index);
-                let at = op_token(At, index, &tokens[*selection.last().unwrap()]);
-                tokens.push(at);
-            }
-
-            At1 => {
-                selection.pop();
-            }
-
-            _ => {}
-        }
-    }
+                //}
+            //}
+        //}
+    //}
 
     todo!();
 }

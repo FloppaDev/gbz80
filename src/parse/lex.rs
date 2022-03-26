@@ -9,7 +9,7 @@ use TokenType::*;
 
 pub const fn is_char_word(c: char) -> bool {
     matches!(c,
-        '('|')'|'!'|'*'|'/'|'+'|'<'|'>'|'^'|'|')
+        '('|')'|'*'|'/'|'+'|'-')
 }
 
 /// All the different token types than can be identified.
@@ -171,8 +171,8 @@ impl TokenType {
     /// Is it one the tokens that end on a newline?
     pub const fn ends_on_newline(self) -> bool {
         matches!(self,
-            Instruction|Argument|MacroCall|Directive|Marker|DefB|DefW|DefS|
-            Include|Macro|NamedMark|AnonMark|Label)
+            Instruction|Argument|MacroCall|Directive|Marker|Expr|DefB|DefW|
+            DefS|Include|Macro|NamedMark|AnonMark|Label)
     }
 
     /// Find a token type that can be identified from a word.
@@ -244,16 +244,19 @@ impl TokenType {
             "NZ" => Some(FlagNz),
             "C" => Some(FlagC),
             "NC" => Some(FlagNc),
+            "MOD" => Some(BinMod),
+            "AND" => Some(BinAnd),
+            "OR" => Some(BinOr),
+            "XOR" => Some(BinXor),
+            "NOT" => Some(UnNot),
+            "SHL" => Some(BinShl),
+            "SHR" => Some(BinShr),
             "(" => Some(At0),
             ")" => Some(At1),
-            "!" => Some(UnNot),
             "*" => Some(BinMul),
             "/" => Some(BinDiv),
             "+" => Some(BinAdd),
-            "<" => Some(BinShl),
-            ">" => Some(BinShr),
-            "^" => Some(BinXor),
-            "|" => Some(BinOr),
+            "-" => Some(BinSub),
             _ => None
         }
     }
