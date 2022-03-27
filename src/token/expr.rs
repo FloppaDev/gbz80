@@ -46,19 +46,49 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
 }
 
 pub fn build(ast: &mut Ast, expr_index: usize) {
-    //let mut selection = vec![0];
+    let mut selection = vec![expr_index];
+    let mut unary = false;
 
-    //for prec in PRECEDENCE {
-        //for token in &tokens {
-            //if token.ty == prec {
+    for prec in PRECEDENCE {
+        let sel = &ast.tokens[*selection.last().unwrap()];
+        let children = &sel.children;
+
+        for (i, child) in children.iter().enumerate() {
+            let token = &ast.tokens[*child];
+
+            if token.ty == prec {
                 // '-' is used for BinSub and UnNeg.
-                // It is UnNeg if the token on the left is nothing or an operator.
-                //if prec == BinSub {
+                if token.ty.paren_type() == Expr {
+                    // It is unary if there is no token on the left
+                    // or selection is a sub-type of Expr.
+                    if i == 0 || sel.ty.parent_type() == Expr {
+                        match token.ty {
+                            BinSub => {}
 
-                //}
-            //}
-        //}
-    //}
+                            UnNot => {}
+
+                            _ => {}
+                        }
+                    }
+
+                    else {
+                        selection.push(token.index);
+                        //TODO re-parent left
+                    }
+                }
+            }
+
+            else if token.ty == At {
+                if i == children.len() - 1 {
+                    selection.pop();
+                }
+
+                else {
+                    selection.push(token.index);
+                }
+            }
+        }
+    }
 
     todo!();
 }
