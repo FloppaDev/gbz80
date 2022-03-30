@@ -55,7 +55,6 @@ pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, 
         let mut sel = selection[selection.len()-1];
 
         for (i, child) in ast.tokens[sel].children.clone().iter().enumerate() {
-            sel = selection[selection.len()-1];
 
             // A binary operator is waiting for its right operand.
             if bin {
@@ -101,6 +100,7 @@ pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, 
             // Enter parens.
             else if ast.tokens[*child].ty == At {
                 selection.push(ast.tokens[*child].index);
+                sel = selection[selection.len()-1];
             }
                 
             // Last child inside selection.
@@ -115,7 +115,10 @@ pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, 
                         AstMsg, BinaryWithoutRhs, ast.tokens.get(*child).unwrap().into()));
                 }
 
-                selection.pop();
+                if selection.len() > 1 {
+                    selection.pop();
+                    sel = selection[selection.len()-1];
+                }
             }
         }
     }
