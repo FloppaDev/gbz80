@@ -47,15 +47,16 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
 }
 
 pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    let mut selection = vec![expr_index];
     let mut bin = false;
     let mut un = false;
 
     for prec in PRECEDENCE {
-        let sel = *selection.last().unwrap();
-        let children = ast.tokens[sel].children.clone();
+        let mut selection = vec![expr_index];
+        let mut sel = selection[selection.len()-1];
 
-        for (i, child) in children.iter().enumerate() {
+        for (i, child) in ast.tokens[sel].children.clone().iter().enumerate() {
+            sel = selection[selection.len()-1];
+
             // A binary operator is waiting for its right operand.
             if bin {
                 let op = ast.left_of(ast.tokens[*child].index).unwrap();
@@ -103,7 +104,7 @@ pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, 
             }
                 
             // Last child inside selection.
-            if i == children.len() - 1 {
+            if i == ast.tokens[sel].children.len() - 1 {
                 if un {
                     return Err(err!(
                         AstMsg, UnaryWithoutRhs, ast.tokens.get(*child).unwrap().into()));

@@ -93,3 +93,5 @@ fn main() {
 //TODO forbid LitStr in arithmetics.
 
 //TODO update crate doc
+
+//TODO forbid expr names as identifiers.
