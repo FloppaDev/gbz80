@@ -47,7 +47,7 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
 
 pub fn build(ast: &mut Ast, expr_index: usize) {
     let mut selection = vec![expr_index];
-    let mut unary = false;
+    let mut bin = false;
 
     for prec in PRECEDENCE {
         let sel = &ast.tokens[*selection.last().unwrap()];
@@ -56,36 +56,40 @@ pub fn build(ast: &mut Ast, expr_index: usize) {
         for (i, child) in children.iter().enumerate() {
             let token = &ast.tokens[*child];
 
-            if token.ty == prec {
-                // '-' is used for BinSub and UnNeg.
-                if token.ty.paren_type() == Expr {
-                    // It is unary if there is no token on the left
-                    // or selection is a sub-type of Expr.
-                    if i == 0 || sel.ty.parent_type() == Expr {
-                        match token.ty {
-                            BinSub => {}
+            // A binary operator is waiting for its right operand.
+            if bin {
+                // Add right
+                bin = false;
+            }
 
-                            UnNot => {}
+            if token.ty == BinSub && prec == UnNeg {
+                let left = ast.left_of(token.index);
 
-                            _ => {}
-                        }
-                    }
-
-                    else {
-                        selection.push(token.index);
-                        //TODO re-parent left
-                    }
+                if left.is_none() || left.unwrap().ty.parent_type() == Expr {
+                    // This is a UnNeg. 
+                    // Change ty
                 }
             }
 
-            else if token.ty == At {
-                if i == children.len() - 1 {
-                    selection.pop();
+            else if token.ty == prec {
+                if prec == UnNot {
+                    // This is a UnNot. 
                 }
 
-                else {
-                    selection.push(token.index);
+                else if let Some(left) = ast.left_of(token.index) {
+                    // Add left
+                    bin = true; 
                 }
+            }
+
+            // Enter parens.
+            else if token.ty == At {
+                selection.push(token.index);
+            }
+                
+            // Last child inside selection.
+            if i == children.len() - 1 {
+                selection.pop();
             }
         }
     }
