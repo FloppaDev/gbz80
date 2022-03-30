@@ -300,8 +300,7 @@ impl<'a> Ast<'a> {
     }
 
     /// Index of the token sharing the same parent that was added before this one.
-    #[allow(dead_code)]//TODO expr types miht need it.
-    fn older_sibling_of(&self, index: usize) -> Option<usize> {
+    pub fn left_of(&self, index: usize) -> Option<usize> {
         let siblings = &self.tokens[self.tokens[index].parent].children;
         let mut alone = true;
         let mut prev = 0;

@@ -48,10 +48,11 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
 pub fn build(ast: &mut Ast, expr_index: usize) {
     let mut selection = vec![expr_index];
     let mut bin = false;
+    let mut un = false;
 
     for prec in PRECEDENCE {
-        let sel = &ast.tokens[*selection.last().unwrap()];
-        let children = &sel.children;
+        let sel = *selection.last().unwrap();
+        let children = ast.tokens[sel].children.clone();
 
         for (i, child) in children.iter().enumerate() {
             let token = &ast.tokens[*child];
@@ -62,18 +63,27 @@ pub fn build(ast: &mut Ast, expr_index: usize) {
                 bin = false;
             }
 
-            if token.ty == BinSub && prec == UnNeg {
+            // A unary operator is waiting for its operand.
+            else if un {
+                // Add right
+                un = false;
+            }
+
+            else if token.ty == BinSub && prec == UnNeg {
                 let left = ast.left_of(token.index);
 
-                if left.is_none() || left.unwrap().ty.parent_type() == Expr {
+                if left.is_none() || ast.tokens[left.unwrap()].ty.parent_type() == Expr {
                     // This is a UnNeg. 
                     // Change ty
+                    ast.tokens[sel].ty = UnNeg;
+                    un = true;
                 }
             }
 
             else if token.ty == prec {
                 if prec == UnNot {
                     // This is a UnNot. 
+                    un = true;
                 }
 
                 else if let Some(left) = ast.left_of(token.index) {
@@ -93,6 +103,4 @@ pub fn build(ast: &mut Ast, expr_index: usize) {
             }
         }
     }
-
-    todo!();
 }
