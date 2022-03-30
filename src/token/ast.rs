@@ -134,7 +134,10 @@ impl<'a> Ast<'a> {
                     }
 
                     Expr => {
-                        expr::build(self, *selection);
+                        if let Err(e) = expr::build(self, *selection) {
+                            errors.push(e);
+                        }
+
                         *selection = self.parent_of(*selection);
                     }
 

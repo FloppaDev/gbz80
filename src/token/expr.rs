@@ -5,6 +5,7 @@ use crate::{
     token::ast::Ast,
     token::Token,
     parse::lex::TokenType::{self, *},
+    error::asm::{AsmErr, AstMsg::{self, *}},
 };
 
 //TODO << >> for shifts, for now a single char is more convenient.
@@ -45,7 +46,7 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
     Token{ ty, line_number, line, word, value, index, parent, children: vec![] }
 }
 
-pub fn build(ast: &mut Ast, expr_index: usize) {
+pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     let mut selection = vec![expr_index];
     let mut bin = false;
     let mut un = false;
@@ -55,52 +56,68 @@ pub fn build(ast: &mut Ast, expr_index: usize) {
         let children = ast.tokens[sel].children.clone();
 
         for (i, child) in children.iter().enumerate() {
-            let token = &ast.tokens[*child];
-
             // A binary operator is waiting for its right operand.
             if bin {
-                // Add right
+                let op = ast.left_of(ast.tokens[*child].index).unwrap();
+                let left = ast.left_of(op)
+                    .ok_or(err!(
+                        AstMsg, BinaryWithoutLhs, ast.tokens.get(*child).unwrap().into()))?;
+
+                ast.move_into(left, op);
+                ast.move_into(ast.tokens[*child].index, op);
+
                 bin = false;
             }
 
             // A unary operator is waiting for its operand.
             else if un {
-                // Add right
+                let op = ast.left_of(ast.tokens[*child].index).unwrap();
+                ast.move_into(ast.tokens[*child].index, op);
                 un = false;
             }
 
-            else if token.ty == BinSub && prec == UnNeg {
-                let left = ast.left_of(token.index);
+            // BinSub needs to be converted if it was used as unary.
+            else if ast.tokens[*child].ty == BinSub && prec == UnNeg {
+                let left = ast.left_of(ast.tokens[*child].index);
 
                 if left.is_none() || ast.tokens[left.unwrap()].ty.parent_type() == Expr {
-                    // This is a UnNeg. 
-                    // Change ty
                     ast.tokens[sel].ty = UnNeg;
                     un = true;
                 }
             }
 
-            else if token.ty == prec {
+            // This is the operator we are currently looking for.
+            else if ast.tokens[*child].ty == prec {
                 if prec == UnNot {
-                    // This is a UnNot. 
                     un = true;
                 }
-
-                else if let Some(left) = ast.left_of(token.index) {
-                    // Add left
+                
+                else {
                     bin = true; 
                 }
             }
 
             // Enter parens.
-            else if token.ty == At {
-                selection.push(token.index);
+            else if ast.tokens[*child].ty == At {
+                selection.push(ast.tokens[*child].index);
             }
                 
             // Last child inside selection.
             if i == children.len() - 1 {
+                if un {
+                    return Err(err!(
+                        AstMsg, UnaryWithoutRhs, ast.tokens.get(*child).unwrap().into()));
+                }
+
+                if bin {
+                    return Err(err!(
+                        AstMsg, BinaryWithoutRhs, ast.tokens.get(*child).unwrap().into()));
+                }
+
                 selection.pop();
             }
         }
     }
+
+    Ok(())
 }

@@ -174,9 +174,10 @@ impl AsmMsg for ParseMsg {
 pub enum AstMsg {
     NoTokens,
     UnmatchedParen,
-    PlusWithoutRhs,
-    MinusWithoutRhs,
     MarkWithoutLiteral,
+    UnaryWithoutRhs,
+    BinaryWithoutLhs,
+    BinaryWithoutRhs,
     //TODO assembler bug
     UnhandledNewline,
     //TODO assembler bug
@@ -195,14 +196,17 @@ impl AsmMsg for AstMsg {
             UnmatchedParen =>
                 "Parens must come in pair",
 
-            PlusWithoutRhs =>
-                "Plus operation expects a right-hand side operand",
-
-            MinusWithoutRhs =>
-                "Minus operation expects a right-hand side operand",
-
             MarkWithoutLiteral => 
                 "marker expected a literal",
+
+            UnaryWithoutRhs =>
+                "Unary operator expected an operand on its right",
+
+            BinaryWithoutLhs =>
+                "Binary operator expected an operand on its left",
+
+            BinaryWithoutRhs =>
+                "Binary operator expected an operand on its right",
 
             UnhandledNewline =>
                 "Internal error on new line",
