@@ -46,79 +46,101 @@ fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
     Token{ ty, line_number, line, word, value, index, parent, children: vec![] }
 }
 
+struct Cursor {
+    /// Index of a token.
+    selection: usize,
+
+    /// Copy of the children of the selection.
+    children: Vec<usize>,
+
+    /// Current iteration index within `children`.
+    i: usize,
+
+    /// Last iteration index within `children`.
+    last: usize,
+}
+
+impl Cursor {
+
+    fn new(selection: usize, children: Vec<usize>) -> Self {
+        let last = children.len() - 1;
+        Self{ selection, children, i: 0, last }
+    }
+
+}
+
 pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    let mut bin = false;
-    let mut un = false;
-
     for prec in PRECEDENCE {
-        let mut selection = vec![expr_index];
-        let mut sel = selection[selection.len()-1];
+        let mut stack = vec![
+            Cursor::new(expr_index, ast.tokens[expr_index].children.clone())];
 
-        for (i, child) in ast.tokens[sel].children.clone().iter().enumerate() {
+        loop {
+            let last = stack.len() - 1;
+            let mut cursor = &mut stack[last];
 
-            // A binary operator is waiting for its right operand.
-            if bin {
-                let op = ast.left_of(ast.tokens[*child].index).unwrap();
-                let left = ast.left_of(op)
-                    .ok_or(err!(
-                        AstMsg, BinaryWithoutLhs, ast.tokens.get(*child).unwrap().into()))?;
+            // This is the last child in selection.
+            if cursor.i > cursor.last {
+                // End of the stack, break the loop.
+                if stack.len() == 1 {
+                    break;
+                }
 
-                ast.move_into(left, op);
-                ast.move_into(ast.tokens[*child].index, op);
-
-                bin = false;
+                // Pop top of the stack
+                else {
+                    stack.pop();
+                    continue;
+                }
             }
 
-            // A unary operator is waiting for its operand.
-            else if un {
-                let op = ast.left_of(ast.tokens[*child].index).unwrap();
-                ast.move_into(ast.tokens[*child].index, op);
-                un = false;
-            }
+            let child = cursor.children[cursor.i];
+            cursor.i += 1;
 
             // BinSub needs to be converted if it was used as unary.
-            else if ast.tokens[*child].ty == BinSub && prec == UnNeg {
-                let left = ast.left_of(ast.tokens[*child].index);
+            if ast.tokens[child].ty == BinSub && prec == UnNeg {
+                let left = ast.left_of(ast.tokens[child].index);
 
                 if left.is_none() || ast.tokens[left.unwrap()].ty.parent_type() == Expr {
-                    ast.tokens[sel].ty = UnNeg;
-                    un = true;
+                    ast.tokens[child].ty = UnNeg;
+                    let right = ast.right_of(child).ok_or(err!(
+                        AstMsg, UnaryWithoutRhs, ast.tokens.get(child).unwrap().into()))?;
+                    ast.move_into(right, child);
                 }
             }
 
-            // This is the operator we are currently looking for.
-            else if ast.tokens[*child].ty == prec {
+            // Is this is the operator we are currently looking for?
+            else if ast.tokens[child].ty == prec {
+                // Is it a a UnNot?
                 if prec == UnNot {
-                    un = true;
+                    let right = ast.right_of(child).ok_or(err!(
+                        AstMsg, UnaryWithoutRhs, ast.tokens.get(child).unwrap().into()))?;
+                    ast.move_into(right, child);
                 }
                 
+                // It is a binary operator.
                 else {
-                    bin = true; 
+                    let left = ast.left_of(child).ok_or(err!(
+                        AstMsg, BinaryWithoutLhs, ast.tokens.get(child).unwrap().into()))?;
+                    let right = ast.right_of(child).ok_or(err!(
+                        AstMsg, BinaryWithoutRhs, ast.tokens.get(child).unwrap().into()))?;
+                    //TODO ast.move_into(vec![left, right] ...
+                    ast.move_into(left, child);
+                    ast.move_into(right, child);
+
+                    println!(
+                        "l{}: {:?} {:?} {:?}", 
+                        ast.tokens[child].line_number, 
+                        ast.tokens[left].ty, 
+                        ast.tokens[child].ty, 
+                        ast.tokens[right].ty);
                 }
             }
 
             // Enter parens.
-            else if ast.tokens[*child].ty == At {
-                selection.push(ast.tokens[*child].index);
-                sel = selection[selection.len()-1];
-            }
-                
-            // Last child inside selection.
-            if i == ast.tokens[sel].children.len() - 1 {
-                if un {
-                    return Err(err!(
-                        AstMsg, UnaryWithoutRhs, ast.tokens.get(*child).unwrap().into()));
-                }
+            else if ast.tokens[child].ty == At {
+                let at = ast.tokens[child].index;
+                stack.push(Cursor::new(at, ast.tokens[at].children.clone()));
 
-                if bin {
-                    return Err(err!(
-                        AstMsg, BinaryWithoutRhs, ast.tokens.get(*child).unwrap().into()));
-                }
-
-                if selection.len() > 1 {
-                    selection.pop();
-                    sel = selection[selection.len()-1];
-                }
+                continue;
             }
         }
     }

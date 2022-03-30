@@ -305,16 +305,10 @@ impl<'a> Ast<'a> {
     /// Index of the token sharing the same parent that was added before this one.
     pub fn left_of(&self, index: usize) -> Option<usize> {
         let siblings = &self.tokens[self.tokens[index].parent].children;
-        let mut alone = true;
         let mut prev = 0;
 
         for sibling in siblings {
-            if alone {
-                alone = false;
-            }
-
-            // The indices match and there is a token before this one.
-            else if *sibling == index {
+            if *sibling == index {
                 return Some(prev);
             }
 
@@ -324,8 +318,24 @@ impl<'a> Ast<'a> {
         None
     }
 
+    /// Index of the token sharing the same parent that was added after this one.
+    pub fn right_of(&self, index: usize) -> Option<usize> {
+        let mut siblings = self.tokens[self.tokens[index].parent].children.iter();
+
+        while let Some(sibling) = siblings.next() {
+            if *sibling == index {
+                return if let Some(right) = siblings.next() {
+                    Some(*right)
+                }else{
+                    None
+                };
+            }
+        }
+
+        None
+    }
+
     /// Move a token into another.
-    #[allow(dead_code)]//TODO expr types miht need it.
     pub fn move_into(&mut self, index: usize, dest: usize) {
         // Remove index from its current parent's 'children' vec.
         let current_parent = self.tokens[index].parent;
