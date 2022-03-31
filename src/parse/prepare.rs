@@ -30,8 +30,9 @@ pub fn parse<'a>(
 ) -> Result<Vec<ParsedToken<'a>>, Vec<AsmErr<'a, ParseMsg>>> {
     let mut parsed_tokens = vec![];
     let mut errors = vec![];
+    let mut words = split.words().iter();
 
-    for word in split.words() {
+    while let Some(word) = words.next() {
         let id_words = identify(word.value);
 
         // Error while identifying token type.
@@ -47,8 +48,37 @@ pub fn parse<'a>(
             continue;
         }
 
+        let mut id_words = id_words.unwrap();
+
+        if matches!(id_words[0].0, DefB|DefW|DefS) {
+            if let Some(word) = words.next() {
+                let mut is_ident = false;
+    
+                if let Some(c) = word.value.get(0..1) {
+                    let c = c.chars().next().unwrap();
+
+                    if text::is_char_ident_first(c) {
+                        if let Some(ident) = text::check_ident(word.value) {
+                            id_words.push((Identifier, ident));
+                            is_ident = true;
+                            println!("{}", word.value);
+                        }
+                    }                
+                }
+
+                if !is_ident {
+                    let err_ctx = ErrCtx::new(
+                        split.line_number(word.line_index),
+                        split.line(word.line_index),
+                        word.value);
+
+                    errors.push(err!(ParseMsg, InvalidIdent, err_ctx));
+                }
+            }
+        }
+
         // Extract data for all words and collect errors.
-        for (ty, word_str) in id_words.unwrap() {
+        for (ty, word_str) in id_words {
             let values = extract((ty, word_str.as_str()));
 
             if let Err(err_type) = values {

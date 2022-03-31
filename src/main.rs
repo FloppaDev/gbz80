@@ -94,4 +94,5 @@ fn main() {
 
 //TODO update crate doc
 
-//TODO forbid expr names as identifiers.
+//TODO forbid expr, flag, register, and instruction names as identifiers.
+// it only matters for expr and flag, as the name should be full caps.

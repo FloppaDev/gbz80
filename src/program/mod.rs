@@ -47,6 +47,7 @@ pub fn run() -> Result<(), ()> {
     macros.expand(&mut ast).map_err(stage::macros)?;
     #[cfg(debug_assertions)] ast.debug();
 
+    panic!();
     let ast_ref = TokenRef::new(&ast);
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
 

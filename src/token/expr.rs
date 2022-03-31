@@ -8,14 +8,12 @@ use crate::{
     error::asm::{AsmErr, AstMsg::{self, *}},
 };
 
-//TODO << >> for shifts, for now a single char is more convenient.
-
 /// Precedence from strongest to weakest.
-/// unary ! -
-/// * / %
+/// NOT -x
+/// * / MOD
 /// + -
-/// < >
-/// & ^ |
+/// SHL SHR
+/// AND XOR OR
 const PRECEDENCE: [TokenType; 12] = [
     UnNot, UnNeg,
     BinMul, BinDiv, BinMod,
@@ -24,130 +22,76 @@ const PRECEDENCE: [TokenType; 12] = [
     BinAnd, BinXor, BinOr
 ];
 
-fn expr<'a>(token: &Token<'a>) -> Token<'a> {
-    let Token{ line_number, line, word, value, .. } = *token;
+pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+    let children = ast.tokens[scope].children.clone();
 
-    Token{ 
-        ty: Expr, 
-        line_number, 
-        line, 
-        word, 
-        value, 
-        index: 0, 
-        parent: 0, 
-        children: vec![] 
-    }
-}
+    for child in children {
+        let ty = ast.tokens[child].ty; 
 
-fn op_token<'a>(ty: TokenType, index: usize, parent: &Token<'a>) -> Token<'a> {
-    let Token{ line_number, line, word, value, .. } = *parent;
-    let parent = parent.index;
-
-    Token{ ty, line_number, line, word, value, index, parent, children: vec![] }
-}
-
-struct Cursor {
-    /// Index of a token.
-    selection: usize,
-
-    /// Copy of the children of the selection.
-    children: Vec<usize>,
-
-    /// Current iteration index within `self.children`.
-    i: usize,
-
-    /// Last iteration index within `self.children`.
-    last: usize,
-
-    /// Current iteration index within `PRECEDENCE`
-    p: usize,
-}
-
-impl Cursor {
-
-    fn new(selection: usize, children: Vec<usize>) -> Self {
-        let last = children.len() - 1;
-        Self{ selection, children, i: 0, last, p: 0 }
-    }
-
-}
-
-pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    //TODO fix: only the top level gets through all operators.
-    for prec in PRECEDENCE {
-        let mut stack = vec![
-            Cursor::new(expr_index, ast.tokens[expr_index].children.clone())];
-
-        loop {
-            let last = stack.len() - 1;
-            let mut cursor = &mut stack[last];
-
-            // This is the last child in selection.
-            if cursor.i > cursor.last {
-                // End of the stack, break the loop.
-                if stack.len() == 1 {
-                    break;
+        if ty.parent_type() == Expr {
+            for prec in PRECEDENCE {
+                if ty == BinSub && prec == UnNeg {
+                    un_neg(ast, child)?;
                 }
 
-                // Pop top of the stack
-                else {
-                    stack.pop();
-                    continue;
+                else if ty == prec {
+                    if prec == UnNot {
+                        un_not(ast, child)?;
+                    }
+                    
+                    else {
+                        bin(ast, child)?;
+                    }
                 }
-            }
-
-            let child = cursor.children[cursor.i];
-            cursor.i += 1;
-
-            // BinSub needs to be converted if it was used as unary.
-            if ast.tokens[child].ty == BinSub && prec == UnNeg {
-                let left = ast.left_of(ast.tokens[child].index);
-
-                if left.is_none() || ast.tokens[left.unwrap()].ty.parent_type() == Expr {
-                    ast.tokens[child].ty = UnNeg;
-                    let right = ast.right_of(child).ok_or(err!(
-                        AstMsg, UnaryWithoutRhs, ast.tokens.get(child).unwrap().into()))?;
-                    ast.move_into(right, child);
-                }
-            }
-
-            // Is this is the operator we are currently looking for?
-            else if ast.tokens[child].ty == prec {
-                // Is it a a UnNot?
-                if prec == UnNot {
-                    let right = ast.right_of(child).ok_or(err!(
-                        AstMsg, UnaryWithoutRhs, ast.tokens.get(child).unwrap().into()))?;
-                    ast.move_into(right, child);
-                }
-                
-                // It is a binary operator.
-                else {
-                    let left = ast.left_of(child).ok_or(err!(
-                        AstMsg, BinaryWithoutLhs, ast.tokens.get(child).unwrap().into()))?;
-                    let right = ast.right_of(child).ok_or(err!(
-                        AstMsg, BinaryWithoutRhs, ast.tokens.get(child).unwrap().into()))?;
-                    //TODO ast.move_into(vec![left, right] ...
-                    ast.move_into(left, child);
-                    ast.move_into(right, child);
-
-                    println!(
-                        "l{}: {:?} {:?} {:?}", 
-                        ast.tokens[child].line_number, 
-                        ast.tokens[left].ty, 
-                        ast.tokens[child].ty, 
-                        ast.tokens[right].ty);
-                }
-            }
-
-            // Enter parens.
-            else if ast.tokens[child].ty == At {
-                let at = ast.tokens[child].index;
-                stack.push(Cursor::new(at, ast.tokens[at].children.clone()));
-
-                continue;
             }
         }
+
+        else if ty == At {
+            build(ast, child)?;
+        }
     }
+
+    Ok(())
+}
+
+fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+    if let Some(left) = ast.left_of(ast.tokens[neg].index) {
+        let is_expr = ast.tokens[left].ty.parent_type() == Expr;
+        let is_empty = ast.tokens[left].children.is_empty();
+
+        if !is_expr || (is_expr && !is_empty) {
+            return Ok(());
+        }
+    }
+
+    ast.tokens[neg].ty = UnNeg;
+    let right = ast.right_of(neg).ok_or(err!(
+        AstMsg, UnaryWithoutRhs, ast.tokens.get(neg).unwrap().into()))?;
+
+    ast.move_into(right, neg);
+
+    Ok(())
+}
+
+fn un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+    let right = ast.right_of(not).ok_or(err!(
+        AstMsg, UnaryWithoutRhs, ast.tokens.get(not).unwrap().into()))?;
+
+    ast.move_into(right, not);
+
+    Ok(())
+}
+
+fn bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+
+    let left = ast.left_of(bin).ok_or(err!(
+        AstMsg, BinaryWithoutLhs, ast.tokens.get(bin).unwrap().into()))?;
+    let right = ast.right_of(bin).ok_or(err!(
+        AstMsg, BinaryWithoutRhs, ast.tokens.get(bin).unwrap().into()))?;
+
+    //TODO ast.move_into(vec![left, right] ...
+    ast.move_into(left, bin);
+    ast.move_into(right, bin);
 
     Ok(())
 }
