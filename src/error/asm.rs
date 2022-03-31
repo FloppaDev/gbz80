@@ -51,14 +51,9 @@ macro_rules! err {
 /// Error variants when parsing values from the source file.
 #[derive(Debug, Copy, Clone)]
 pub enum ParseMsg {
-    /// Number literals are either 1 or 2 bytes long. (255 or 65535 max value)
-    HexOverflow,
-    DecOverflow,
-    BinOverflow,
-
+    WrongByte,
+    WrongWord,
     EmptyStr,
-
-    /// Syntax errors
     Invalid,
     InvalidHex,
     InvalidBin,
@@ -78,7 +73,6 @@ pub enum ParseMsg {
     InvalidNamedMarkHex,
     InvalidAnonMark,
     InvalidAnonMarkHex,
-
     //TODO those are bugs
     UnhandledType,
     UnexpectedPrefix,
@@ -90,14 +84,11 @@ impl AsmMsg for ParseMsg {
         use ParseMsg::*;
 
         match self {
-            HexOverflow => 
-                "Hexadecimal literal overflow",
+            WrongByte => 
+                "Byte value not in range 0-255",
 
-            BinOverflow => 
-                "Binary literal overflow",
-
-            DecOverflow => 
-                "Decimal literal overflow",
+            WrongWord => 
+                "Word value not in range 0-65535",
 
             EmptyStr => 
                 "Empty string",
@@ -180,8 +171,6 @@ pub enum AstMsg {
     BinaryWithoutRhs,
     //TODO assembler bug
     UnhandledNewline,
-    //TODO assembler bug
-    UnknownError,
 }
 
 impl AsmMsg for AstMsg {
@@ -210,9 +199,6 @@ impl AsmMsg for AstMsg {
 
             UnhandledNewline =>
                 "Internal error on new line",
-
-            UnknownError =>
-                "Unknown error",
         }
     }
 }

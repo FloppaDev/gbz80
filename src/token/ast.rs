@@ -73,7 +73,7 @@ impl<'a> Ast<'a> {
                 }
             }
 
-            ast.process_token(token, &mut selection, macros, &mut errors);
+            ast.process_token(token, &mut selection, macros);
         }
 
         // Run `newline` for the last line too.
@@ -161,10 +161,8 @@ impl<'a> Ast<'a> {
         token: ParsedToken<'a>,
         selection: &mut usize,
         macros: &mut Macros,
-        errors: &mut Vec<AsmErr<'a, AstMsg>>,
     ) {
         let ParsedToken{ line_number, line, .. } = token;
-        let err_ctx: ErrCtx = (&token).into();
 
         // Match parent type of the token.
         match token.ty.parent_type() {

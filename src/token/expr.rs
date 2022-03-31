@@ -53,23 +53,27 @@ struct Cursor {
     /// Copy of the children of the selection.
     children: Vec<usize>,
 
-    /// Current iteration index within `children`.
+    /// Current iteration index within `self.children`.
     i: usize,
 
-    /// Last iteration index within `children`.
+    /// Last iteration index within `self.children`.
     last: usize,
+
+    /// Current iteration index within `PRECEDENCE`
+    p: usize,
 }
 
 impl Cursor {
 
     fn new(selection: usize, children: Vec<usize>) -> Self {
         let last = children.len() - 1;
-        Self{ selection, children, i: 0, last }
+        Self{ selection, children, i: 0, last, p: 0 }
     }
 
 }
 
 pub fn build<'a>(ast: &mut Ast<'a>, expr_index: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+    //TODO fix: only the top level gets through all operators.
     for prec in PRECEDENCE {
         let mut stack = vec![
             Cursor::new(expr_index, ast.tokens[expr_index].children.clone())];
