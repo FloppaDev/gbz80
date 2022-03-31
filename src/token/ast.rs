@@ -303,14 +303,17 @@ impl<'a> Ast<'a> {
     /// Index of the token sharing the same parent that was added before this one.
     pub fn left_of(&self, index: usize) -> Option<usize> {
         let siblings = &self.tokens[self.tokens[index].parent].children;
+        let mut alone = true;
         let mut prev = 0;
 
         for sibling in siblings {
-            if *sibling == index {
+            if !alone && *sibling == index {
                 return Some(prev);
             }
 
             prev = *sibling;
+
+            alone = false
         }
 
         None

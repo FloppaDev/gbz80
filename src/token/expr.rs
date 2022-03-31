@@ -25,29 +25,29 @@ const PRECEDENCE: [TokenType; 12] = [
 pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     let children = ast.tokens[scope].children.clone();
 
-    for child in children {
-        let ty = ast.tokens[child].ty; 
+    for prec in PRECEDENCE {
+        for child in &children {
+            let ty = ast.tokens[*child].ty; 
 
-        if ty.parent_type() == Expr {
-            for prec in PRECEDENCE {
+            if ty.parent_type() == Expr {
                 if ty == BinSub && prec == UnNeg {
-                    un_neg(ast, child)?;
+                    un_neg(ast, *child)?;
                 }
 
                 else if ty == prec {
                     if prec == UnNot {
-                        un_not(ast, child)?;
+                        un_not(ast, *child)?;
                     }
                     
                     else {
-                        bin(ast, child)?;
+                        bin(ast, *child)?;
                     }
                 }
             }
-        }
 
-        else if ty == At {
-            build(ast, child)?;
+            else if ty == At {
+                build(ast, *child)?;
+            }
         }
     }
 
