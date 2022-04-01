@@ -1,9 +1,6 @@
 
-#![allow(unused_mut, unused_variables, dead_code)] //TODO
-
 use crate::{
     token::ast::Ast,
-    token::Token,
     parse::lex::TokenType::{self, *},
     error::asm::{AsmErr, AstMsg::{self, *}},
 };
@@ -22,6 +19,7 @@ const PRECEDENCE: [TokenType; 12] = [
     BinAnd, BinXor, BinOr
 ];
 
+/// Builds an `Expr` token from a `DefB` or `DefW`.
 pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     // Iterate recursively through parens.
     for i in 0..ast.tokens[scope].children.len() {
@@ -77,36 +75,39 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
     Ok(())
 }
 
+/// Check if a '-' is a unary operator and attempts to move right operand into it.
 fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, AstMsg>> {
     if let Some(left) = ast.left_of(ast.tokens[neg].index) {
-        let is_expr = ast.tokens[left].ty.parent_type() == Expr;
-        let is_empty = ast.tokens[left].children.is_empty();
+        let left = &ast.tokens[left];
+        let is_expr = left.ty.parent_type() == Expr;
 
-        if !is_expr || (is_expr && !is_empty) {
+        if !is_expr || (is_expr && !left.children.is_empty()) {
             return Ok(false);
         }
     }
 
     ast.tokens[neg].ty = UnNeg;
-    let right = ast.right_of(neg).ok_or(err!(
-        AstMsg, UnaryWithoutRhs, ast.tokens.get(neg).unwrap().into()))?;
+    let right = ast.right_of(neg)
+        .ok_or(err!(AstMsg, UnaryWithoutRhs, (&ast.tokens[neg]).into()))?;
 
     ast.move_into(right, neg);
 
     Ok(true)
 }
 
+/// Attempts to move right operand into a unary 'not' operator.
 fn un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    let right = ast.right_of(not).ok_or(err!(
-        AstMsg, UnaryWithoutRhs, ast.tokens.get(not).unwrap().into()))?;
+    let right = ast.right_of(not)
+        .ok_or(err!(AstMsg, UnaryWithoutRhs, (&ast.tokens[not]).into()))?;
 
     ast.move_into(right, not);
 
     Ok(())
 }
 
+/// Attempts to move left and right operands into a binary operator.
 fn bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    let err_ctx = ast.tokens.get(bin).unwrap().into();
+    let err_ctx = (&ast.tokens[bin]).into();
 
     let left = ast.left_of(bin).ok_or(err!(AstMsg, BinaryWithoutLhs, err_ctx))?;
     let right = ast.right_of(bin).ok_or(err!(AstMsg, BinaryWithoutRhs, err_ctx))?;
