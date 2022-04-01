@@ -23,30 +23,53 @@ const PRECEDENCE: [TokenType; 12] = [
 ];
 
 pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    let children = ast.tokens[scope].children.clone();
+    // Iterate recursively through parens.
+    for i in 0..ast.tokens[scope].children.len() {
+        let child = ast.tokens[scope].children[i];
+        let ty = ast.tokens[child].ty; 
 
+        if ty == At {
+            build(ast, child)?;
+        }
+    }
+
+    // Build the tree of operator, following the precedence order.
     for prec in PRECEDENCE {
-        for child in &children {
-            let ty = ast.tokens[*child].ty; 
+        let mut i = 0;
+
+        loop {
+            let child = ast.tokens[scope].children[i];
+            let ty = ast.tokens[child].ty; 
+            let mut is_bin = false;
+            let mut is_neg = false;
 
             if ty.parent_type() == Expr {
                 if ty == BinSub && prec == UnNeg {
-                    un_neg(ast, *child)?;
+                    match un_neg(ast, child) {
+                        Ok(n) => is_neg = n,
+                        Err(e) => return Err(e),
+                    }
                 }
 
-                else if ty == prec {
+                if !is_neg && ty == prec {
                     if prec == UnNot {
-                        un_not(ast, *child)?;
+                        un_not(ast, child)?;
                     }
                     
                     else {
-                        bin(ast, *child)?;
+                        bin(ast, child)?;
+                        is_bin = true;
                     }
                 }
             }
 
-            else if ty == At {
-                build(ast, *child)?;
+            // if is it was a bin, 2 tokens were removed. Next index is the same index.
+            if !is_bin {
+                i += 1;
+            }
+
+            if i == ast.tokens[scope].children.len() {
+                break;
             }
         }
     }
@@ -54,13 +77,13 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
     Ok(())
 }
 
-fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, AstMsg>> {
     if let Some(left) = ast.left_of(ast.tokens[neg].index) {
         let is_expr = ast.tokens[left].ty.parent_type() == Expr;
         let is_empty = ast.tokens[left].children.is_empty();
 
         if !is_expr || (is_expr && !is_empty) {
-            return Ok(());
+            return Ok(false);
         }
     }
 
@@ -70,7 +93,7 @@ fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<(), AsmErr<'a, AstMsg>> {
 
     ast.move_into(right, neg);
 
-    Ok(())
+    Ok(true)
 }
 
 fn un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
@@ -83,13 +106,11 @@ fn un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
 }
 
 fn bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+    let err_ctx = ast.tokens.get(bin).unwrap().into();
 
-    let left = ast.left_of(bin).ok_or(err!(
-        AstMsg, BinaryWithoutLhs, ast.tokens.get(bin).unwrap().into()))?;
-    let right = ast.right_of(bin).ok_or(err!(
-        AstMsg, BinaryWithoutRhs, ast.tokens.get(bin).unwrap().into()))?;
+    let left = ast.left_of(bin).ok_or(err!(AstMsg, BinaryWithoutLhs, err_ctx))?;
+    let right = ast.right_of(bin).ok_or(err!(AstMsg, BinaryWithoutRhs, err_ctx))?;
 
-    //TODO ast.move_into(vec![left, right] ...
     ast.move_into(left, bin);
     ast.move_into(right, bin);
 

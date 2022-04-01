@@ -61,7 +61,6 @@ pub fn parse<'a>(
                         if let Some(ident) = text::check_ident(word.value) {
                             id_words.push((Identifier, ident));
                             is_ident = true;
-                            println!("{}", word.value);
                         }
                     }                
                 }
