@@ -73,6 +73,7 @@ pub enum ParseMsg {
     InvalidNamedMarkHex,
     InvalidAnonMark,
     InvalidAnonMarkHex,
+    ReservedKeyword,
     //TODO those are bugs
     UnhandledType,
     UnexpectedPrefix,
@@ -149,6 +150,9 @@ impl AsmMsg for ParseMsg {
 
             InvalidIdent => 
                 "Invalid as identifier",
+
+            ReservedKeyword =>
+                "Identifier cannot be a reserved keyword",
 
             UnhandledType => 
                 "Parser could not handle the token type",

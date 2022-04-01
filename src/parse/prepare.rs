@@ -50,27 +50,37 @@ pub fn parse<'a>(
 
         let mut id_words = id_words.unwrap();
 
+        //TODO fn
         if matches!(id_words[0].0, DefB|DefW|DefS) {
             if let Some(word) = words.next() {
                 let mut is_ident = false;
+                let mut is_allowed = false;
     
                 if let Some(c) = word.value.get(0..1) {
                     let c = c.chars().next().unwrap();
 
                     if text::is_char_ident_first(c) {
                         if let Some(ident) = text::check_ident(word.value) {
-                            id_words.push((Identifier, ident));
-                            is_ident = true;
+                            is_allowed = TokenType::get_by_word(ident.as_str()).is_none();
+
+                            if is_allowed {
+                                id_words.push((Identifier, ident));
+                                is_ident = true;
+                            }
                         }
                     }                
                 }
 
-                if !is_ident {
-                    let err_ctx = ErrCtx::new(
-                        split.line_number(word.line_index),
-                        split.line(word.line_index),
-                        word.value);
+                let err_ctx = ErrCtx::new(
+                    split.line_number(word.line_index),
+                    split.line(word.line_index),
+                    word.value);
 
+                if !is_allowed {
+                    errors.push(err!(ParseMsg, ReservedKeyword, err_ctx));
+                }
+
+                else if !is_ident {
                     errors.push(err!(ParseMsg, InvalidIdent, err_ctx));
                 }
             }

@@ -93,6 +93,3 @@ fn main() {
 //TODO forbid LitStr in arithmetics.
 
 //TODO update crate doc
-
-//TODO forbid expr, flag, register, and instruction names as identifiers.
-// it only matters for expr and flag, as the name should be full caps.
