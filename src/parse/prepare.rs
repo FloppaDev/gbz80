@@ -50,7 +50,6 @@ pub fn parse<'a>(
 
         let mut id_words = id_words.unwrap();
 
-        //TODO fn
         if matches!(id_words[0].0, DefB|DefW|DefS) {
             if let Some(word) = words.next() {
                 let mut is_ident = false;

@@ -32,6 +32,9 @@ pub enum ConstExpr<'a> {
 
     /// Known value.
     Value(Value<'a>),
+
+    /// Value needs to be calculated.
+    Expr(&'a TokenRef<'a>),
 }
 
 pub struct Constants<'a> {
@@ -107,22 +110,16 @@ impl<'a> Constants<'a> {
                     let child = token.get(0);
 
                     match child.ty() {
-                        DefB => {
+                        DefB|DefW => {
                             let ident = child.get(0).value().as_str();
-                            let value = ConstExpr::Value(Value::Usize(1));
-                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
-                        }
-
-                        DefW => {
-                            let ident = child.get(0).value().as_str();
-                            let value = ConstExpr::Value(Value::Usize(2));
+                            let value = ConstExpr::Expr(child.get(1));
                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
                         DefS => {
                             let ident = child.get(0).value().as_str();
-                            let len = child.get(0).value().as_str().len();
-                            let value = ConstExpr::Value(Value::Usize(len));
+                            let str_value = child.get(0).value();
+                            let value = ConstExpr::Value(*str_value);
                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
                         }
 
