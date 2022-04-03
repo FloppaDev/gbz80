@@ -173,6 +173,7 @@ pub enum AstMsg {
     UnaryWithoutRhs,
     BinaryWithoutLhs,
     BinaryWithoutRhs,
+    CircularDependency,
     //TODO assembler bug
     UnhandledNewline,
 }
@@ -200,6 +201,9 @@ impl AsmMsg for AstMsg {
 
             BinaryWithoutRhs =>
                 "Binary operator expected an operand on its right",
+
+            CircularDependency =>
+                "Circular dependency in expression",
 
             UnhandledNewline =>
                 "Internal error on new line",

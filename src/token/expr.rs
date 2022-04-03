@@ -1,6 +1,9 @@
 
 use crate::{
-    token::ast::Ast,
+    token::{
+        ast::Ast,
+        read::TokenRef,
+    },
     parse::lex::TokenType::{self, *},
     error::asm::{AsmErr, AstMsg::{self, *}},
 };
@@ -116,4 +119,122 @@ fn bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     ast.move_into(right, bin);
 
     Ok(())
+}
+
+pub fn evaluate(expr: &TokenRef) {
+    assert_eq!(expr.ty(), Expr);
+
+    // - Evaluate op if Lit or Identifier (not LitStr).
+    // - Do not allow ident of this expr within the Expr itself.
+    // - Check for circular depencies.
+
+    let mut errors = vec![];
+    let def_ident = expr.parent().get(0).value().as_str();
+}
+
+fn eval_scope(
+    scope: &TokenRef, 
+    def_ident: &str, 
+    constants: &mut Constants,
+    errors: &mut Vec<()>
+) -> Result<usize, ()> {
+    for child in scope.children() {
+        // A value without an operator parent must be an only-child.
+        // e.g.     #db X0 10
+        //          #db X1 10 + (5)
+        // error:   #db x2 1 2 3
+        let not_op = matches!(scope.ty(), At|Expr);
+        let is_value = matches!(child.ty(), Lit|Identifier);
+
+        if not_op && is_value {
+            if scope.children().len() == 1 {
+                return eval_value(child, def_ident, constants, errors);
+            }
+
+            else {
+                errors.push();
+                return Err(());
+            }
+        }
+
+        if child.ty() == At || child.ty().parent_type() == Expr {
+            eval_scope(child, def_ident);        
+        }
+    }
+}
+
+fn eval_op(op: &TokenRef, def_ident: &str) {
+    assert_eq!(op.ty().parent_type(), Expr);
+
+    match op.ty() {
+        //TODO child can technically be a scope.
+        UnNot => ~eval_value(op.get(0), def_ident, constants, errors)?,
+            
+        //TODO expr will need to be calculated with `isize`.
+        UnNeg => -eval_value(op.get(0), def_ident, constants, errors)?,
+
+        BinMul => {
+
+        }
+
+        BinDiv => {
+
+        }
+
+        BinMod => {
+
+        }
+
+        BinAdd => {
+
+        }
+
+        BinSub => {
+
+        }
+
+        BinShl => {
+
+        }
+
+        BinShr => {
+
+        }
+
+        BinAnd => {
+
+        }
+
+        BinXor => {
+
+        }
+
+        BinOr => {
+
+        }
+
+        _ => unreachable!("Unhandled operator type")
+    }
+}
+
+fn eval_value(
+    scope: &TokenRef, 
+    def_ident: &str, 
+    constants: &mut Constants,
+    errors: &mut Vec<()>
+) -> Result<usize, ()> {
+    match child.ty() {
+        Lit => {
+            
+        }
+
+        Identifier => {
+            // Does this expression depend on itself? 
+            if child.value().as_str() == def_ident {
+                errors.push(err!(ExprMsg, CircularDependency, child.into()));
+            }
+        }
+
+        _ => {}
+    }
 }
