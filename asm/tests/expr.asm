@@ -16,8 +16,8 @@
 #db E1 (((5 * 2) + 3) SHL 1) OR %1000
 
 ; Circular dependency.
-#db X0 X1
-#db X1 X0
+; #db X0 X1
+; #db X1 X0
 
 #db P0 10 + 2 * 1 - 5 + 3
 #db P1 (10 + 2 * 1 - 5 + 3)
@@ -26,3 +26,18 @@
 ; #db XOR 10
 ; #db C 10
 ; #db ld 10
+
+; Indirect circular dependency.
+; #db U V
+; #db V W
+; #db W U
+
+; Dependency list 
+; #db U V + W   ; eval V then W
+; #db V W       ; eval W 
+;
+; if #db W U check for U
+; if #db W V check for V
+;
+; -> #db U ... deps = [U]
+; -> #db V ... deps = [U,V]

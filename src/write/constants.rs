@@ -39,10 +39,20 @@ pub enum ConstExpr<'a> {
 
 pub struct Constants<'a> {
     constants: HashMap<&'a str, ConstExpr<'a>>,
+    //TODO process includes before parse.
     includes: HashMap<&'a str, Vec<u8>>,
 }
 
 impl<'a> Constants<'a> {
+
+    #[allow(dead_code)]
+    pub fn get(&self, ident: &str) -> &ConstExpr {
+        self.get(ident).unwrap() 
+    }
+
+    pub fn get_mut(&mut self, ident: &str) -> &mut ConstExpr {
+        self.get_mut(ident).unwrap() 
+    }
 
     pub fn new(
         ast: &'a TokenRef<'a>,

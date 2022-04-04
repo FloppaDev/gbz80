@@ -138,27 +138,77 @@ fn eval_scope(
     constants: &mut Constants,
     errors: &mut Vec<()>
 ) -> Result<usize, ()> {
-    for child in scope.children() {
-        // A value without an operator parent must be an only-child.
-        // e.g.     #db X0 10
-        //          #db X1 10 + (5)
-        // error:   #db x2 1 2 3
-        let not_op = matches!(scope.ty(), At|Expr);
-        let is_value = matches!(child.ty(), Lit|Identifier);
+    match scope.ty() {
+        Lit => {
+            let litx = scope.get(0);            
 
-        if not_op && is_value {
-            if scope.children().len() == 1 {
-                return eval_value(child, def_ident, constants, errors);
-            }
+            match litx.ty() {
+                LitDec|LitBin|LitHex => {
+                    return litx.value().as_usize();
+                }
 
-            else {
-                errors.push();
-                return Err(());
+                LitStr => {
+                    errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
+                    return Err(());
+                }
+
+                _ => unreachable!("Unhandled Lit type in Expr")
             }
         }
 
-        if child.ty() == At || child.ty().parent_type() == Expr {
-            eval_scope(child, def_ident);        
+        Identifier => {
+            let ident = child.value().ast_str();
+
+            // Does this expression depend on itself? 
+            if child.value().as_str() == def_ident {
+                errors.push(err!(ExprMsg, CircularDependency, child.into()));
+            }
+
+            // Read the value in the `Constants` map.
+            let const_expr = constants.get_mut(ident);
+
+            match const_expr {
+                Value(value) => match value {
+                    Usize(num) => return num,
+
+                    Str(_) => {
+                        errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
+                        return Err(());
+                    }
+                }
+
+                Expr(expr) => {
+                    //TODO
+                }
+
+                _ => unreachable!("Invalid constant")
+            }
+        }
+
+        _ => {
+            for child in scope.children() {
+                // A value without an operator parent must be an only-child.
+                // e.g.     #db X0 10
+                //          #db X1 10 + (5)
+                // error:   #db x2 1 2 3
+                let not_op = matches!(scope.ty(), At|Expr);
+                let is_value = matches!(child.ty(), Lit|Identifier);
+
+                if not_op && is_value {
+                    if scope.children().len() == 1 {
+                        return eval_value(child, def_ident, constants, errors);
+                    }
+
+                    else {
+                        errors.push();
+                        return Err(());
+                    }
+                }
+
+                if child.ty() == At || child.ty().parent_type() == Expr {
+                    eval_scope(child, def_ident);        
+                }
+            }
         }
     }
 }
@@ -214,27 +264,5 @@ fn eval_op(op: &TokenRef, def_ident: &str) {
         }
 
         _ => unreachable!("Unhandled operator type")
-    }
-}
-
-fn eval_value(
-    scope: &TokenRef, 
-    def_ident: &str, 
-    constants: &mut Constants,
-    errors: &mut Vec<()>
-) -> Result<usize, ()> {
-    match child.ty() {
-        Lit => {
-            
-        }
-
-        Identifier => {
-            // Does this expression depend on itself? 
-            if child.value().as_str() == def_ident {
-                errors.push(err!(ExprMsg, CircularDependency, child.into()));
-            }
-        }
-
-        _ => {}
     }
 }
