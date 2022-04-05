@@ -222,56 +222,46 @@ fn eval_scope(
     }
 }
 
-fn eval_op(op: &TokenRef, def_ident: &str, def_ty: TokenType) {
+fn bin_op<'a>(f: fn(isize, isize) -> isize) -> Result<isize, AsmErr<'a, ExprMsg>> {
+    let lhs = eval_scope(op.get(0), def_ident, constants, errors)?;
+    let rhs = eval_scope(op.get(1), def_ident, constants, errors)?;
+
+    Ok(f(lhs, rhs))
+}
+
+fn eval_op<'a>(
+    op: &TokenRef, 
+    def_ident: &str, 
+    def_ty: TokenType,
+    errors: &mut Vec<AsmErr<'a, ExprMsg>>,
+) -> Result<isize, ()> {
     assert_eq!(op.ty().parent_type(), Expr);
 
     let result = match op.ty() {
-        //TODO child can technically be a scope.
         UnNot => ~eval_scope(op.get(0), def_ident, constants, errors)?,
             
         //TODO expr will need to be calculated with `isize`.
         UnNeg => -eval_scope(op.get(0), def_ident, constants, errors)?,
 
-        BinMul => {
-            let lhs = eval_scope(op.get(0), def_ident, constants, errors)?;
-            let rhs = eval_scope(op.get(1), def_ident, constants, errors)?;
-        }
+        BinMul => bin_op(|lhs, rhs| lhs * rhs),
 
-        BinDiv => {
+        BinDiv => bin_op(|lhs, rhs| lhs / rhs),
 
-        }
+        BinMod => bin_op(|lhs, rhs| lhs % rhs),
 
-        BinMod => {
+        BinAdd => bin_op(|lhs, rhs| lhs + rhs),
 
-        }
+        BinSub => bin_op(|lhs, rhs| lhs - rhs),
 
-        BinAdd => {
+        BinShl => bin_op(|lhs, rhs| lhs << rhs),
 
-        }
+        BinShr => bin_op(|lhs, rhs| lhs >> rhs),
 
-        BinSub => {
+        BinAnd => bin_op(|lhs, rhs| lhs & rhs),
 
-        }
+        BinXor => bin_op(|lhs, rhs| lhs ^ rhs),
 
-        BinShl => {
-
-        }
-
-        BinShr => {
-
-        }
-
-        BinAnd => {
-
-        }
-
-        BinXor => {
-
-        }
-
-        BinOr => {
-
-        }
+        BinOr => bin_op(|lhs, rhs| lhs | rhs),
 
         _ => bug!("Unhandled operator type")
     };
