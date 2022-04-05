@@ -1,11 +1,16 @@
 
 use crate::{
     token::{
+        Value,
         ast::Ast,
         read::TokenRef,
     },
     parse::lex::TokenType::{self, *},
-    error::asm::{AsmErr, AstMsg::{self, *}},
+    error::asm::{
+        AsmErr, AstMsg::{self, *}
+        ExprErr, ExprMsg::{self, *}
+    },
+    write::constants::ConstExpr,
 };
 
 /// Precedence from strongest to weakest.
@@ -79,7 +84,7 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
 }
 
 /// Check if a '-' is a unary operator and attempts to move right operand into it.
-fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, AstMsg>> {
+fn build_un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, AstMsg>> {
     if let Some(left) = ast.left_of(ast.tokens[neg].index) {
         let left = &ast.tokens[left];
         let is_expr = left.ty.parent_type() == Expr;
@@ -99,7 +104,7 @@ fn un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, AstMsg>>
 }
 
 /// Attempts to move right operand into a unary 'not' operator.
-fn un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+fn build_un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     let right = ast.right_of(not)
         .ok_or(err!(AstMsg, UnaryWithoutRhs, (&ast.tokens[not]).into()))?;
 
@@ -109,7 +114,7 @@ fn un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
 }
 
 /// Attempts to move left and right operands into a binary operator.
-fn bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+fn build_bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     let err_ctx = (&ast.tokens[bin]).into();
 
     let left = ast.left_of(bin).ok_or(err!(AstMsg, BinaryWithoutLhs, err_ctx))?;
@@ -121,7 +126,8 @@ fn bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>> {
     Ok(())
 }
 
-pub fn evaluate(expr: &TokenRef) {
+/// Evaluate the value for an `Expr` token and its content.
+pub fn evaluate(expr: &TokenRef) -> usize {
     assert_eq!(expr.ty(), Expr);
 
     // - Evaluate op if Lit or Identifier (not LitStr).
@@ -130,21 +136,25 @@ pub fn evaluate(expr: &TokenRef) {
 
     let mut errors = vec![];
     let def_ident = expr.parent().get(0).value().as_str();
+
+    todo!()
 }
 
-fn eval_scope(
-    scope: &TokenRef, 
-    def_ident: &str, 
-    constants: &mut Constants,
-    errors: &mut Vec<()>
-) -> Result<usize, ()> {
+struct ExprCtx<'a> {
+    def_ident: &'a str, 
+    def_ty: TokenType,
+    constants: &'a mut Constants,
+    errors: &'a mut Vec<AsmErr<'a, ExprMsg>>,
+}
+
+fn eval_scope(scope: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
     match scope.ty() {
         Lit => {
             let litx = scope.get(0);            
 
             match litx.ty() {
                 LitDec|LitBin|LitHex => {
-                    return litx.value().as_usize();
+                    return Ok(litx.value().as_usize());
                 }
 
                 LitStr => {
@@ -170,11 +180,11 @@ fn eval_scope(
 
             match const_expr {
                 Value(value) => match value {
-                    Usize(num) => return num,
+                    Value::Usize(num) => return Ok(num as isize),
 
-                    Str(s) => {
+                    Value::Str(s) => {
                         // #db X "Hello" is allowed.
-                        if scope.ty() == Expr && scope.children.len() == 1 {
+                        if scope.ty() == Expr && scope.children().len() == 1 {
 
                         }
 
@@ -186,7 +196,7 @@ fn eval_scope(
                     }
                 }
 
-                Expr(expr) => {
+                ConstExpr::Expr(expr) => {
                     //TODO
                 }
 
@@ -205,70 +215,60 @@ fn eval_scope(
 
                 if not_op && is_value {
                     if scope.children().len() == 1 {
-                        return eval_value(child, def_ident, constants, errors);
+                        return eval_scope(child, ctx);
                     }
 
                     else {
-                        errors.push();
+                        ctx.errors.push();
                         return Err(());
                     }
                 }
 
-                if child.ty() == At || child.ty().parent_type() == Expr {
-                    eval_scope(child, def_ident);        
+                if child.ty() == At {
+                    return eval_scope(child, ctx);
+                }
+
+                else if child.ty().parent_type() == Expr {
+                    return eval_op(child, ctx);
                 }
             }
         }
     }
 }
 
-fn bin_op<'a>(f: fn(isize, isize) -> isize) -> Result<isize, AsmErr<'a, ExprMsg>> {
-    let lhs = eval_scope(op.get(0), def_ident, constants, errors)?;
-    let rhs = eval_scope(op.get(1), def_ident, constants, errors)?;
+fn eval_bin<'a>(
+    f: fn(isize, isize) -> isize,
+    op: &TokenRef<'a>, 
+    ctx: &mut ExprCtx,
+) -> Result<isize, AsmErr<'a, ExprMsg>> {
+    let lhs = eval_scope(op.get(0), ctx)?;
+    let rhs = eval_scope(op.get(1), ctx)?;
 
     Ok(f(lhs, rhs))
 }
 
-fn eval_op<'a>(
-    op: &TokenRef, 
-    def_ident: &str, 
-    def_ty: TokenType,
-    errors: &mut Vec<AsmErr<'a, ExprMsg>>,
-) -> Result<isize, ()> {
+fn eval_op<'a>(op: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
     assert_eq!(op.ty().parent_type(), Expr);
 
     let result = match op.ty() {
-        UnNot => ~eval_scope(op.get(0), def_ident, constants, errors)?,
-            
-        //TODO expr will need to be calculated with `isize`.
-        UnNeg => -eval_scope(op.get(0), def_ident, constants, errors)?,
-
-        BinMul => bin_op(|lhs, rhs| lhs * rhs),
-
-        BinDiv => bin_op(|lhs, rhs| lhs / rhs),
-
-        BinMod => bin_op(|lhs, rhs| lhs % rhs),
-
-        BinAdd => bin_op(|lhs, rhs| lhs + rhs),
-
-        BinSub => bin_op(|lhs, rhs| lhs - rhs),
-
-        BinShl => bin_op(|lhs, rhs| lhs << rhs),
-
-        BinShr => bin_op(|lhs, rhs| lhs >> rhs),
-
-        BinAnd => bin_op(|lhs, rhs| lhs & rhs),
-
-        BinXor => bin_op(|lhs, rhs| lhs ^ rhs),
-
-        BinOr => bin_op(|lhs, rhs| lhs | rhs),
-
+        UnNot => Ok(~eval_scope(op.get(0), ctx)?),
+        UnNeg => Ok(-eval_scope(op.get(0), ctx)?),
+        BinMul => eval_bin(|lhs, rhs| lhs * rhs, op, ctx),
+        BinDiv => eval_bin(|lhs, rhs| lhs / rhs, op, ctx),
+        BinMod => eval_bin(|lhs, rhs| lhs % rhs, op, ctx),
+        BinAdd => eval_bin(|lhs, rhs| lhs + rhs, op, ctx),
+        BinSub => eval_bin(|lhs, rhs| lhs - rhs, op, ctx),
+        BinShl => eval_bin(|lhs, rhs| lhs << rhs, op, ctx),
+        BinShr => eval_bin(|lhs, rhs| lhs >> rhs, op, ctx),
+        BinAnd => eval_bin(|lhs, rhs| lhs & rhs, op, ctx),
+        BinXor => eval_bin(|lhs, rhs| lhs ^ rhs, op, ctx),
+        BinOr => eval_bin(|lhs, rhs| lhs | rhs, op, ctx),
         _ => bug!("Unhandled operator type")
-    };
+    }?;
 
-    match def_ty {
-        DefB => result % 256,
-        DefW => result % 65536,
+    match ctx.def_ty {
+        DefB => Ok(result % 256),
+        DefW => Ok(result % 65536),
         _ => bug!("Wrong Def type.")
     }
 }
