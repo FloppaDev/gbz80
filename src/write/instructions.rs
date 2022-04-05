@@ -755,6 +755,6 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
                 ])
             }
 
-            _ => unreachable!("Op not found"),
+            _ => bug!("Op not found"),
         }
 }

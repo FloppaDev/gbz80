@@ -292,13 +292,40 @@ impl AsmMsg for ConstantsMsg {
 
         match self {
             DuplicateKey =>
-                "Constant's key already existed.",
+                "Constant's key already existed",
             
             MisplacedMarker =>
-                "The location of the marker does match its value.",
+                "The location of the marker does match its value",
 
             FileReadFailed =>
-                "The file to include could not be read.",
+                "The file to include could not be read",
+        }
+    }
+
+}
+
+/// Error variants when evaluating expressions.
+#[derive(Debug, Copy, Clone)]
+pub enum ExprMsg {
+    LitStrInExpr,
+    ConstantNotFound,
+    CircularDependency,
+}
+
+impl AsmMsg for ExprMsg {
+
+    fn msg(&self) -> &'static str {
+        use ExprMsg::*;
+
+        match self {
+            LitStrInExpr =>
+                "String literal not allowed in math expressions. Try: #db X \"Hello\"",
+
+            ConstantNotFound =>
+                "The constant does not exist",
+
+            CircularDependency => 
+                "Infinite loop, the constant's dependencies depend on the constant itself",
         }
     }
 

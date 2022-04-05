@@ -58,7 +58,7 @@ impl<'a> TokenRef<'a> {
 
     fn walk(ast: &'a Ast, current: &mut Self, fail_safe: &mut usize) {
         if *fail_safe == 0 {
-            unreachable!("Recursion limit reached while building TokenRef tree.");
+            bug!("Recursion limit reached while building TokenRef tree.");
         }
 
         for child in &current.token.children {

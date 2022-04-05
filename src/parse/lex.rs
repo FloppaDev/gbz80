@@ -380,7 +380,7 @@ impl TokenType {
             105 => Label,
             106 => Repeat,
             107 => MacroCall,
-            _ => unreachable!()
+            _ => bug!()
         }
     }
 

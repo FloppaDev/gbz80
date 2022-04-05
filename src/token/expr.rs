@@ -152,7 +152,7 @@ fn eval_scope(
                     return Err(());
                 }
 
-                _ => unreachable!("Unhandled Lit type in Expr")
+                _ => bug!("Unhandled Lit type in Expr")
             }
         }
 
@@ -165,15 +165,24 @@ fn eval_scope(
             }
 
             // Read the value in the `Constants` map.
-            let const_expr = constants.get_mut(ident);
+            let const_expr = constants.get_mut(ident)
+                .map_err(|e| errors.push(err!(ExprMsg, ConstantNotFound, child.into())));
 
             match const_expr {
                 Value(value) => match value {
                     Usize(num) => return num,
 
-                    Str(_) => {
-                        errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
-                        return Err(());
+                    Str(s) => {
+                        // #db X "Hello" is allowed.
+                        if scope.ty() == Expr && scope.children.len() == 1 {
+
+                        }
+
+                        // #db X ("Hello") * 10 is not allowed.
+                        else {
+                            errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
+                            return Err(());
+                        }
                     }
                 }
 
@@ -181,7 +190,7 @@ fn eval_scope(
                     //TODO
                 }
 
-                _ => unreachable!("Invalid constant")
+                _ => bug!("Invalid constant")
             }
         }
 
@@ -213,18 +222,19 @@ fn eval_scope(
     }
 }
 
-fn eval_op(op: &TokenRef, def_ident: &str) {
+fn eval_op(op: &TokenRef, def_ident: &str, def_ty: TokenType) {
     assert_eq!(op.ty().parent_type(), Expr);
 
-    match op.ty() {
+    let result = match op.ty() {
         //TODO child can technically be a scope.
-        UnNot => ~eval_value(op.get(0), def_ident, constants, errors)?,
+        UnNot => ~eval_scope(op.get(0), def_ident, constants, errors)?,
             
         //TODO expr will need to be calculated with `isize`.
-        UnNeg => -eval_value(op.get(0), def_ident, constants, errors)?,
+        UnNeg => -eval_scope(op.get(0), def_ident, constants, errors)?,
 
         BinMul => {
-
+            let lhs = eval_scope(op.get(0), def_ident, constants, errors)?;
+            let rhs = eval_scope(op.get(1), def_ident, constants, errors)?;
         }
 
         BinDiv => {
@@ -263,6 +273,12 @@ fn eval_op(op: &TokenRef, def_ident: &str) {
 
         }
 
-        _ => unreachable!("Unhandled operator type")
+        _ => bug!("Unhandled operator type")
+    };
+
+    match def_ty {
+        DefB => result % 256,
+        DefW => result % 65536,
+        _ => bug!("Wrong Def type.")
     }
 }

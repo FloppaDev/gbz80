@@ -82,7 +82,7 @@ impl Arg {
                         false
                     }
 
-                    _ => unreachable!()
+                    _ => bug!()
                 }
             }
 

@@ -46,12 +46,12 @@ pub struct Constants<'a> {
 impl<'a> Constants<'a> {
 
     #[allow(dead_code)]
-    pub fn get(&self, ident: &str) -> &ConstExpr {
-        self.get(ident).unwrap() 
+    pub fn get(&self, ident: &str) -> Option<&ConstExpr> {
+        self.get(ident)
     }
 
-    pub fn get_mut(&mut self, ident: &str) -> &mut ConstExpr {
-        self.get_mut(ident).unwrap() 
+    pub fn get_mut(&mut self, ident: &str) -> Option<&mut ConstExpr> {
+        self.get_mut(ident)
     }
 
     pub fn new(
@@ -226,13 +226,13 @@ impl<'a> Constants<'a> {
 
                     Value::Str(v) => Ok(v.len()),
 
-                    _ => unreachable!()
+                    _ => bug!()
                 }
             }
 
             ConstExpr::Mark => Ok(2),
 
-            _ => unreachable!(),
+            _ => bug!(),
         }
     }
 
@@ -243,7 +243,7 @@ impl<'a> Constants<'a> {
 
             LitStr => litx.value().as_str().len(),
 
-            _ => unreachable!("Unhandled literal type."),
+            _ => bug!("Unhandled literal type."),
         }
     }
 
@@ -254,7 +254,7 @@ impl<'a> Constants<'a> {
             value if (256..=65535).contains(&value) => 2,
 
             //TODO return Err
-            _ => unreachable!("Exceeding number capacity.")
+            _ => bug!("Exceeding number capacity.")
         }
     }
 

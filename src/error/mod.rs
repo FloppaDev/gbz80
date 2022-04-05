@@ -94,3 +94,11 @@ impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
     }
 
 }
+
+/// Generates an `unreachable` macro call with the source context included.
+/// e.g.    bug!("Oopsie! Assembler no worky...")
+macro_rules! bug {
+    ($s:literal) => {
+        unreachable!("Internal error at '{}':\n{}\nThis is a bug.", source!(), $s)
+    }
+}
