@@ -7,10 +7,11 @@ use crate::{
     },
     parse::lex::TokenType::{self, *},
     error::asm::{
-        AsmErr, AstMsg::{self, *}
-        ExprErr, ExprMsg::{self, *}
+        AsmErr, 
+        AstMsg::{self, *},
+        ExprMsg::{self, *},
     },
-    write::constants::ConstExpr,
+    write::constants::{ConstExpr, Constants},
 };
 
 /// Precedence from strongest to weakest.
@@ -51,7 +52,7 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
 
             if ty.parent_type() == Expr {
                 if ty == BinSub && prec == UnNeg {
-                    match un_neg(ast, child) {
+                    match build_un_neg(ast, child) {
                         Ok(n) => is_neg = n,
                         Err(e) => return Err(e),
                     }
@@ -59,11 +60,11 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
 
                 if !is_neg && ty == prec {
                     if prec == UnNot {
-                        un_not(ast, child)?;
+                        build_un_not(ast, child)?;
                     }
                     
                     else {
-                        bin(ast, child)?;
+                        build_bin(ast, child)?;
                         is_bin = true;
                     }
                 }
@@ -127,38 +128,52 @@ fn build_bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>
 }
 
 /// Evaluate the value for an `Expr` token and its content.
-pub fn evaluate(expr: &TokenRef) -> usize {
+pub fn evaluate<'a>(
+    expr: &TokenRef, 
+    constants: &mut Constants<'a>
+) -> Result<usize, AsmErr<'a, ExprMsg>> {
     assert_eq!(expr.ty(), Expr);
 
     // - Evaluate op if Lit or Identifier (not LitStr).
     // - Do not allow ident of this expr within the Expr itself.
     // - Check for circular depencies.
 
+    let def_x = expr.parent().get(0);
+    let def_ident = def_x.value().as_str();
     let mut errors = vec![];
-    let def_ident = expr.parent().get(0).value().as_str();
 
-    todo!()
+    let mut ctx = ExprCtx{ def_ident, constants, errors: &mut errors };
+    let mut result = eval_scope(expr, &mut ctx)? as usize;
+    let def_ty = def_x.ty();
+
+    result = match def_ty {
+        DefB => Ok(result % 256),
+        DefW => Ok(result % 65536),
+        _ => bug!("Wrong Def type.")
+    };
 }
 
 struct ExprCtx<'a> {
     def_ident: &'a str, 
-    def_ty: TokenType,
-    constants: &'a mut Constants,
+    constants: &'a mut Constants<'a>,
     errors: &'a mut Vec<AsmErr<'a, ExprMsg>>,
 }
 
-fn eval_scope(scope: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
+fn eval_scope<'a>(
+    scope: &TokenRef<'a>, 
+    ctx: &mut ExprCtx
+) -> Result<isize, AsmErr<'a, ExprMsg>> {
     match scope.ty() {
         Lit => {
             let litx = scope.get(0);            
 
             match litx.ty() {
                 LitDec|LitBin|LitHex => {
-                    return Ok(litx.value().as_usize());
+                    return Ok(litx.value().as_usize() as isize);
                 }
 
                 LitStr => {
-                    errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
+                    ctx.errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
                     return Err(());
                 }
 
@@ -167,19 +182,19 @@ fn eval_scope(scope: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
         }
 
         Identifier => {
-            let ident = child.value().ast_str();
+            let ident = scope.value().ast_str();
 
             // Does this expression depend on itself? 
-            if child.value().as_str() == def_ident {
-                errors.push(err!(ExprMsg, CircularDependency, child.into()));
+            if scope.value().as_str() == ctx.def_ident {
+                ctx.errors.push(err!(ExprMsg, CircularDependency, scope.into()));
             }
 
             // Read the value in the `Constants` map.
-            let const_expr = constants.get_mut(ident)
-                .map_err(|e| errors.push(err!(ExprMsg, ConstantNotFound, child.into())));
+            let const_expr = ctx.constants.get_mut(ident)
+                .map_err(|e| ctx.errors.push(err!(ExprMsg, ConstantNotFound, scope.into())));
 
             match const_expr {
-                Value(value) => match value {
+                ConstExpr::Value(value) => match value {
                     Value::Usize(num) => return Ok(num as isize),
 
                     Value::Str(s) => {
@@ -190,14 +205,14 @@ fn eval_scope(scope: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
 
                         // #db X ("Hello") * 10 is not allowed.
                         else {
-                            errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
+                            ctx.errors.push(err!(ExprMsg, LitStrInExpr, scope.into()));
                             return Err(());
                         }
                     }
                 }
 
                 ConstExpr::Expr(expr) => {
-                    //TODO
+                    //TODO evaluate()
                 }
 
                 _ => bug!("Invalid constant")
@@ -239,7 +254,7 @@ fn eval_scope(scope: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
 fn eval_bin<'a>(
     f: fn(isize, isize) -> isize,
     op: &TokenRef<'a>, 
-    ctx: &mut ExprCtx,
+    ctx: &mut ExprCtx<'a>,
 ) -> Result<isize, AsmErr<'a, ExprMsg>> {
     let lhs = eval_scope(op.get(0), ctx)?;
     let rhs = eval_scope(op.get(1), ctx)?;
@@ -247,11 +262,11 @@ fn eval_bin<'a>(
     Ok(f(lhs, rhs))
 }
 
-fn eval_op<'a>(op: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
+fn eval_op<'a>(op: &TokenRef<'a>, ctx: &mut ExprCtx<'a>) -> Result<isize, AsmErr<'a, ExprMsg>> {
     assert_eq!(op.ty().parent_type(), Expr);
 
-    let result = match op.ty() {
-        UnNot => Ok(~eval_scope(op.get(0), ctx)?),
+    match op.ty() {
+        UnNot => Ok(!eval_scope(op.get(0), ctx)?),
         UnNeg => Ok(-eval_scope(op.get(0), ctx)?),
         BinMul => eval_bin(|lhs, rhs| lhs * rhs, op, ctx),
         BinDiv => eval_bin(|lhs, rhs| lhs / rhs, op, ctx),
@@ -264,11 +279,5 @@ fn eval_op<'a>(op: &TokenRef, ctx: &mut ExprCtx) -> Result<isize, ()> {
         BinXor => eval_bin(|lhs, rhs| lhs ^ rhs, op, ctx),
         BinOr => eval_bin(|lhs, rhs| lhs | rhs, op, ctx),
         _ => bug!("Unhandled operator type")
-    }?;
-
-    match ctx.def_ty {
-        DefB => Ok(result % 256),
-        DefW => Ok(result % 65536),
-        _ => bug!("Wrong Def type.")
     }
 }

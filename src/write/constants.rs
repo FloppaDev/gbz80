@@ -226,13 +226,13 @@ impl<'a> Constants<'a> {
 
                     Value::Str(v) => Ok(v.len()),
 
-                    _ => bug!()
+                    _ => bug!("Unhandled `Value` type.")
                 }
             }
 
             ConstExpr::Mark => Ok(2),
 
-            _ => bug!(),
+            _ => bug!("Unexpected `ConsExtr` type."),
         }
     }
 

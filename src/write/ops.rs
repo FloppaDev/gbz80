@@ -82,7 +82,7 @@ impl Arg {
                         false
                     }
 
-                    _ => bug!()
+                    _ => bug!("Unexpected `Arg` type.")
                 }
             }
 
