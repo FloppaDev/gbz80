@@ -303,10 +303,11 @@ impl AsmMsg for ConstantsMsg {
 /// Error variants when evaluating expressions.
 #[derive(Debug, Copy, Clone)]
 pub enum ExprMsg {
-    LitStrInExpr,
-    ValueIsNotAlone,
+    StrInExpr,
+    TooManyChildren,
     ConstantNotFound,
     CircularDependency,
+    InvalidNumber,
 }
 
 impl AsmMsg for ExprMsg {
@@ -315,17 +316,20 @@ impl AsmMsg for ExprMsg {
         use ExprMsg::*;
 
         match self {
-            LitStrInExpr =>
+            StrInExpr =>
                 "String literal not allowed in expressions, unless it is completely alone.",
 
-            ValueIsNotAlone =>
-                "The value is not part of an operation, thus it must be alone in its scope",
+            TooManyChildren =>
+                "The token is not alone in its scope.",
 
             ConstantNotFound =>
-                "The constant does not exist",
+                "The constant does not exist.",
 
             CircularDependency => 
-                "Infinite loop, the constant's dependencies depend on the constant itself",
+                "Infinite loop, the constant's dependencies depend on the constant itself.",
+
+            InvalidNumber =>
+                "The result of the expression is not a valid number.",
         }
     }
 

@@ -190,7 +190,9 @@ impl<'a> Ast<'a> {
                 Identifier => {
                     self.cascade(*selection, &[], token);
                     
-                    if matches!(self.type_of(*selection), DefB|DefW|DefS) {
+                    // TODO check what DefS does. It should not be an Expr
+                    // and should accept only a LitStr.
+                    if matches!(self.type_of(*selection), DefB|DefW) {
                         let t = Self::empty(Expr, line_number, line);
                         *selection = self.push(*selection, t);
                     }
