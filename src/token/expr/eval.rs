@@ -12,33 +12,47 @@ use crate::{
 pub struct ExprCtx<'a> {
     def_ty: TokenType,
     dependencies: Vec<&'a TokenRef<'a>>,
-    constants: &'a mut Constants<'a>,
+    constants: &'a Constants<'a>,
     errors: Vec<AsmErr<'a, ExprMsg>>,
+    //TODO assign results to Constants.
+    results: Vec<(&'a TokenRef<'a>, usize)>,
 }
 
 impl<'a> ExprCtx<'a> {
 
-    pub fn new(def_ty: TokenType, constants: &'a mut Constants<'a>) -> Self {
-        Self { def_ty, dependencies: vec![], constants, errors: vec![] }
+    pub fn new(def_ty: TokenType, constants: &'a Constants<'a>) -> Self {
+        Self { def_ty, dependencies: vec![], constants, errors: vec![], results: vec![] }
     }
 
     /// Evaluate the value for an `Expr` token and its content.
-    pub fn evaluate(&'a mut self, expr: &'a TokenRef<'a>) -> Result<usize, ()> {
+    pub fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
         self.dependencies.push(expr);
-        let mut result = self.eval_scope(expr)? as usize;
+        let mut result = 0;
+
+        self = match self.eval_scope(expr) {
+            Ok((value, s)) => {
+                result = value as usize;
+                s
+            }
+
+            Err(s) => s
+        };
+
         self.dependencies.pop();
 
-        match self.def_ty {
-            DefB => Ok(result % 256),
-            DefW => Ok(result % 65536),
+        result = match self.def_ty {
+            DefB => result % 256,
+            DefW => result % 65536,
             _ => bug!("Wrong Def type.")
-        }
+        };
+        
+        Ok((result, self))
     }
 
-    fn eval_scope(&mut self, scope: &TokenRef<'a>) -> Result<isize, ()> {
+    fn eval_scope(mut self, scope: &TokenRef<'a>) -> Result<(isize, Self), Self> {
         if scope.children().len() != 1 {
             self.errors.push(err!(ExprMsg, TooManyChildren, scope.into()));
-            return Err(());
+            return Err(self);
         }
 
         let child = scope.children()[0];
@@ -49,12 +63,12 @@ impl<'a> ExprCtx<'a> {
 
                 match litx.ty() {
                     LitDec|LitBin|LitHex => {
-                        return Ok(litx.value().as_usize() as isize);
+                        return Ok((litx.value().as_usize() as isize, self));
                     }
 
                     LitStr => {
                         self.errors.push(err!(ExprMsg, StrInExpr, litx.into()));
-                        return Err(());
+                        return Err(self);
                     }
 
                     _ => bug!("Unhandled Lit type in Expr")
@@ -64,23 +78,25 @@ impl<'a> ExprCtx<'a> {
             Identifier => {
                 let ident = scope.value().as_str();
 
-                //TODO check deps stack
-                //if scope.value().as_str() == self.def_ident {
-                    //self.errors.push(err!(ExprMsg, CircularDependency, scope.into()));
-                //}
-
                 // Read the value in the `Constants` map.
-                let const_expr = self.constants.get_mut(ident)
-                    .ok_or(self.errors.push(err!(ExprMsg, ConstantNotFound, scope.into())))?;
+                let const_expr = self.constants.get(ident);
+
+                if const_expr.is_none() {
+                    self.errors.push(err!(ExprMsg, ConstantNotFound, scope.into()));
+                    drop(const_expr);
+                    return Err(self);
+                }
+
+                let const_expr = const_expr.unwrap();
 
                 match const_expr {
                     ConstExpr::Value(value) => {
                         match value {
-                            Value::Usize(num) => return Ok(*num as isize),
+                            Value::Usize(num) => return Ok((*num as isize, self)),
 
                             Value::Str(_) => {
                                 self.errors.push(err!(ExprMsg, StrInExpr, scope.into()));
-                                return Err(());
+                                return Err(self);
                             }
 
                             _ => bug!("Unhandled value type")
@@ -88,8 +104,21 @@ impl<'a> ExprCtx<'a> {
                     }
 
                     ConstExpr::Expr(expr) => {
-                        //TODO evaluate()
-                        return Err(());//TODO remove
+                        for dep in &self.dependencies {
+                            if **expr == **dep {
+                                self.errors.push(err!(ExprMsg, CircularDependency, scope.into()));
+                                return Err(self);
+                            }
+                        }
+
+                        match self.evaluate(expr) {
+                            Ok((value, mut s)) => {
+                                s.results.push((expr, value));
+                                return Ok((value as isize, s));
+                            }
+
+                            Err(s) => return Err(s)
+                        }
                     }
 
                     _ => bug!("Invalid constant")
@@ -121,22 +150,55 @@ impl<'a> ExprCtx<'a> {
     }
 
     fn eval_bin(
-        &mut self,
+        mut self,
         f: fn(isize, isize) -> isize,
         op: &TokenRef<'a>, 
-    ) -> Result<isize, ()> {
-        let lhs = self.eval_scope(op.get(0))?;
-        let rhs = self.eval_scope(op.get(1))?;
+    ) -> Result<(isize, Self), Self> {
+        let mut lhs = 0;
+        let mut rhs = 0;
 
-        Ok(f(lhs, rhs))
+        match self.eval_scope(op.get(0)) {
+            Ok((value, s)) => {
+                lhs = value;
+                self = s;
+            }
+
+            Err(s) => return Err(s)
+        }
+
+        match self.eval_scope(op.get(1)) {
+            Ok((value, s)) => {
+                rhs = value;
+                self = s;
+            }
+
+            Err(s) => return Err(s)
+        }
+
+        Ok((f(lhs, rhs), self))
     }
 
-    fn eval_op(&mut self, op: &TokenRef<'a>) -> Result<isize, ()> {
+    fn eval_op(
+        mut self, 
+        op: &TokenRef<'a>,
+    ) -> Result<(isize, Self), Self> {
         assert_eq!(op.ty().parent_type(), Expr);
 
         match op.ty() {
-            UnNot => Ok(!self.eval_scope(op.get(0))?),
-            UnNeg => Ok(-self.eval_scope(op.get(0))?),
+            UnNot => {
+                match self.eval_scope(op.get(0)) {
+                    Ok((value, s)) => Ok((!value, s)),
+                    Err(s) => Err(s)
+                }
+            }
+
+            UnNeg => {
+                match self.eval_scope(op.get(0)) {
+                    Ok((value, s)) => Ok((-value, s)),
+                    Err(s) => Err(s)
+                }
+            }
+
             BinMul => self.eval_bin(|lhs, rhs| lhs * rhs, op),
             BinDiv => self.eval_bin(|lhs, rhs| lhs / rhs, op),
             BinMod => self.eval_bin(|lhs, rhs| lhs % rhs, op),
