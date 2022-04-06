@@ -127,157 +127,163 @@ fn build_bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>
     Ok(())
 }
 
-/// Evaluate the value for an `Expr` token and its content.
-pub fn evaluate<'a>(
-    expr: &TokenRef, 
-    constants: &mut Constants<'a>
-) -> Result<usize, AsmErr<'a, ExprMsg>> {
-    assert_eq!(expr.ty(), Expr);
-
-    // - Evaluate op if Lit or Identifier (not LitStr).
-    // - Do not allow ident of this expr within the Expr itself.
-    // - Check for circular depencies.
-
-    let def_x = expr.parent().get(0);
-    let def_ident = def_x.value().as_str();
-    let mut errors = vec![];
-
-    let mut ctx = ExprCtx{ def_ident, constants, errors: &mut errors };
-    let mut result = eval_scope(expr, &mut ctx)? as usize;
-    let def_ty = def_x.ty();
-
-    result = match def_ty {
-        DefB => Ok(result % 256),
-        DefW => Ok(result % 65536),
-        _ => bug!("Wrong Def type.")
-    };
-}
-
-struct ExprCtx<'a> {
-    def_ident: &'a str, 
+pub struct ExprCtx<'a> {
+    def_ty: TokenType,
+    dependencies: Vec<&'a str>,
     constants: &'a mut Constants<'a>,
-    errors: &'a mut Vec<AsmErr<'a, ExprMsg>>,
+    errors: Vec<AsmErr<'a, ExprMsg>>,
 }
 
-fn eval_scope<'a>(
-    scope: &TokenRef<'a>, 
-    ctx: &mut ExprCtx
-) -> Result<isize, AsmErr<'a, ExprMsg>> {
-    match scope.ty() {
-        Lit => {
-            let litx = scope.get(0);            
+impl<'a> ExprCtx<'a> {
 
-            match litx.ty() {
-                LitDec|LitBin|LitHex => {
-                    return Ok(litx.value().as_usize() as isize);
-                }
+    pub fn new(def_ty: TokenType, constants: &'a mut Constants<'a>) -> Self {
+        Self { def_ty, dependencies: vec![], constants, errors: vec![] }
+    }
 
-                LitStr => {
-                    ctx.errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
-                    return Err(());
-                }
+    /// Evaluate the value for an `Expr` token and its content.
+    pub fn evaluate<'a>(&mut self, ident: &'a str) -> Result<usize, ()> {
+        // - Evaluate op if Lit or Identifier (not LitStr).
+        // - Do not allow ident of this expr within the Expr itself.
+        // - Check for circular depencies.
 
-                _ => bug!("Unhandled Lit type in Expr")
-            }
+        let expr = self.constants.get(ident);
+       
+        if expr.is_none() {
+            self.errors.push(err!());
+            return Err(());
         }
 
-        Identifier => {
-            let ident = scope.value().ast_str();
+        self.dependencies.push(ident);
+        let mut result = eval_scope(expr.unwrap(), self)? as usize;
+        self.dependencies.pop();
 
-            // Does this expression depend on itself? 
-            if scope.value().as_str() == ctx.def_ident {
-                ctx.errors.push(err!(ExprMsg, CircularDependency, scope.into()));
+        result = match self.def_ty {
+            DefB => Ok(result % 256),
+            DefW => Ok(result % 65536),
+            _ => bug!("Wrong Def type.")
+        };
+    }
+
+    fn eval_scope<'a>(&mut self, scope: &TokenRef<'a>) -> Result<isize, ()> {
+        match scope.ty() {
+            Lit => {
+                let litx = scope.get(0);            
+
+                match litx.ty() {
+                    LitDec|LitBin|LitHex => {
+                        return Ok(litx.value().as_usize() as isize);
+                    }
+
+                    LitStr => {
+                        self.errors.push(err!(ExprMsg, LitStrInExpr, litx.into()));
+                        return Err(());
+                    }
+
+                    _ => bug!("Unhandled Lit type in Expr")
+                }
             }
 
-            // Read the value in the `Constants` map.
-            let const_expr = ctx.constants.get_mut(ident)
-                .map_err(|e| ctx.errors.push(err!(ExprMsg, ConstantNotFound, scope.into())));
+            Identifier => {
+                let ident = scope.value().ast_str();
 
-            match const_expr {
-                ConstExpr::Value(value) => match value {
-                    Value::Usize(num) => return Ok(num as isize),
+                // Does this expression depend on itself? 
+                if scope.value().as_str() == self.def_ident {
+                    self.errors.push(err!(ExprMsg, CircularDependency, scope.into()));
+                }
 
-                    Value::Str(s) => {
-                        // #db X "Hello" is allowed.
-                        if scope.ty() == Expr && scope.children().len() == 1 {
+                // Read the value in the `Constants` map.
+                let const_expr = self.constants.get_mut(ident)
+                    .map_err(|e| self.errors.push(err!(ExprMsg, ConstantNotFound, scope.into())));
 
+                match const_expr {
+                    ConstExpr::Value(value) => match value {
+                        Value::Usize(num) => return Ok(num as isize),
+
+                        Value::Str(s) => {
+                            // #db X "Hello" is allowed.
+                            if scope.ty() == Expr && scope.children().len() == 1 {
+
+                            }
+
+                            // #db X ("Hello") * 10 is not allowed.
+                            else {
+                                self.errors.push(err!(ExprMsg, LitStrInExpr, scope.into()));
+                                return Err(());
+                            }
+                        }
+                    }
+
+                    ConstExpr::Expr(expr) => {
+                        //TODO evaluate()
+                    }
+
+                    _ => bug!("Invalid constant")
+                }
+            }
+
+            _ => {
+                for child in scope.children() {
+                    // A value without an operator parent must be an only-child.
+                    // e.g.     #db X0 10
+                    //          #db X1 10 + (5)
+                    // error:   #db x2 1 2 3
+                    let not_op = matches!(scope.ty(), At|Expr);
+                    let is_value = matches!(child.ty(), Lit|Identifier);
+
+                    if not_op && is_value {
+                        if scope.children().len() == 1 {
+                            return eval_scope(child, self);
                         }
 
-                        // #db X ("Hello") * 10 is not allowed.
                         else {
-                            ctx.errors.push(err!(ExprMsg, LitStrInExpr, scope.into()));
+                            self.errors.push(err!(ExprMsg, ValueIsNotAlone, child.into()));
                             return Err(());
                         }
                     }
-                }
 
-                ConstExpr::Expr(expr) => {
-                    //TODO evaluate()
-                }
-
-                _ => bug!("Invalid constant")
-            }
-        }
-
-        _ => {
-            for child in scope.children() {
-                // A value without an operator parent must be an only-child.
-                // e.g.     #db X0 10
-                //          #db X1 10 + (5)
-                // error:   #db x2 1 2 3
-                let not_op = matches!(scope.ty(), At|Expr);
-                let is_value = matches!(child.ty(), Lit|Identifier);
-
-                if not_op && is_value {
-                    if scope.children().len() == 1 {
-                        return eval_scope(child, ctx);
+                    if child.ty() == At {
+                        return eval_scope(child, self);
                     }
 
-                    else {
-                        ctx.errors.push();
-                        return Err(());
+                    else if child.ty().parent_type() == Expr {
+                        return eval_op(child, self);
                     }
-                }
-
-                if child.ty() == At {
-                    return eval_scope(child, ctx);
-                }
-
-                else if child.ty().parent_type() == Expr {
-                    return eval_op(child, ctx);
                 }
             }
         }
     }
-}
 
-fn eval_bin<'a>(
-    f: fn(isize, isize) -> isize,
-    op: &TokenRef<'a>, 
-    ctx: &mut ExprCtx<'a>,
-) -> Result<isize, AsmErr<'a, ExprMsg>> {
-    let lhs = eval_scope(op.get(0), ctx)?;
-    let rhs = eval_scope(op.get(1), ctx)?;
+    fn eval_bin<'a>(
+        &mut self,
+        f: fn(isize, isize) -> isize,
+        op: &TokenRef<'a>, 
+    ) -> Result<isize, ()> {
+        let lhs = eval_scope(op.get(0), self)?;
+        let rhs = eval_scope(op.get(1), self)?;
 
-    Ok(f(lhs, rhs))
-}
-
-fn eval_op<'a>(op: &TokenRef<'a>, ctx: &mut ExprCtx<'a>) -> Result<isize, AsmErr<'a, ExprMsg>> {
-    assert_eq!(op.ty().parent_type(), Expr);
-
-    match op.ty() {
-        UnNot => Ok(!eval_scope(op.get(0), ctx)?),
-        UnNeg => Ok(-eval_scope(op.get(0), ctx)?),
-        BinMul => eval_bin(|lhs, rhs| lhs * rhs, op, ctx),
-        BinDiv => eval_bin(|lhs, rhs| lhs / rhs, op, ctx),
-        BinMod => eval_bin(|lhs, rhs| lhs % rhs, op, ctx),
-        BinAdd => eval_bin(|lhs, rhs| lhs + rhs, op, ctx),
-        BinSub => eval_bin(|lhs, rhs| lhs - rhs, op, ctx),
-        BinShl => eval_bin(|lhs, rhs| lhs << rhs, op, ctx),
-        BinShr => eval_bin(|lhs, rhs| lhs >> rhs, op, ctx),
-        BinAnd => eval_bin(|lhs, rhs| lhs & rhs, op, ctx),
-        BinXor => eval_bin(|lhs, rhs| lhs ^ rhs, op, ctx),
-        BinOr => eval_bin(|lhs, rhs| lhs | rhs, op, ctx),
-        _ => bug!("Unhandled operator type")
+        Ok(f(lhs, rhs))
     }
+
+    fn eval_op<'a>(&mut self, op: &TokenRef<'a>) -> Result<isize, ()> {
+        assert_eq!(op.ty().parent_type(), Expr);
+
+        match op.ty() {
+            UnNot => Ok(!eval_scope(op.get(0), self)?),
+            UnNeg => Ok(-eval_scope(op.get(0), self)?),
+            BinMul => eval_bin(|lhs, rhs| lhs * rhs, op, self),
+            BinDiv => eval_bin(|lhs, rhs| lhs / rhs, op, self),
+            BinMod => eval_bin(|lhs, rhs| lhs % rhs, op, self),
+            BinAdd => eval_bin(|lhs, rhs| lhs + rhs, op, self),
+            BinSub => eval_bin(|lhs, rhs| lhs - rhs, op, self),
+            BinShl => eval_bin(|lhs, rhs| lhs << rhs, op, self),
+            BinShr => eval_bin(|lhs, rhs| lhs >> rhs, op, self),
+            BinAnd => eval_bin(|lhs, rhs| lhs & rhs, op, self),
+            BinXor => eval_bin(|lhs, rhs| lhs ^ rhs, op, self),
+            BinOr => eval_bin(|lhs, rhs| lhs | rhs, op, self),
+            _ => bug!("Unhandled operator type")
+        }
+    }
+
 }
+
+

@@ -304,6 +304,7 @@ impl AsmMsg for ConstantsMsg {
 #[derive(Debug, Copy, Clone)]
 pub enum ExprMsg {
     LitStrInExpr,
+    ValueIsNotAlone,
     ConstantNotFound,
     CircularDependency,
 }
@@ -315,7 +316,10 @@ impl AsmMsg for ExprMsg {
 
         match self {
             LitStrInExpr =>
-                "String literal not allowed in math expressions. Try: #db X \"Hello\"",
+                "String literal not allowed in expressions, unless it is completely alone.",
+
+            ValueIsNotAlone =>
+                "The value is not part of an operation, thus it must be alone in its scope",
 
             ConstantNotFound =>
                 "The constant does not exist",
