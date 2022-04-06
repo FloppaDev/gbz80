@@ -129,7 +129,7 @@ fn build_bin<'a>(ast: &mut Ast<'a>, bin: usize) -> Result<(), AsmErr<'a, AstMsg>
 
 pub struct ExprCtx<'a> {
     def_ty: TokenType,
-    dependencies: Vec<&'a str>,
+    dependencies: Vec<&'a TokenRef<'a>>,
     constants: &'a mut Constants<'a>,
     errors: Vec<AsmErr<'a, ExprMsg>>,
 }
@@ -141,13 +141,8 @@ impl<'a> ExprCtx<'a> {
     }
 
     /// Evaluate the value for an `Expr` token and its content.
-    pub fn evaluate(&'a mut self, ident: &'a str) -> Result<usize, ()> {
-        let expr = match self.constants.get(ident).unwrap() {
-            ConstExpr::Expr(e) => e,
-            _ => bug!("The identifier of the expression maps to the wrong constant")
-        };
-
-        self.dependencies.push(ident);
+    pub fn evaluate(&'a mut self, expr: &'a TokenRef<'a>) -> Result<usize, ()> {
+        self.dependencies.push(expr);
         let mut result = self.eval_scope(expr)? as usize;
         self.dependencies.pop();
 
