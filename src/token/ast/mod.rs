@@ -1,4 +1,7 @@
 
+pub mod utils;
+pub mod macros;
+
 use crate::{
     parse::{
         lex::TokenType::{self, *},
@@ -430,4 +433,3 @@ impl<'a> Ast<'a> {
         println!();
     }
 }
-

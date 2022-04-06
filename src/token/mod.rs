@@ -1,7 +1,4 @@
 
-/// Macros validation and expansion.
-pub mod macros;
-
 pub mod read;
 
 pub mod ast;

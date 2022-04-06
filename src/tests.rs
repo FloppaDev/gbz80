@@ -1,6 +1,4 @@
 
-#![cfg(target_family="unix")]
-
 use crate::{
     parse::{
         split::Split,
