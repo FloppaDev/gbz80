@@ -1,8 +1,17 @@
 
-pub trait AstUtils {
+use crate::{
+    parse::lex::TokenType::{self, *},
+    token::{
+        Value, ParsedToken, Token,
+        ast::Ast,
+    }, 
+    program::fmt::title,
+};
+
+impl<'a> Ast<'a> {
 
     /// Push a new token as child into destination and return its index.
-    fn push(&mut self, dest: usize, token: ParsedToken<'a>) -> usize {
+    pub fn push(&mut self, dest: usize, token: ParsedToken<'a>) -> usize {
         // Create the Token
         let index = self.tokens.len();
         let token = Token::new(token, index, dest);
@@ -16,7 +25,7 @@ pub trait AstUtils {
 
     /// Push new tokens of parent types, and parent them in a cascade with 'token' as final child. 
     /// Parent tokens inherit line data from 'token' but not the data key.
-    fn cascade(
+    pub fn cascade(
         &mut self, 
         dest: usize, 
         parent_types: &[TokenType], 
@@ -42,17 +51,17 @@ pub trait AstUtils {
     }
 
     /// Parent of index.
-    fn parent_of(&self, index: usize) -> usize {
+    pub fn parent_of(&self, index: usize) -> usize {
         self.tokens[index].parent
     }
 
     /// Token type at index.
-    fn type_of(&self, index: usize) -> TokenType {
+    pub fn type_of(&self, index: usize) -> TokenType {
         self.tokens[index].ty
     }
 
     /// Index of the token sharing the same parent that was added before this one.
-    fn left_of(&self, index: usize) -> Option<usize> {
+    pub fn left_of(&self, index: usize) -> Option<usize> {
         let siblings = &self.tokens[self.tokens[index].parent].children;
         let mut alone = true;
         let mut prev = 0;
@@ -71,7 +80,7 @@ pub trait AstUtils {
     }
 
     /// Index of the token sharing the same parent that was added after this one.
-    fn right_of(&self, index: usize) -> Option<usize> {
+    pub fn right_of(&self, index: usize) -> Option<usize> {
         let mut siblings = self.tokens[self.tokens[index].parent].children.iter();
 
         while let Some(sibling) = siblings.next() {
@@ -88,7 +97,7 @@ pub trait AstUtils {
     }
 
     /// Move a token into another.
-    fn move_into(&mut self, index: usize, dest: usize) {
+    pub fn move_into(&mut self, index: usize, dest: usize) {
         // Remove index from its current parent's 'children' vec.
         let current_parent = self.tokens[index].parent;
         let mut child_vec_index = 0; 
@@ -111,7 +120,7 @@ pub trait AstUtils {
     }
 
     /// Create a token with only line information and a type.
-    const fn empty(
+    pub const fn empty(
         ty: TokenType,
         line_number: usize, 
         line: &'a str,
@@ -124,7 +133,7 @@ pub trait AstUtils {
     }
 
     /// Root of the token tree.
-    const fn create_root() -> Token<'a> {
+    pub const fn create_root() -> Token<'a> {
         Token {
             ty: Root,
             line_number: 0,
@@ -138,7 +147,7 @@ pub trait AstUtils {
     }
 
     #[cfg(debug_assertions)]
-    fn debug(&self) {
+    pub fn debug(&self) {
         fn children(ast: &Ast, token: &Token, indent: usize) {
             if indent >= 100 {
                 println!("Recursion limit reached.");

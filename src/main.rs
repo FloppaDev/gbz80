@@ -74,7 +74,8 @@ mod token;
 
 mod write;
 
-#[cfg(and(target_family="unix"), test)]
+#[cfg(target_family="unix")]
+#[cfg(test)]
 mod tests;
 
 use crate::program::run;

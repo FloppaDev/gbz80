@@ -11,9 +11,11 @@ use crate::{
         prepare::parse,
     },
     token::{
-        ast::Ast, 
+        ast::{
+            Ast, 
+            macros::Macros,
+        },
         read::TokenRef,
-        macros::Macros,
     },
     write::{
         ops::OpMap,
