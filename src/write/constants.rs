@@ -6,6 +6,7 @@ use crate::{
     token::{
         Value,
         read::TokenRef,
+        expr::eval,
     },
     error::{
         ITERATION_LIMIT,
@@ -59,21 +60,21 @@ impl<'a> Constants<'a> {
         op_map: &OpMap<'a>,
     ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         let mut fail_safe = ITERATION_LIMIT;
-        let mut constants = Self{ 
+        let mut result = Self{ 
             constants: HashMap::new(), 
             includes: HashMap::new(),
         };
 
-        constants = constants.get_constants(ast, &mut fail_safe)?; 
+        result = result.get_constants(ast, &mut fail_safe)?; 
 
         let mut location = 0;
 
         // Calculate the size of labels and validate markers.
         for child in ast.children() {
-            constants.set_location(op_map, child, &mut location)?; 
+            result.set_location(op_map, child, &mut location)?; 
         }
 
-        Ok(constants)
+        Ok(result)
     }
 
     fn get_constants(

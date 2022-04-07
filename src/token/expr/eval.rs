@@ -9,7 +9,16 @@ use crate::{
     write::constants::{ConstExpr, Constants},
 };
 
-pub struct ExprCtx<'a> {
+pub fn run<'a>(
+    mut constants: Constants<'a>, 
+    errors: &mut Vec<AsmErr<'a, ExprMsg>>
+) -> Constants<'a> {
+    //TODO
+
+    constants
+}
+
+struct ExprCtx<'a> {
     def_ty: TokenType,
     dependencies: Vec<&'a TokenRef<'a>>,
     constants: Option<&'a Constants<'a>>,
@@ -20,7 +29,7 @@ pub struct ExprCtx<'a> {
 
 impl<'a> ExprCtx<'a> {
 
-    pub fn new(def_ty: TokenType, constants: &'a Constants<'a>) -> Self {
+    fn new(def_ty: TokenType, constants: &'a Constants<'a>) -> Self {
         Self {
             def_ty, 
             dependencies: vec![], 
@@ -32,7 +41,7 @@ impl<'a> ExprCtx<'a> {
     }
 
     /// Evaluates the expression.
-    pub fn run(mut self, expr: &'a TokenRef<'a>) -> Self {
+    fn run(mut self, expr: &'a TokenRef<'a>) -> Self {
         match self.evaluate(expr) {
             Ok((value, mut s)) => {
                 s.constants = None;
@@ -45,7 +54,7 @@ impl<'a> ExprCtx<'a> {
     }
 
     /// Applies changes to constants if `run` produced no errors.
-    pub fn apply(mut self, constants: &mut Constants<'a>) -> Self {
+    fn apply(mut self, constants: &mut Constants<'a>) -> Self {
         if self.errors.is_empty() {
             for (ident, value) in &self.results {
                 let const_expr = constants.get_mut(ident).unwrap(); 
@@ -57,7 +66,7 @@ impl<'a> ExprCtx<'a> {
     }
 
     /// Comsumes the `ExprCtx` to get the result.
-    pub fn read(mut self) -> Result<usize, Vec<AsmErr<'a, ExprMsg>>> {
+    fn read(mut self) -> Result<usize, Vec<AsmErr<'a, ExprMsg>>> {
         return if self.errors.is_empty() {
             Ok(self.value)
         }else {

@@ -16,6 +16,7 @@ use crate::{
             macros::Macros,
         },
         read::TokenRef,
+        expr,
     },
     write::{
         ops::OpMap,
@@ -52,7 +53,10 @@ pub fn run() -> Result<(), ()> {
     let ast_ref = TokenRef::new(&ast);
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
 
-    let _constants = Constants::new(&ast_ref, &op_map);
+    // Find and calculate all constants.
+    let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
+    let mut expr_errors = vec![];
+    constants = expr::eval::run(constants, &mut expr_errors);
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);
