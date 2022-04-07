@@ -40,3 +40,7 @@ pub fn macros<E: std::fmt::Display + Sized>(ev: Vec<E>) {
 pub fn ops<E: std::fmt::Display + Sized>(ev: Vec<E>) {
     stage_err_vec(ev, "Could not find instructions.");
 }
+
+pub fn constants<E: std::fmt::Display + Sized>(e: E) {
+    stage_err(e, "Could not collect constants.");
+}
