@@ -12,20 +12,61 @@ use crate::{
 pub struct ExprCtx<'a> {
     def_ty: TokenType,
     dependencies: Vec<&'a TokenRef<'a>>,
-    constants: &'a Constants<'a>,
+    constants: Option<&'a Constants<'a>>,
     errors: Vec<AsmErr<'a, ExprMsg>>,
-    //TODO assign results to Constants.
-    results: Vec<(&'a TokenRef<'a>, usize)>,
+    results: Vec<(&'a str, usize)>,
+    value: usize,
 }
 
 impl<'a> ExprCtx<'a> {
 
     pub fn new(def_ty: TokenType, constants: &'a Constants<'a>) -> Self {
-        Self { def_ty, dependencies: vec![], constants, errors: vec![], results: vec![] }
+        Self {
+            def_ty, 
+            dependencies: vec![], 
+            constants: Some(constants), 
+            errors: vec![],
+            results: vec![],
+            value: 0,
+        }
     }
 
-    /// Evaluate the value for an `Expr` token and its content.
-    pub fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
+    /// Evaluates the expression.
+    pub fn run(mut self, expr: &'a TokenRef<'a>) -> Self {
+        match self.evaluate(expr) {
+            Ok((value, mut s)) => {
+                s.constants = None;
+                s.value = value;
+                s
+            }
+
+            Err(s) => s 
+        }
+    }
+
+    /// Applies changes to constants if `run` produced no errors.
+    pub fn apply(mut self, constants: &mut Constants<'a>) -> Self {
+        if self.errors.is_empty() {
+            for (ident, value) in &self.results {
+                let const_expr = constants.get_mut(ident).unwrap(); 
+                *const_expr = ConstExpr::Value(Value::Usize(*value));
+            }
+        }
+
+        self
+    }
+
+    /// Comsumes the `ExprCtx` to get the result.
+    pub fn read(mut self) -> Result<usize, Vec<AsmErr<'a, ExprMsg>>> {
+        return if self.errors.is_empty() {
+            Ok(self.value)
+        }else {
+            Err(self.errors)
+        };
+    }
+
+    /// Evaluates the value for an `Expr` token and its content.
+    fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
         self.dependencies.push(expr);
         let mut result = 0;
 
@@ -49,7 +90,7 @@ impl<'a> ExprCtx<'a> {
         Ok((result, self))
     }
 
-    fn eval_scope(mut self, scope: &TokenRef<'a>) -> Result<(isize, Self), Self> {
+    fn eval_scope(mut self, scope: &'a TokenRef<'a>) -> Result<(isize, Self), Self> {
         if scope.children().len() != 1 {
             self.errors.push(err!(ExprMsg, TooManyChildren, scope.into()));
             return Err(self);
@@ -79,7 +120,7 @@ impl<'a> ExprCtx<'a> {
                 let ident = scope.value().as_str();
 
                 // Read the value in the `Constants` map.
-                let const_expr = self.constants.get(ident);
+                let const_expr = self.constants.as_ref().unwrap().get(ident);
 
                 if const_expr.is_none() {
                     self.errors.push(err!(ExprMsg, ConstantNotFound, scope.into()));
@@ -113,7 +154,7 @@ impl<'a> ExprCtx<'a> {
 
                         match self.evaluate(expr) {
                             Ok((value, mut s)) => {
-                                s.results.push((expr, value));
+                                s.results.push((ident, value));
                                 return Ok((value as isize, s));
                             }
 
@@ -133,26 +174,23 @@ impl<'a> ExprCtx<'a> {
                 let not_op = matches!(scope.ty(), At|Expr);
                 let is_value = matches!(child.ty(), Lit|Identifier);
 
-                //TODO check bool logic
-                if not_op && is_value {
+                if (not_op && is_value) || child.ty() == At {
                     return self.eval_scope(child);
                 }
-                if child.ty() == At {
-                    return self.eval_scope(child);
-                }
+
                 else if child.ty().parent_type() == Expr {
                     return self.eval_op(child);
                 }
+
+                bug!("Unexpected token in expression.");
             }
         }
-
-        todo!();//TODO remove
     }
 
     fn eval_bin(
         mut self,
         f: fn(isize, isize) -> isize,
-        op: &TokenRef<'a>, 
+        op: &'a TokenRef<'a>, 
     ) -> Result<(isize, Self), Self> {
         let mut lhs = 0;
         let mut rhs = 0;
@@ -180,7 +218,7 @@ impl<'a> ExprCtx<'a> {
 
     fn eval_op(
         mut self, 
-        op: &TokenRef<'a>,
+        op: &'a TokenRef<'a>,
     ) -> Result<(isize, Self), Self> {
         assert_eq!(op.ty().parent_type(), Expr);
 
