@@ -44,3 +44,7 @@ pub fn ops<E: std::fmt::Display + Sized>(ev: Vec<E>) {
 pub fn constants<E: std::fmt::Display + Sized>(e: E) {
     stage_err(e, "Could not collect constants.");
 }
+
+pub fn expressions<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+    stage_err_vec(ev, "Could not evaluate expressions in constants.");
+}

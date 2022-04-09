@@ -9,45 +9,17 @@ use crate::{
     write::constants::{ConstExpr, Constants},
 };
 
-pub fn run<'a>(
-    mut constants: Constants<'a>
-) -> Result<Constants<'a>, Vec<AsmErr<'a, ExprMsg>>> {
-    let exprv = constants.constants.values()
-        .filter(|v| matches!(v, ConstExpr::Expr(_)))
-        .map(|v| match v { ConstExpr::Expr(e) => *e, _ => unreachable!() })
-        .collect::<Vec<_>>();
-
-    let mut results = vec![];
-    let mut errors = vec![];
-
-    for expr in exprv {
-        match ExprResult::eval(expr, &constants) {
-            Ok(result) => results.push(result),
-            Err(mut e) => errors.append(&mut e)
-        }
-    }
-
-    for result in results {
-        for (ident, v) in result.updates {
-            let value = ConstExpr::Value(Value::Usize(v));
-            *constants.get_mut(&ident).unwrap() = value;
-        }
-    }
-
-    todo!();
+pub struct ExprResult<'a> {
+    pub updates: Vec<(&'a str, usize)>,
 }
 
-pub struct ExprResult {
-    updates: Vec<(String, usize)>,
-}
+impl<'a> ExprResult<'a> {
 
-impl ExprResult {
-
-    fn new(updates: Vec<(String, usize)>) -> Self {
+    fn new(updates: Vec<(&'a str, usize)>) -> Self {
         Self{ updates }
     }
 
-    pub fn eval<'a>(
+    pub fn eval(
         expr: &'a TokenRef<'a>, 
         constants: &'a Constants<'a>
     ) -> Result<Self, Vec<AsmErr<'a, ExprMsg>>> {
@@ -57,9 +29,9 @@ impl ExprResult {
         }
     }
 
-    pub fn apply<'a>(self, constants: &mut Constants<'a>) {
+    pub fn apply(self, constants: &mut Constants<'a>) {
         for (ident, value) in self.updates {
-            let const_expr = constants.get_mut(&ident).unwrap(); 
+            let const_expr = constants.get_mut(ident).unwrap(); 
             *const_expr = ConstExpr::Value(Value::Usize(value));
         }
     }
@@ -70,7 +42,7 @@ struct ExprCtx<'a> {
     dependencies: Vec<&'a TokenRef<'a>>,
     constants: &'a Constants<'a>,
     errors: Vec<AsmErr<'a, ExprMsg>>,
-    updates: Vec<(String, usize)>,
+    updates: Vec<(&'a str, usize)>,
 }
 
 impl<'a> ExprCtx<'a> {
@@ -106,7 +78,7 @@ impl<'a> ExprCtx<'a> {
             _ => bug!("Wrong Def type.")
         };
 
-        let ident = expr.parent().get(0).value().as_str().into();
+        let ident = expr.parent().get(0).value().as_str();
         self.updates.push((ident, result));
         
         Ok((result, self))

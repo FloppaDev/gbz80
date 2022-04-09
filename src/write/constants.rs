@@ -6,13 +6,14 @@ use crate::{
     token::{
         Value,
         read::TokenRef,
-        expr::eval,
+        expr::eval::ExprResult,
     },
     error::{
         ITERATION_LIMIT,
         asm::{
             AsmErr, 
             ConstantsMsg::{self, *},
+            ExprMsg::{self, *},
         },
     },
     write::ops::OpMap,
@@ -47,11 +48,11 @@ pub struct Constants<'a> {
 impl<'a> Constants<'a> {
 
     #[allow(dead_code)]
-    pub fn get(&self, ident: &str) -> Option<&ConstExpr> {
+    pub fn get(&self, ident: &'a str) -> Option<&ConstExpr> {
         self.get(ident)
     }
 
-    pub fn get_mut(&mut self, ident: &str) -> Option<&mut ConstExpr> {
+    pub fn get_mut(&mut self, ident: &'a str) -> Option<&mut ConstExpr> {
         self.get_mut(ident)
     }
 
@@ -75,6 +76,36 @@ impl<'a> Constants<'a> {
         }
 
         Ok(result)
+    }
+
+    pub fn eval(&'a self) -> Result<Vec<(&'a str, usize)>, Vec<AsmErr<'a, ExprMsg>>> {
+        let exprv = self.constants.values()
+            .filter(|v| matches!(v, ConstExpr::Expr(_)))
+            .map(|v| match v { ConstExpr::Expr(e) => *e, _ => unreachable!() })
+            .collect::<Vec<_>>();
+
+        let mut updates = vec![];
+        let mut errors = vec![];
+
+        for expr in exprv {
+            match ExprResult::eval(expr, self) {
+                Ok(mut result) => updates.append(&mut result.updates),
+                Err(mut e) => errors.append(&mut e)
+            }
+        }
+
+        return if errors.is_empty() {
+            Ok(updates)
+        }else {
+            Err(errors)
+        };
+    }
+
+    pub fn update(&mut self, updates: Vec<(&'a str, usize)>) {
+        for (ident, v) in updates {
+            let value = ConstExpr::Value(Value::Usize(v));
+            *self.constants.get_mut(&ident).unwrap() = value;
+        }
     }
 
     fn get_constants(
@@ -186,7 +217,8 @@ impl<'a> Constants<'a> {
 
             Label => {
                 let value = ConstExpr::Value(Value::Usize(*location));
-                *self.constants.get_mut(token.value().as_str()).unwrap() = value;
+                let key = token.value().as_str();
+                *self.constants.get_mut(key).unwrap() = value;
                 *location += 2;
             }
 
@@ -195,7 +227,8 @@ impl<'a> Constants<'a> {
 
                 if *location == marker_location {
                     let value = ConstExpr::Value(Value::Usize(*location));
-                    *self.constants.get_mut(token.value().as_str()).unwrap() = value;
+                    let key = token.value().as_str();
+                    *self.constants.get_mut(key).unwrap() = value;
                 }
 
                 else {
