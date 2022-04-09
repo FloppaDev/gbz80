@@ -9,70 +9,75 @@ use crate::{
     write::constants::{ConstExpr, Constants},
 };
 
-pub fn run<'a>(
-    mut constants: Constants<'a>, 
-    errors: &mut Vec<AsmErr<'a, ExprMsg>>
-) -> Constants<'a> {
-    //TODO
+pub fn run<'a>(constants: &mut Constants<'a>) -> Result<(), Vec<AsmErr<'a, ExprMsg>>> {
+    let exprv = constants.constants.values()
+        .filter(|v| matches!(v, ConstExpr::Expr(_)))
+        .map(|v| match v { ConstExpr::Expr(e) => *e, _ => unreachable!() })
+        .collect::<Vec<_>>();
 
-    constants
+    for expr in exprv {
+        eval_expr(expr, constants);
+    }
+
+    todo!();
+}
+
+fn eval_expr<'a>(
+    expr: &'a TokenRef<'a>, 
+    constants: &mut Constants<'a>
+) -> Result<usize, Vec<AsmErr<'a, ExprMsg>>> {
+    let mut ctx = ExprCtx{
+        dependencies: vec![], 
+        constants: Some(constants as *const _), 
+        errors: vec![],
+        results: vec![],
+        value: 0,
+    };
+
+    ctx = match ctx.evaluate(expr) {
+        Ok((value, mut ctx)) => {
+            ctx.value = value;
+            ctx 
+        }
+
+        Err(ctx) => ctx
+    };
+
+    ctx.constants = None;
+
+    if ctx.errors.is_empty() {
+        for (ident, value) in &ctx.results {
+            let const_expr = constants.get_mut(ident).unwrap(); 
+            *const_expr = ConstExpr::Value(Value::Usize(*value));
+        }
+    }
+
+    return if ctx.errors.is_empty() {
+        Ok(ctx.value)
+    }else {
+        Err(ctx.errors)
+    };
 }
 
 struct ExprCtx<'a> {
-    def_ty: TokenType,
+    /// Dependencies stack for evaluating nested expressions.
     dependencies: Vec<&'a TokenRef<'a>>,
-    constants: Option<&'a Constants<'a>>,
+
+    /// Read-only pointer for convenience, not used after evaluation.
+    /// Safe to use within ExprCtx implementation.
+    constants: Option<*const Constants<'a>>,
+
+    /// Collects all errors.
     errors: Vec<AsmErr<'a, ExprMsg>>,
+
+    /// Collects identifiers and their updated values.
     results: Vec<(&'a str, usize)>,
+
+    /// The result of the expression.
     value: usize,
 }
 
 impl<'a> ExprCtx<'a> {
-
-    fn new(def_ty: TokenType, constants: &'a Constants<'a>) -> Self {
-        Self {
-            def_ty, 
-            dependencies: vec![], 
-            constants: Some(constants), 
-            errors: vec![],
-            results: vec![],
-            value: 0,
-        }
-    }
-
-    /// Evaluates the expression.
-    fn run(mut self, expr: &'a TokenRef<'a>) -> Self {
-        match self.evaluate(expr) {
-            Ok((value, mut s)) => {
-                s.constants = None;
-                s.value = value;
-                s
-            }
-
-            Err(s) => s 
-        }
-    }
-
-    /// Applies changes to constants if `run` produced no errors.
-    fn apply(mut self, constants: &mut Constants<'a>) -> Self {
-        if self.errors.is_empty() {
-            for (ident, value) in &self.results {
-                let const_expr = constants.get_mut(ident).unwrap(); 
-                *const_expr = ConstExpr::Value(Value::Usize(*value));
-            }
-        }
-
-        self
-    }
-
-    /// Comsumes the `ExprCtx` to get the result.
-    fn read(mut self) -> Result<usize, Vec<AsmErr<'a, ExprMsg>>> {
-        return if self.errors.is_empty() {
-            Ok(self.value)
-        }else {
-            Err(self.errors)
-        };
-    }
 
     /// Evaluates the value for an `Expr` token and its content.
     fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
@@ -90,7 +95,7 @@ impl<'a> ExprCtx<'a> {
 
         self.dependencies.pop();
 
-        result = match self.def_ty {
+        result = match expr.parent().get(0).ty() {
             DefB => result % 256,
             DefW => result % 65536,
             _ => bug!("Wrong Def type.")
@@ -129,11 +134,12 @@ impl<'a> ExprCtx<'a> {
                 let ident = scope.value().as_str();
 
                 // Read the value in the `Constants` map.
-                let const_expr = self.constants.as_ref().unwrap().get(ident);
+                let const_expr = unsafe {
+                    (&*self.constants.clone().unwrap()).get(ident)
+                };
 
                 if const_expr.is_none() {
                     self.errors.push(err!(ExprMsg, ConstantNotFound, scope.into()));
-                    drop(const_expr);
                     return Err(self);
                 }
 

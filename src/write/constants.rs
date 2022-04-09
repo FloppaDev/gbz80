@@ -39,7 +39,7 @@ pub enum ConstExpr<'a> {
 }
 
 pub struct Constants<'a> {
-    constants: HashMap<&'a str, ConstExpr<'a>>,
+    pub constants: HashMap<&'a str, ConstExpr<'a>>,
     //TODO process includes before parse.
     includes: HashMap<&'a str, Vec<u8>>,
 }
