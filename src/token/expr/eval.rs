@@ -9,75 +9,85 @@ use crate::{
     write::constants::{ConstExpr, Constants},
 };
 
-pub fn run<'a>(constants: &mut Constants<'a>) -> Result<(), Vec<AsmErr<'a, ExprMsg>>> {
+pub fn run<'a>(
+    mut constants: Constants<'a>
+) -> Result<Constants<'a>, Vec<AsmErr<'a, ExprMsg>>> {
     let exprv = constants.constants.values()
         .filter(|v| matches!(v, ConstExpr::Expr(_)))
         .map(|v| match v { ConstExpr::Expr(e) => *e, _ => unreachable!() })
         .collect::<Vec<_>>();
 
+    let mut results = vec![];
+    let mut errors = vec![];
+
     for expr in exprv {
-        eval_expr(expr, constants);
+        match ExprResult::eval(expr, &constants) {
+            Ok(result) => results.push(result),
+            Err(mut e) => errors.append(&mut e)
+        }
+    }
+
+    for result in results {
+        for (ident, v) in result.updates {
+            let value = ConstExpr::Value(Value::Usize(v));
+            *constants.get_mut(&ident).unwrap() = value;
+        }
     }
 
     todo!();
 }
 
-fn eval_expr<'a>(
-    expr: &'a TokenRef<'a>, 
-    constants: &mut Constants<'a>
-) -> Result<usize, Vec<AsmErr<'a, ExprMsg>>> {
-    let mut ctx = ExprCtx{
-        dependencies: vec![], 
-        constants: Some(constants as *const _), 
-        errors: vec![],
-        results: vec![],
-        value: 0,
-    };
+pub struct ExprResult {
+    updates: Vec<(String, usize)>,
+    value: usize,//TODO remove
+}
 
-    ctx = match ctx.evaluate(expr) {
-        Ok((value, mut ctx)) => {
-            ctx.value = value;
-            ctx 
-        }
+impl ExprResult {
 
-        Err(ctx) => ctx
-    };
+    fn new(updates: Vec<(String, usize)>, value: usize) -> Self {
+        Self{ updates, value }
+    }
 
-    ctx.constants = None;
-
-    if ctx.errors.is_empty() {
-        for (ident, value) in &ctx.results {
-            let const_expr = constants.get_mut(ident).unwrap(); 
-            *const_expr = ConstExpr::Value(Value::Usize(*value));
+    pub fn eval<'a>(
+        expr: &'a TokenRef<'a>, 
+        constants: &'a Constants<'a>
+    ) -> Result<Self, Vec<AsmErr<'a, ExprMsg>>> {
+        match ExprCtx::new(constants).evaluate(expr) {
+            Ok((v, ctx)) => Ok(Self::new(ctx.updates, v)),
+            Err(ctx) => Err(ctx.errors)
         }
     }
 
-    return if ctx.errors.is_empty() {
-        Ok(ctx.value)
-    }else {
-        Err(ctx.errors)
-    };
+    pub fn apply<'a>(&self, constants: &mut Constants<'a>) {
+        for (ident, value) in &self.updates {
+            let const_expr = constants.get_mut(ident).unwrap(); 
+            *const_expr = ConstExpr::Value(Value::Usize(self.value));
+        }
+    }
+
+    pub fn read(self) -> usize {
+        self.value
+    }
+
 }
 
 struct ExprCtx<'a> {
-    /// Dependencies stack for evaluating nested expressions.
     dependencies: Vec<&'a TokenRef<'a>>,
-
-    /// Read-only pointer for convenience, not used after evaluation.
-    /// Safe to use within ExprCtx implementation.
-    constants: Option<*const Constants<'a>>,
-
-    /// Collects all errors.
+    constants: &'a Constants<'a>,
     errors: Vec<AsmErr<'a, ExprMsg>>,
-
-    /// Collects identifiers and their updated values.
-    results: Vec<(&'a str, usize)>,
-
-    /// The result of the expression.
-    value: usize,
+    updates: Vec<(String, usize)>,
 }
 
 impl<'a> ExprCtx<'a> {
+
+    fn new(constants: &'a Constants<'a>) -> Self {
+        Self{
+            dependencies: vec![], 
+            constants,
+            errors: vec![],
+            updates: vec![],
+        }
+    }
 
     /// Evaluates the value for an `Expr` token and its content.
     fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
@@ -134,9 +144,7 @@ impl<'a> ExprCtx<'a> {
                 let ident = scope.value().as_str();
 
                 // Read the value in the `Constants` map.
-                let const_expr = unsafe {
-                    (&*self.constants.clone().unwrap()).get(ident)
-                };
+                let const_expr = self.constants.get(ident);
 
                 if const_expr.is_none() {
                     self.errors.push(err!(ExprMsg, ConstantNotFound, scope.into()));
@@ -169,7 +177,7 @@ impl<'a> ExprCtx<'a> {
 
                         match self.evaluate(expr) {
                             Ok((value, mut s)) => {
-                                s.results.push((ident, value));
+                                s.updates.push((ident.to_string(), value));
                                 return Ok((value as isize, s));
                             }
 

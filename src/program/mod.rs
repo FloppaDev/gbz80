@@ -55,7 +55,7 @@ pub fn run() -> Result<(), ()> {
 
     // Find and calculate all constants.
     let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
-    expr::eval::run(&mut constants);
+    constants = expr::eval::run(constants).unwrap();
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);
