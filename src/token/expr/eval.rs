@@ -39,13 +39,12 @@ pub fn run<'a>(
 
 pub struct ExprResult {
     updates: Vec<(String, usize)>,
-    value: usize,//TODO remove
 }
 
 impl ExprResult {
 
-    fn new(updates: Vec<(String, usize)>, value: usize) -> Self {
-        Self{ updates, value }
+    fn new(updates: Vec<(String, usize)>) -> Self {
+        Self{ updates }
     }
 
     pub fn eval<'a>(
@@ -53,20 +52,16 @@ impl ExprResult {
         constants: &'a Constants<'a>
     ) -> Result<Self, Vec<AsmErr<'a, ExprMsg>>> {
         match ExprCtx::new(constants).evaluate(expr) {
-            Ok((v, ctx)) => Ok(Self::new(ctx.updates, v)),
+            Ok((v, ctx)) => Ok(Self::new(ctx.updates)),
             Err(ctx) => Err(ctx.errors)
         }
     }
 
-    pub fn apply<'a>(&self, constants: &mut Constants<'a>) {
-        for (ident, value) in &self.updates {
-            let const_expr = constants.get_mut(ident).unwrap(); 
-            *const_expr = ConstExpr::Value(Value::Usize(self.value));
+    pub fn apply<'a>(self, constants: &mut Constants<'a>) {
+        for (ident, value) in self.updates {
+            let const_expr = constants.get_mut(&ident).unwrap(); 
+            *const_expr = ConstExpr::Value(Value::Usize(value));
         }
-    }
-
-    pub fn read(self) -> usize {
-        self.value
     }
 
 }
@@ -105,11 +100,14 @@ impl<'a> ExprCtx<'a> {
 
         self.dependencies.pop();
 
-        result = match expr.parent().get(0).ty() {
+        result = match expr.parent().ty() {
             DefB => result % 256,
             DefW => result % 65536,
             _ => bug!("Wrong Def type.")
         };
+
+        let ident = expr.parent().get(0).value().as_str().into();
+        self.updates.push((ident, result));
         
         Ok((result, self))
     }
@@ -175,14 +173,10 @@ impl<'a> ExprCtx<'a> {
                             }
                         }
 
-                        match self.evaluate(expr) {
-                            Ok((value, mut s)) => {
-                                s.updates.push((ident.to_string(), value));
-                                return Ok((value as isize, s));
-                            }
-
-                            Err(s) => return Err(s)
-                        }
+                        return match self.evaluate(expr) {
+                            Ok((value, mut s)) => Ok((value as isize, s)),
+                            Err(s) => Err(s)
+                        };
                     }
 
                     _ => bug!("Invalid constant")
