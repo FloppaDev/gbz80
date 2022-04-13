@@ -40,20 +40,47 @@ pub enum ConstExpr<'a> {
 }
 
 pub struct Constants<'a> {
-    pub constants: HashMap<&'a str, ConstExpr<'a>>,
+    pub constants: Vec<(&'a str, ConstExpr<'a>)>,//TODO rename
     //TODO process includes before parse.
     includes: HashMap<&'a str, Vec<u8>>,
 }
 
 impl<'a> Constants<'a> {
 
-    #[allow(dead_code)]
-    pub fn get(&self, ident: &'a str) -> Option<&ConstExpr> {
-        self.get(ident)
+    pub fn get(&self, ident: &str) -> Option<&ConstExpr<'a>> {
+        for (key, value) in &self.constants {
+            if *key == ident {
+                return Some(value)
+            }
+        }
+
+        None
     }
 
-    pub fn get_mut(&mut self, ident: &'a str) -> Option<&mut ConstExpr> {
-        self.get_mut(ident)
+    pub fn get_mut(&mut self, ident: &str) -> Option<&mut ConstExpr<'a>> {
+        for (key, value) in &mut self.constants {
+            if *key == ident {
+                return Some(value)
+            }
+        }
+
+        None
+    }
+
+    fn insert(&mut self, ident: &'a str, const_expr: ConstExpr<'a>) -> Result<(), ()> {
+        for (i, (key, value)) in self.constants.iter().enumerate() {
+            if *key == ident {
+                return Err(());
+            }
+        }
+
+        self.constants.push((ident, const_expr));
+
+        Ok(()) 
+    }
+
+    fn entries(&self) -> &[(&'a str, ConstExpr<'a>)] {
+        &self.constants
     }
 
     pub fn new(
@@ -62,7 +89,7 @@ impl<'a> Constants<'a> {
     ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         let mut fail_safe = ITERATION_LIMIT;
         let mut result = Self{ 
-            constants: HashMap::new(), 
+            constants: vec![],
             includes: HashMap::new(),
         };
 
@@ -78,10 +105,10 @@ impl<'a> Constants<'a> {
         Ok(result)
     }
 
-    pub fn eval(&'a self) -> Result<Vec<(&'a str, usize)>, Vec<AsmErr<'a, ExprMsg>>> {
-        let exprv = self.constants.values()
-            .filter(|v| matches!(v, ConstExpr::Expr(_)))
-            .map(|v| match v { ConstExpr::Expr(e) => *e, _ => unreachable!() })
+    pub fn eval(&'a self) -> Result<Vec<(String, usize)>, Vec<AsmErr<'a, ExprMsg>>> {
+        let exprv = self.entries().iter()
+            .filter(|(_, v)| matches!(v, ConstExpr::Expr(_)))
+            .map(|(_, v)| match v { ConstExpr::Expr(e) => *e, _ => unreachable!() })
             .collect::<Vec<_>>();
 
         let mut updates = vec![];
@@ -101,10 +128,10 @@ impl<'a> Constants<'a> {
         };
     }
 
-    pub fn update(&mut self, updates: Vec<(&'a str, usize)>) {
+    pub fn update(&mut self, updates: Vec<(String, usize)>) {
         for (ident, v) in updates {
             let value = ConstExpr::Value(Value::Usize(v));
-            *self.constants.get_mut(&ident).unwrap() = value;
+            *self.get_mut(&ident).unwrap() = value;
         }
     }
 
@@ -135,13 +162,13 @@ impl<'a> Constants<'a> {
                             let ident = child.value().as_str();
                             let value = ConstExpr::Mark;
 
-                             self.constants.insert(ident, value).xor(nil).ok_or(err)?;
+                             self.insert(ident, value).map_err(|_| err)?;
                         }
 
                         NamedMark => {
                             let ident = child.value().as_str();
                             let value = ConstExpr::Value(*child.get(0).get(0).value());
-                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.insert(ident, value).map_err(|_| err)?;
                         }
 
                         _ => {}
@@ -155,14 +182,14 @@ impl<'a> Constants<'a> {
                         DefB|DefW => {
                             let ident = child.get(0).value().as_str();
                             let value = ConstExpr::Expr(child.get(1));
-                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.insert(ident, value).map_err(|_| err)?;
                         }
 
                         DefS => {
                             let ident = child.get(0).value().as_str();
                             let str_value = child.get(0).value();
                             let value = ConstExpr::Value(*str_value);
-                            self.constants.insert(ident, value).xor(nil).ok_or(err)?;
+                            self.insert(ident, value).map_err(|_| err)?;
                         }
 
                         Include => {
@@ -218,7 +245,7 @@ impl<'a> Constants<'a> {
             Label => {
                 let value = ConstExpr::Value(Value::Usize(*location));
                 let key = token.value().as_str();
-                *self.constants.get_mut(key).unwrap() = value;
+                *self.get_mut(key).unwrap() = value;
                 *location += 2;
             }
 
@@ -228,7 +255,7 @@ impl<'a> Constants<'a> {
                 if *location == marker_location {
                     let value = ConstExpr::Value(Value::Usize(*location));
                     let key = token.value().as_str();
-                    *self.constants.get_mut(key).unwrap() = value;
+                    *self.get_mut(key).unwrap() = value;
                 }
 
                 else {
@@ -253,10 +280,10 @@ impl<'a> Constants<'a> {
     }
     
     fn size_of_ident(&self, ident: &'a str) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
-        match self.constants[ident] {
+        match self.get(ident).unwrap() {
             ConstExpr::Value(value) => {
                 match value {
-                    Value::Usize(v) => Ok(Self::size_of_num(v)),
+                    Value::Usize(v) => Ok(Self::size_of_num(*v)),
 
                     Value::Str(v) => Ok(v.len()),
 

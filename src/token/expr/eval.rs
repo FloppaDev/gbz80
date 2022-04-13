@@ -9,17 +9,17 @@ use crate::{
     write::constants::{ConstExpr, Constants},
 };
 
-pub struct ExprResult<'a> {
-    pub updates: Vec<(&'a str, usize)>,
+pub struct ExprResult {
+    pub updates: Vec<(String, usize)>,
 }
 
-impl<'a> ExprResult<'a> {
+impl ExprResult {
 
-    fn new(updates: Vec<(&'a str, usize)>) -> Self {
+    fn new(updates: Vec<(String, usize)>) -> Self {
         Self{ updates }
     }
 
-    pub fn eval(
+    pub fn eval<'a>(
         expr: &'a TokenRef<'a>, 
         constants: &'a Constants<'a>
     ) -> Result<Self, Vec<AsmErr<'a, ExprMsg>>> {
@@ -29,9 +29,9 @@ impl<'a> ExprResult<'a> {
         }
     }
 
-    pub fn apply(self, constants: &mut Constants<'a>) {
+    pub fn apply<'a>(self, constants: &mut Constants<'a>) {
         for (ident, value) in self.updates {
-            let const_expr = constants.get_mut(ident).unwrap(); 
+            let const_expr = constants.get_mut(&ident).unwrap(); 
             *const_expr = ConstExpr::Value(Value::Usize(value));
         }
     }
@@ -42,7 +42,7 @@ struct ExprCtx<'a> {
     dependencies: Vec<&'a TokenRef<'a>>,
     constants: &'a Constants<'a>,
     errors: Vec<AsmErr<'a, ExprMsg>>,
-    updates: Vec<(&'a str, usize)>,
+    updates: Vec<(String, usize)>,
 }
 
 impl<'a> ExprCtx<'a> {
@@ -79,7 +79,7 @@ impl<'a> ExprCtx<'a> {
         };
 
         let ident = expr.parent().get(0).value().as_str();
-        self.updates.push((ident, result));
+        self.updates.push((ident.to_string(), result));
         
         Ok((result, self))
     }
