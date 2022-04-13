@@ -68,7 +68,7 @@
 #db FONT_LEN FontEnd - Font
 
 :Font
-    #include "font.bin"
+    ;#include "font.bin"
 :FontEnd
     ld a b
     add Font

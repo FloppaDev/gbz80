@@ -57,6 +57,7 @@ pub fn run() -> Result<(), ()> {
     let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
     let updates = constants.eval().unwrap();
     constants.update(updates);
+    #[cfg(debug_assertions)] constants.debug();
 
     // let instructions = opcodes::get_instructions();
     // let int_ast = ast::Token::make_ast(split, &instructions);

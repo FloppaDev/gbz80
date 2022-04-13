@@ -99,6 +99,9 @@ impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 /// e.g.    bug!("Oopsie! Assembler no worky...")
 macro_rules! bug {
     ($s:literal) => {
-        unreachable!("Internal error at '{}':\n{}\nThis is a bug.", source!(), $s)
+        {
+            println!("Internal error at '{}':\n{}\nThis is a bug.", source!(), $s);
+            std::process::exit(1);
+        }
     }
 }

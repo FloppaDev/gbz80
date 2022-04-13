@@ -19,6 +19,9 @@ use crate::{
     write::ops::OpMap,
 };
 
+#[cfg(debug_assertions)]
+use crate::program::fmt::title;
+
 use std::collections::HashMap;
 use std::io::prelude::*;
 use std::fs::File;
@@ -316,6 +319,32 @@ impl<'a> Constants<'a> {
 
             //TODO return Err
             _ => bug!("Exceeding number capacity.")
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn debug(&self) {
+        title("Constant values");
+
+        for (key, value) in &self.constants {
+            let value_str = match value {
+                ConstExpr::Value(v) => {
+                    match v {
+                        Value::Usize(v) => v.to_string(),
+                        Value::Str(v) => v.to_string(),
+                        _ => bug!("Unexpected Value type")
+                    }
+                }
+
+                //TODO remove {
+                    ConstExpr::Expr(expr) => expr.line().to_string(),
+                    ConstExpr::Mark => "Mark".into(),
+                //}
+
+                _ => bug!("Unexpected ConstExpr type")
+            };
+
+            println!("{}: {}", key, value_str);
         }
     }
 
