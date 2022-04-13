@@ -30,11 +30,8 @@
             }
 
             Directive {
-                DefB
-                DefW
-                DefS
+                DefB DefW DefS
                 Include
-
                 Macro { MacroIdent MacroArg MacroBody }
             }
 
@@ -43,6 +40,33 @@
             Repeat
             MacroCall
         }
+    }
+
+    // Those do not require validation rules.
+    ignored { Root ..At }
+
+    // For those, validity rules follow the hierarchy defined in types
+    validate_from_hierarchy {
+        Instruction 
+        Directive ..Directive
+        InstrName ..InstrName 
+        Argument 
+        Register ..Register 
+        Flag ..Flag 
+        ..Lit Lit 
+        Lit { Expr At ..Expr Argument } //Also in Repeat? TODO check 
+        Identifier { DefB DefW DefS } //MacroIdent? TODO 
+        Marker ..Marker
+        MacroCall //TODO only if no nesting, check that.
+    }
+
+    // `Children` `ValidParents`
+    // e.g.     Expr is valid inside DefB or DefW
+    validation {
+        Expr { DefB DefW }
+        { ..Expr At } { Expr At ..Expr } 
+        Instruction MacroCall
+        //TODO { Macro { MacroIdent MacroArg MacroBody } Repeat }
     }
 
     // Those are identified by their name lowercased.
