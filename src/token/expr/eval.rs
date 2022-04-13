@@ -91,6 +91,7 @@ impl<'a> ExprCtx<'a> {
         }
 
         let child = scope.children()[0];
+        println!("L{} {:?}:{:?}", child.line_number(), scope.ty(), child.ty());
 
         match scope.ty() {
             Lit => {
@@ -98,6 +99,7 @@ impl<'a> ExprCtx<'a> {
 
                 match litx.ty() {
                     LitDec|LitBin|LitHex => {
+                        println!("Lit");
                         return Ok((litx.value().as_usize() as isize, self));
                     }
 
@@ -163,14 +165,23 @@ impl<'a> ExprCtx<'a> {
                 let not_op = matches!(scope.ty(), At|Expr);
                 let is_value = matches!(child.ty(), Lit|Identifier);
 
+
                 if (not_op && is_value) || child.ty() == At {
+                    print!("eval_scope\n");
                     return self.eval_scope(child);
                 }
 
                 else if child.ty().parent_type() == Expr {
+                    print!("eval_op child\n");
                     return self.eval_op(child);
                 }
 
+                else if scope.ty().parent_type() == Expr {
+                    print!("eval_op scope\n");
+                    return self.eval_op(scope);
+                }
+
+                println!();
                 bug!("Unexpected token in expression.");
             }
         }
@@ -184,6 +195,7 @@ impl<'a> ExprCtx<'a> {
         let mut lhs = 0;
         let mut rhs = 0;
 
+        println!("lhs:{:?} ", op.get(0).ty());
         match self.eval_scope(op.get(0)) {
             Ok((value, s)) => {
                 lhs = value;
@@ -193,6 +205,7 @@ impl<'a> ExprCtx<'a> {
             Err(s) => return Err(s)
         }
 
+        println!("rhs:{:?} ", op.get(1).ty());
         match self.eval_scope(op.get(1)) {
             Ok((value, s)) => {
                 rhs = value;
@@ -220,6 +233,7 @@ impl<'a> ExprCtx<'a> {
             }
 
             UnNeg => {
+                println!("eval_op:eval_scope");
                 match self.eval_scope(op.get(0)) {
                     Ok((value, s)) => Ok((-value, s)),
                     Err(s) => Err(s)
