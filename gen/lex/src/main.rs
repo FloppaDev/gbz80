@@ -74,6 +74,18 @@ fn build(tree: &Tree) {
     fmt_char_words(tree, char_words, &mut char_words_str);
     char_words_str = tab(2, &char_words_str);
 
+    let mut len = 0;
+    let mut hierarchy_str = String::new();
+    let hierarchy = tree.find("validate_from_hierarchy");
+    fmt_hierarchy_validation(tree, hierarchy, &mut hierarchy_str, &mut len);
+    hierarchy_str = tab(3, &hierarchy_str);
+
+    len = 0;
+    let mut validation_str = String::new();
+    let validation = tree.find("validation");
+    fmt_validation(tree, validation, &mut validation_str, &mut len);
+    validation_str = tab(3, &validation_str);
+
     let result = template
         .replace(&key("no_touchy"), NO_TOUCHY)
         .replace(&key("types"), types_str.trim_end())
@@ -83,7 +95,9 @@ fn build(tree: &Tree) {
         .replace(&key("get_by_word"), words.trim_end())
         .replace(&key("prefixes"), prefixes_str.trim_end())
         .replace(&key("at"), at_str.trim_end())
-        .replace(&key("is_char_word"), char_words_str.trim_end());
+        .replace(&key("is_char_word"), char_words_str.trim_end())
+        .replace(&key("hierarchy_validation"), hierarchy_str.trim_end())
+        .replace(&key("validation"), validation_str.trim_end());
 
     println!("{}", result);
 
@@ -239,14 +253,14 @@ fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
     out.push(')');
 }
 
-fn fmt_hierarchy_validation(tree: &Tree, node: &Node, out &mut String, ln_start: &mut usize) {
+fn fmt_hierarchy_validation(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usize) {
     for (i, index) in node.children.iter().enumerate() {
         if out.len() - *ln_start >= 60 {
             out.push('\n'); 
             *ln_start = out.len();
         }
 
-        out.push_str(tree.nodes[*index].value);
+        out.push_str(&tree.nodes[*index].value);
 
         if i != node.children.len() - 1 {
             out.push('|');
@@ -256,50 +270,55 @@ fn fmt_hierarchy_validation(tree: &Tree, node: &Node, out &mut String, ln_start:
     out.push_str(" => ty.parent_type() == parent_type,\n");
 }
 
-fn fmt_validation(tree: &Tree, node: &Node, out &mut String, ln_start: &mut usize) {
+fn fmt_validation(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usize) {
     let mut i = 0;
     let children = &node.children;
     let len = children.len();
 
     loop {
-        
+        *ln_start = out.len();
+        let children_a = &tree.nodes[children[i]].children;
 
-        for (i, index) in &tree.nodes[children[i]].children.iter().enumerate() {
+        for (i, index) in children_a.iter().enumerate() {
             if out.len() - *ln_start >= 60 {
                 out.push('\n'); 
                 *ln_start = out.len();
             }
 
             let child = &tree.nodes[*index];
-            out.push_str(child.value);
+            out.push_str(&child.value);
 
-            if i != child.children.len() - 1 {
+            if i != children_a.len() - 1 {
                 out.push('|');
             }
         }
 
-        out.push_str(" => {\n    matches!(\"parent_type, ");
+        out.push_str(" => {\n    ");
+        *ln_start = out.len();
+        out.push_str("matches!(parent_type, ");
+        let children_b = &tree.nodes[children[i+1]].children;
 
-        for (i, index) in &tree.nodes[children[i+1]].children.iter().enumerate() {
+        for (i, index) in children_b.iter().enumerate() {
             if out.len() - *ln_start >= 60 {
-                out.push('\n'); 
+                out.push_str("\n        "); 
                 *ln_start = out.len();
             }
 
             let child = &tree.nodes[*index];
-            out.push_str(child.value);
+            out.push_str(&child.value);
 
-            if i != child.children.len() - 1 {
+            if i != children_b.len() - 1 {
                 out.push('|');
             }
         }
 
         out.push_str(")\n}\n");
+        i += 2;
 
         if i >= len {
             break;
         }
 
-        i += 2;
+        out.push_str("\n");
     }
 }

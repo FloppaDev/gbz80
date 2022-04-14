@@ -384,4 +384,40 @@ impl TokenType {
         }
     }
 
+    /// Checks if the token has a valid parent.
+    pub fn validate(ty: TokenType, parent_type: TokenType) -> bool {
+        match ty {
+            Instruction|Directive|DefB|DefW|DefS|Include|Macro|InstrName|
+            Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|
+            Ld|Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|
+            Rrc|Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|
+            Reti|Rlca|Nop|Argument|Register|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|
+            Flag|FlagZ|FlagNz|FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|
+            NamedMark|AnonMark|Label|Repeat|MacroCall|MacroIdent|MacroArg|
+            MacroBody => ty.parent_type() == parent_type,
+
+            Expr => {
+                matches!(parent_type, DefB|DefW)
+            }
+
+            BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
+            BinXor|UnNot|UnNeg|At => {
+                matches!(parent_type, Expr|At|BinAdd|BinSub|BinMul|BinDiv|BinMod|
+                    BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg)
+            }
+
+            Lit => {
+                matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
+                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg|
+                    Root)
+            }
+
+            Identifier => {
+                matches!(parent_type, DefB|DefW|DefS|Argument|Root)
+            }
+
+            Root|At0|At1 => true
+        }
+    }
+
 }

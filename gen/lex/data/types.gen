@@ -58,14 +58,11 @@
         MacroIdent MacroArg MacroBody
     }
 
-    // `Children` `ValidParents`
-    // e.g.     Expr is valid inside DefB or DefW
     validation {
-        Expr { DefB DefW }
-        { ..Expr At } { Expr At ..Expr } 
-        MacroCall { Root Argument }
-        Lit { Argument Expr At Expr.. Root }
-        Identifier { DefB DefW DefS Argument Root }
+        Children { Expr }       Parents { DefB DefW }
+        Children { ..Expr At }  Parents { Expr At ..Expr } 
+        Children { Lit }        Parents { Argument Expr At ..Expr Root }
+        Children { Identifier } Parents { DefB DefW DefS Argument Root }
     }
 
     // Those are identified by their name lowercased.
