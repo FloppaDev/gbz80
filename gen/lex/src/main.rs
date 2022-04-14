@@ -251,13 +251,55 @@ fn fmt_hierarchy_validation(tree: &Tree, node: &Node, out &mut String, ln_start:
         if i != node.children.len() - 1 {
             out.push('|');
         }
-
-        else {
-            out.push(" => ty.parent_type() == parent_type,\n");
-        }
     }
+
+    out.push_str(" => ty.parent_type() == parent_type,\n");
 }
 
 fn fmt_validation(tree: &Tree, node: &Node, out &mut String, ln_start: &mut usize) {
+    let mut i = 0;
+    let children = &node.children;
+    let len = children.len();
 
+    loop {
+        
+
+        for (i, index) in &tree.nodes[children[i]].children.iter().enumerate() {
+            if out.len() - *ln_start >= 60 {
+                out.push('\n'); 
+                *ln_start = out.len();
+            }
+
+            let child = &tree.nodes[*index];
+            out.push_str(child.value);
+
+            if i != child.children.len() - 1 {
+                out.push('|');
+            }
+        }
+
+        out.push_str(" => {\n    matches!(\"parent_type, ");
+
+        for (i, index) in &tree.nodes[children[i+1]].children.iter().enumerate() {
+            if out.len() - *ln_start >= 60 {
+                out.push('\n'); 
+                *ln_start = out.len();
+            }
+
+            let child = &tree.nodes[*index];
+            out.push_str(child.value);
+
+            if i != child.children.len() - 1 {
+                out.push('|');
+            }
+        }
+
+        out.push_str(")\n}\n");
+
+        if i >= len {
+            break;
+        }
+
+        i += 2;
+    }
 }
