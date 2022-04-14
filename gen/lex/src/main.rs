@@ -238,3 +238,26 @@ fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
 
     out.push(')');
 }
+
+fn fmt_hierarchy_validation(tree: &Tree, node: &Node, out &mut String, ln_start: &mut usize) {
+    for (i, index) in node.children.iter().enumerate() {
+        if out.len() - *ln_start >= 60 {
+            out.push('\n'); 
+            *ln_start = out.len();
+        }
+
+        out.push_str(tree.nodes[*index].value);
+
+        if i != node.children.len() - 1 {
+            out.push('|');
+        }
+
+        else {
+            out.push(" => ty.parent_type() == parent_type,\n");
+        }
+    }
+}
+
+fn fmt_validation(tree: &Tree, node: &Node, out &mut String, ln_start: &mut usize) {
+
+}

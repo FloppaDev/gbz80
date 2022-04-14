@@ -54,4 +54,13 @@ impl TokenType {
         //[[at]]
     }
 
+    /// Checks if the token has a valid parent.
+    pub const fn validate(ty: TokenType, parent_type: TokenType) -> bool {
+        match ty {
+            //[hierarchy_validation]
+            //[validation]
+            Root|At0|At1 => true
+        }
+    }
+
 }

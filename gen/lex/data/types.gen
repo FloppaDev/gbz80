@@ -42,9 +42,6 @@
         }
     }
 
-    // Those do not require validation rules.
-    ignored { Root ..At }
-
     // For those, validity rules follow the hierarchy defined in types
     // Note: Validation happens before macros expansion.
     validate_from_hierarchy {
