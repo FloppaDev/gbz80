@@ -46,6 +46,7 @@
     ignored { Root ..At }
 
     // For those, validity rules follow the hierarchy defined in types
+    // Note: Validation happens before macros expansion.
     validate_from_hierarchy {
         Instruction 
         Directive ..Directive
@@ -53,11 +54,11 @@
         Argument 
         Register ..Register 
         Flag ..Flag 
-        ..Lit Lit 
-        Lit { Expr At ..Expr Argument } //Also in Repeat? TODO check 
-        Identifier { DefB DefW DefS } //MacroIdent? TODO 
+        ..Lit
         Marker ..Marker
-        MacroCall //TODO only if no nesting, check that.
+        Repeat
+        MacroCall
+        MacroIdent MacroArg MacroBody
     }
 
     // `Children` `ValidParents`
@@ -65,8 +66,9 @@
     validation {
         Expr { DefB DefW }
         { ..Expr At } { Expr At ..Expr } 
-        Instruction MacroCall
-        //TODO { Macro { MacroIdent MacroArg MacroBody } Repeat }
+        MacroCall { Root Argument }
+        Lit { Argument Expr At Expr.. Root }
+        Identifier { DefB DefW DefS Argument Root }
     }
 
     // Those are identified by their name lowercased.
