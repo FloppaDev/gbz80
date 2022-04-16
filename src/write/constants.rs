@@ -13,7 +13,7 @@ use crate::{
         asm::{
             AsmErr, 
             ConstantsMsg::{self, *},
-            ExprMsg::{self, *},
+            ExprMsg,
         },
     },
     write::ops::OpMap,
@@ -29,9 +29,6 @@ use std::fs::File;
 /// Holds the value of a constant or the token required to calculate it.
 #[derive(Copy, Clone)]
 pub enum ConstExpr<'a> {
-    /// Not stored anywhere, used only for convenience.
-    Nil,
-
     /// Location needs to be calculated.
     Mark,
 
@@ -71,7 +68,7 @@ impl<'a> Constants<'a> {
     }
 
     fn insert(&mut self, ident: &'a str, const_expr: ConstExpr<'a>) -> Result<(), ()> {
-        for (i, (key, value)) in self.constants.iter().enumerate() {
+        for (key, _) in &self.constants {
             if *key == ident {
                 return Err(());
             }
@@ -148,8 +145,6 @@ impl<'a> Constants<'a> {
         if *fail_safe == 0 {
             panic!("Recursion limit reached while reading constants");
         }
-
-        let nil = Some(ConstExpr::Nil);
 
         for token in ast.children() {
             let err = err!(ConstantsMsg, DuplicateKey, token.into());
@@ -340,8 +335,8 @@ impl<'a> Constants<'a> {
                     ConstExpr::Expr(expr) => expr.line().to_string(),
                     ConstExpr::Mark => "Mark".into(),
                 //}
-
-                _ => bug!("Unexpected ConstExpr type")
+                //TODO And uncomment:
+                //_ => bug!("Unexpected ConstExpr type")
             };
 
             println!("{}: {}", key, value_str);

@@ -267,7 +267,7 @@ fn fmt_hierarchy_validation(tree: &Tree, node: &Node, out: &mut String, ln_start
         }
     }
 
-    out.push_str(" => ty.parent_type() == parent_type,\n");
+    out.push_str(" => self.parent_type() == parent_type,\n");
 }
 
 fn fmt_validation(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usize) {

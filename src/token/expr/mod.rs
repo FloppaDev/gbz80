@@ -5,7 +5,6 @@ use crate::{
     token::{ast::Ast},
     parse::lex::TokenType::{self, *},
     error::asm::{AsmErr, AstMsg::{self, *}},
-    write::constants::{ConstExpr, Constants},
 };
 
 /// Precedence from strongest to weakest.

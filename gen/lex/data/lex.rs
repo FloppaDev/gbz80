@@ -55,8 +55,8 @@ impl TokenType {
     }
 
     /// Checks if the token has a valid parent.
-    pub fn validate(ty: TokenType, parent_type: TokenType) -> bool {
-        match ty {
+    pub fn validate(self, parent_type: TokenType) -> bool {
+        match self {
             //[[hierarchy_validation]]
 
             //[[validation]]

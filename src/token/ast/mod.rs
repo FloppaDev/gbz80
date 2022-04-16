@@ -4,11 +4,11 @@ pub mod macros;
 
 use crate::{
     parse::{
-        lex::TokenType::{self, *},
+        lex::TokenType::*,
         prepare::ParsedToken,
     },
     token::{
-        Token, Value,
+        Token,
         expr,
         ast::macros::Macros,
     },
@@ -21,9 +21,6 @@ use crate::{
         },
     },
 };
-
-#[cfg(debug_assertions)]
-use crate::program::fmt::title;
 
 /// Abstract Token Tree.
 /// The whole hierarchy of parsed tokens from the source file.

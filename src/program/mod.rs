@@ -16,7 +16,6 @@ use crate::{
             macros::Macros,
         },
         read::TokenRef,
-        expr,
     },
     write::{
         ops::OpMap,
@@ -25,9 +24,7 @@ use crate::{
     error::stage,
 };
 
-use std::{
-    fs,
-};
+use std::fs;
 
 pub fn run() -> Result<(), ()> {
     // Command line arguments.
@@ -55,7 +52,7 @@ pub fn run() -> Result<(), ()> {
 
     // Find and calculate all constants.
     let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
-    let updates = constants.eval().unwrap();
+    let updates = constants.eval().map_err(stage::expressions)?;
     constants.update(updates);
     #[cfg(debug_assertions)] constants.debug();
 

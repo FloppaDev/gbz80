@@ -385,8 +385,8 @@ impl TokenType {
     }
 
     /// Checks if the token has a valid parent.
-    pub fn validate(ty: TokenType, parent_type: TokenType) -> bool {
-        match ty {
+    pub fn validate(self, parent_type: TokenType) -> bool {
+        match self {
             Instruction|Directive|DefB|DefW|DefS|Include|Macro|InstrName|
             Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|
             Ld|Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|
@@ -394,7 +394,7 @@ impl TokenType {
             Reti|Rlca|Nop|Argument|Register|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|
             Flag|FlagZ|FlagNz|FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|
             NamedMark|AnonMark|Label|Repeat|MacroCall|MacroIdent|MacroArg|
-            MacroBody => ty.parent_type() == parent_type,
+            MacroBody => self.parent_type() == parent_type,
 
             Expr => {
                 matches!(parent_type, DefB|DefW)

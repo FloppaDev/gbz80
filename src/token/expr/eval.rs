@@ -4,7 +4,7 @@ use crate::{
         Value,
         read::TokenRef,
     },
-    parse::lex::TokenType::{self, *},
+    parse::lex::TokenType::*,
     error::asm::{AsmErr, ExprMsg::{self, *}},
     write::constants::{ConstExpr, Constants},
 };
@@ -24,15 +24,8 @@ impl ExprResult {
         constants: &'a Constants<'a>
     ) -> Result<Self, Vec<AsmErr<'a, ExprMsg>>> {
         match ExprCtx::new(constants).evaluate(expr) {
-            Ok((v, ctx)) => Ok(Self::new(ctx.updates)),
+            Ok((_, ctx)) => Ok(Self::new(ctx.updates)),
             Err(ctx) => Err(ctx.errors)
-        }
-    }
-
-    pub fn apply<'a>(self, constants: &mut Constants<'a>) {
-        for (ident, value) in self.updates {
-            let const_expr = constants.get_mut(&ident).unwrap(); 
-            *const_expr = ConstExpr::Value(Value::Usize(value));
         }
     }
 
@@ -91,7 +84,6 @@ impl<'a> ExprCtx<'a> {
         }
 
         let child = scope.children()[0];
-        println!("L{} {:?}:{:?}", child.line_number(), scope.ty(), child.ty());
 
         match scope.ty() {
             Lit => {
@@ -99,7 +91,6 @@ impl<'a> ExprCtx<'a> {
 
                 match litx.ty() {
                     LitDec|LitBin|LitHex => {
-                        println!("Lit");
                         return Ok((litx.value().as_usize() as isize, self));
                     }
 
@@ -148,7 +139,7 @@ impl<'a> ExprCtx<'a> {
                         }
 
                         return match self.evaluate(expr) {
-                            Ok((value, mut s)) => Ok((value as isize, s)),
+                            Ok((value, s)) => Ok((value as isize, s)),
                             Err(s) => Err(s)
                         };
                     }
@@ -167,59 +158,43 @@ impl<'a> ExprCtx<'a> {
 
 
                 if (not_op && is_value) || child.ty() == At {
-                    print!("eval_scope\n");
                     return self.eval_scope(child);
                 }
 
                 else if child.ty().parent_type() == Expr {
-                    print!("eval_op child\n");
                     return self.eval_op(child);
                 }
 
                 else if scope.ty().parent_type() == Expr {
-                    print!("eval_op scope\n");
                     return self.eval_op(scope);
                 }
 
-                println!();
                 bug!("Unexpected token in expression.");
             }
         }
     }
 
     fn eval_bin(
-        mut self,
+        self,
         f: fn(isize, isize) -> isize,
         op: &'a TokenRef<'a>, 
     ) -> Result<(isize, Self), Self> {
-        let mut lhs = 0;
-        let mut rhs = 0;
-
-        println!("lhs:{:?} ", op.get(0).ty());
         match self.eval_scope(op.get(0)) {
             Ok((value, s)) => {
-                lhs = value;
-                self = s;
+                let lhs = value;
+
+                match s.eval_scope(op.get(1)) {
+                    Ok((value, s)) => Ok((f(lhs, value), s)),
+                    Err(s) => return Err(s)
+                }
             }
 
             Err(s) => return Err(s)
         }
-
-        println!("rhs:{:?} ", op.get(1).ty());
-        match self.eval_scope(op.get(1)) {
-            Ok((value, s)) => {
-                rhs = value;
-                self = s;
-            }
-
-            Err(s) => return Err(s)
-        }
-
-        Ok((f(lhs, rhs), self))
     }
 
     fn eval_op(
-        mut self, 
+        self, 
         op: &'a TokenRef<'a>,
     ) -> Result<(isize, Self), Self> {
         assert_eq!(op.ty().parent_type(), Expr);
@@ -233,7 +208,6 @@ impl<'a> ExprCtx<'a> {
             }
 
             UnNeg => {
-                println!("eval_op:eval_scope");
                 match self.eval_scope(op.get(0)) {
                     Ok((value, s)) => Ok((-value, s)),
                     Err(s) => Err(s)

@@ -179,7 +179,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
                 mul *= 10;
             }
 
-            //TODO check for overflows in validation.
+            //TODO check for overflows
             Ok((ty, Value::Usize(dec)))
         }
 

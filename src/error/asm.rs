@@ -51,8 +51,6 @@ macro_rules! err {
 /// Error variants when parsing values from the source file.
 #[derive(Debug, Copy, Clone)]
 pub enum ParseMsg {
-    WrongByte,
-    WrongWord,
     EmptyStr,
     Invalid,
     InvalidHex,
@@ -85,12 +83,6 @@ impl AsmMsg for ParseMsg {
         use ParseMsg::*;
 
         match self {
-            WrongByte => 
-                "Byte value not in range 0-255",
-
-            WrongWord => 
-                "Word value not in range 0-65535",
-
             EmptyStr => 
                 "Empty string",
 
@@ -217,7 +209,7 @@ pub enum MacroMsg {
     NoCallIdent,
     DeclNotFound,
     ArgCountMismatch,
-    ArgNotFound,
+    //TODO ArgNotFound,
 }
 
 impl AsmMsg for MacroMsg {
@@ -247,8 +239,8 @@ impl AsmMsg for MacroMsg {
             ArgCountMismatch =>
                 "Argument count in the call does not match the declaration",
 
-            ArgNotFound =>
-                "Argument not found in declaration",
+            //ArgNotFound =>
+                //"Argument not found in declaration",
         }
     }
 
@@ -307,7 +299,6 @@ pub enum ExprMsg {
     TooManyChildren,
     ConstantNotFound,
     CircularDependency,
-    InvalidNumber,
 }
 
 impl AsmMsg for ExprMsg {
@@ -327,9 +318,6 @@ impl AsmMsg for ExprMsg {
 
             CircularDependency => 
                 "Infinite loop, the constant's dependencies depend on the constant itself.",
-
-            InvalidNumber =>
-                "The result of the expression is not a valid number.",
         }
     }
 
