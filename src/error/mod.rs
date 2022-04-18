@@ -71,6 +71,32 @@ impl<'a> ErrCtx<'a> {
         Self{ ty, line_number, line, word }
     }
 
+    pub fn word_start(self) -> Option<usize> {
+        if self.line.is_empty() || self.word.is_empty() {
+            return None;
+        }
+
+        let line = self.line.as_ptr() as usize;
+        let word = self.word.as_ptr() as usize;
+
+        if line > word {
+            return None;
+        }
+
+        let mut start_byte = word - line;
+        let mut char_index = 0;
+
+        for (i, ch) in self.line.chars().enumerate() {
+            start_byte -= ch.len_utf8();
+
+            if start_byte == 0 {
+                return Some(i+1);
+            }
+        }
+
+        None
+    }
+
 }
 
 impl<'a> From<&ParsedToken<'a>> for ErrCtx<'a> {

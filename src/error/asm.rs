@@ -22,17 +22,29 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let ErrCtx{ ty, line_number, line, word } = self.err_ctx;
 
-        let text = fmt::strip()
+        let mut strip = fmt::strip()
             .debug(&format!("{}\n", self.source_ctx)) 
             .info(&format!("({:?}) ", self.ty))
             .bold(&format!("{} ", self.ty.msg()))
             .faint(&format!("l{}:", line_number ))
-            .faint(&(if ty == Unknown { "".into() } else { format!("({:?})", ty) }))
-            .bold(&format!(" \"{}\"", word))
-            .faint(&format!("\n    {}\n", line))
-            .read();
+            .faint(&(if ty == Unknown { "".into() } else { format!("({:?})", ty) }));
 
-        write!(f, "{}", text)
+        if let Some(word_start) = self.err_ctx.word_start() {
+            let line_a = line.get(..word_start).unwrap();
+            let line_word = line.get(word_start..word_start+word.len()).unwrap();
+            let line_b = line.get(word_start+word.len()..).unwrap();
+
+            strip = strip
+                .faint(&format!("\n    {}", line_a))
+                .err(&format!("{}", line_word))
+                .faint(&format!("{}\n", line_b));
+        }
+
+        else {
+            strip = strip.faint(&format!("\n    {}\n", line))
+        }
+
+        write!(f, "{}", strip.read())
     }
 
 }
