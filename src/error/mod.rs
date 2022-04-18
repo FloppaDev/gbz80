@@ -9,7 +9,10 @@ pub mod init;
 pub mod asm;
 
 use crate::{
-    parse::prepare::ParsedToken,
+    parse::{
+        prepare::ParsedToken,
+        lex::TokenType,
+    },
     token::{
         Token,
         read::TokenRef,
@@ -51,6 +54,7 @@ impl std::fmt::Display for SourceCtx {
 /// Provides context for an error in the parsed source file.
 #[derive(Debug, Copy, Clone)]
 pub struct ErrCtx<'a> {
+    ty: TokenType,
     line_number: usize,
     line: &'a str,
     word: &'a str,
@@ -59,11 +63,12 @@ pub struct ErrCtx<'a> {
 impl<'a> ErrCtx<'a> {
 
     pub const fn new(
+        ty: TokenType,
         line_number: usize,
         line: &'a str,
         word: &'a str,
     ) -> Self {
-        Self{ line_number, line, word }
+        Self{ ty, line_number, line, word }
     }
 
 }
@@ -71,8 +76,8 @@ impl<'a> ErrCtx<'a> {
 impl<'a> From<&ParsedToken<'a>> for ErrCtx<'a> {
 
     fn from(token: &ParsedToken<'a>) -> Self {
-        let ParsedToken{ line_number, line, word, .. } = *token;
-        Self { line_number, line, word }
+        let ParsedToken{ ty, line_number, line, word, .. } = *token;
+        Self { ty, line_number, line, word }
     }
 
 }
@@ -80,8 +85,8 @@ impl<'a> From<&ParsedToken<'a>> for ErrCtx<'a> {
 impl<'a> From<&Token<'a>> for ErrCtx<'a> {
 
     fn from(token: &Token<'a>) -> Self {
-        let Token{ line_number, line, word, .. } = *token;
-        Self { line_number, line, word }
+        let Token{ ty, line_number, line, word, .. } = *token;
+        Self { ty, line_number, line, word }
     }
 
 }
@@ -89,8 +94,8 @@ impl<'a> From<&Token<'a>> for ErrCtx<'a> {
 impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 
     fn from(token_ref: &TokenRef<'a>) -> Self {
-        let Token{ line_number, line, word, .. } = *token_ref.token();
-        Self { line_number, line, word }
+        let Token{ ty, line_number, line, word, .. } = *token_ref.token();
+        Self { ty, line_number, line, word }
     }
 
 }

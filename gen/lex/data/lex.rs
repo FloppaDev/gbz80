@@ -61,7 +61,7 @@ impl TokenType {
 
             //[[validation]]
 
-            Root|At0|At1 => true
+            Root|At0|At1|Unknown => true
         }
     }
 

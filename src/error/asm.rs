@@ -2,6 +2,7 @@
 use crate::{
     program::fmt,
     error::{ErrCtx, SourceCtx},
+    parse::lex::TokenType::*,
 };
 
 pub trait AsmMsg: Sized + std::fmt::Debug {
@@ -19,15 +20,16 @@ pub struct AsmErr<'a, T: AsmMsg> {
 impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ErrCtx{ line_number, line, word } = self.err_ctx;
+        let ErrCtx{ ty, line_number, line, word } = self.err_ctx;
 
         let text = fmt::strip()
             .debug(&format!("{}\n", self.source_ctx)) 
             .info(&format!("({:?}) ", self.ty))
             .bold(&format!("{} ", self.ty.msg()))
             .faint(&format!("l{}:", line_number ))
-            .bold(&format!("{}\n", word))
-            .faint(&format!("    {}\n", line))
+            .faint(&(if ty == Unknown { "".into() } else { format!("({:?})", ty) }))
+            .bold(&format!(" \"{}\"", word))
+            .faint(&format!("\n    {}\n", line))
             .read();
 
         write!(f, "{}", text)
