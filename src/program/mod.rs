@@ -16,6 +16,7 @@ use crate::{
             macros::Macros,
         },
         read::TokenRef,
+        validation,
     },
     write::{
         ops::OpMap,
@@ -49,6 +50,8 @@ pub fn run() -> Result<(), ()> {
 
     let ast_ref = TokenRef::new(&ast);
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
+
+    validation::run(&ast_ref).map_err(stage::validation)?;
 
     // Find and calculate all constants.
     let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;

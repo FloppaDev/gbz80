@@ -5,6 +5,8 @@ pub mod ast;
 
 pub mod expr;
 
+pub mod validation;
+
 use crate::{
     parse::{
         lex::TokenType,

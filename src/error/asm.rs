@@ -246,6 +246,25 @@ impl AsmMsg for MacroMsg {
 
 }
 
+/// Error variants when validating the Ast.
+#[derive(Debug, Copy, Clone)]
+pub enum ValidationMsg {
+    InvalidParent,
+}
+
+impl AsmMsg for ValidationMsg {
+
+    fn msg(&self) -> &'static str {
+        use ValidationMsg::*;
+
+        match self {
+            InvalidParent =>
+                "Parent of the token is of an unexpected type",
+        }
+    }
+
+}
+
 /// Error variants when looking for an opcode.
 #[derive(Debug, Copy, Clone)]
 pub enum OpMsg {
