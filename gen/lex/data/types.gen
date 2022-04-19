@@ -62,13 +62,18 @@
     validation {
         Children { Expr }       Parents { DefB DefW }
         Children { ..Expr At }  Parents { Expr At ..Expr } 
-        Children { Lit }        Parents { Argument Expr At ..Expr Root }
+
+        Children { Lit }        
+        Parents { 
+            Argument Expr At ..Expr Root 
+            NamedMark AnonMark
+        }
+
         Children { Identifier }
         Parents { 
             DefB DefW DefS 
             Argument Root 
             At Expr ..Expr 
-            NamedMark AnonMark
         }
     }
 

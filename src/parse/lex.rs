@@ -411,13 +411,13 @@ impl TokenType {
             Lit => {
                 matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
                     BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg|
-                    Root)
+                    Root|NamedMark|AnonMark)
             }
 
             Identifier => {
                 matches!(parent_type, DefB|DefW|DefS|Argument|Root|At|Expr|BinAdd|
                     BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
-                    UnNot|UnNeg|NamedMark|AnonMark)
+                    UnNot|UnNeg)
             }
 
             Root|At0|At1|Unknown => true
