@@ -41,7 +41,7 @@ pub enum ConstExpr<'a> {
 
 pub struct Constants<'a> {
     pub constants: Vec<(&'a str, ConstExpr<'a>)>,//TODO rename
-    //TODO process includes before parse.
+    //TODO include data
     includes: HashMap<&'a str, Vec<u8>>,
 }
 
