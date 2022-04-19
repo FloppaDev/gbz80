@@ -2,8 +2,6 @@
 ;TODO force idents to start with a _
 ; there are too many potential conflicts (registers, flags...).
 
-// ;TODO this should throw 2 errors.
-
 #db N0 -10
 #db N1 20 - -10
 #db N2 -3 - 1

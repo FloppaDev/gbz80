@@ -415,7 +415,9 @@ impl TokenType {
             }
 
             Identifier => {
-                matches!(parent_type, DefB|DefW|DefS|Argument|Root)
+                matches!(parent_type, DefB|DefW|DefS|Argument|Root|At|Expr|BinAdd|
+                    BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
+                    UnNot|UnNeg|NamedMark|AnonMark)
             }
 
             Root|At0|At1|Unknown => true
