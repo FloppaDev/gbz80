@@ -41,7 +41,7 @@ impl<'a> Ast<'a> {
         macros: &mut Macros,
     ) -> Result<Self, Vec<AsmErr<'a, AstMsg>>> {
         if tokens.is_empty() {
-            let e = err!(AstMsg, NoTokens, ErrCtx::new(Unknown, 0, "", ""));
+            let e = err!(AstMsg, NoTokens, ErrCtx::new(0, "", ""));
             return Err(vec![e]);
         }
 
@@ -233,10 +233,6 @@ impl<'a> Ast<'a> {
                     let t = Self::empty(Marker, line_number, line);
                     *selection = self.push(*selection, t);
                     *selection = self.push(*selection, token);
-                }
-
-                Repeat => {
-                    self.push(*selection, token);
                 }
 
                 Label => {

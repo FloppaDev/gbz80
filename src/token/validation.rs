@@ -16,11 +16,11 @@ pub fn run<'a>(root: &TokenRef<'a>) -> Result<(), Vec<AsmErr<'a, ValidationMsg>>
     let mut errors = vec![];
     walk(root, &mut errors);
 
-    return if errors.is_empty() {
+    if errors.is_empty() {
         Ok(())
     }else {
         Err(errors)
-    };
+    }
 }
 
 fn walk<'a>(scope: &TokenRef<'a>, errors: &mut Vec<AsmErr<'a, ValidationMsg>>) {

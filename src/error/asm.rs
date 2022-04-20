@@ -2,7 +2,6 @@
 use crate::{
     program::fmt,
     error::{ErrCtx, SourceCtx},
-    parse::lex::TokenType::*,
 };
 
 pub trait AsmMsg: Sized + std::fmt::Debug {
@@ -20,7 +19,7 @@ pub struct AsmErr<'a, T: AsmMsg> {
 impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ErrCtx{ ty, line_number, line, word } = self.err_ctx;
+        let ErrCtx{ line_number, line, word } = self.err_ctx;
 
         let mut strip = fmt::strip()
             .debug(&format!("{}\n", self.source_ctx)) 
@@ -35,15 +34,13 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
             strip = strip
                 .faint(&format!("l{}:", line_number ))
                 .base(&format!("    {}", line_a))
-                .err(&format!("{}", line_word))
+                .err(line_word)
                 .faint(&format!("{}\n", line_b));
         }
 
         else {
-            if line_number == 13 {
-                dbg!(word);
-            }
-            strip = strip.faint(&format!("\n    {}\n", line))
+            //TODO ideally this branch would be a bug.
+            strip = strip.faint(&format!("l{}:    {}\n", line_number, line));
         }
 
         write!(f, "{}", strip.read())
@@ -334,6 +331,7 @@ pub enum ExprMsg {
     TooManyChildren,
     ConstantNotFound,
     CircularDependency,
+    NegativeResult,
 }
 
 impl AsmMsg for ExprMsg {
@@ -353,6 +351,9 @@ impl AsmMsg for ExprMsg {
 
             CircularDependency => 
                 "Infinite loop, the constant's dependencies depend on the constant itself.",
+
+            NegativeResult =>
+                "The result of an expression cannot be negative.",
         }
     }
 

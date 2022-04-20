@@ -83,7 +83,7 @@ fn build_un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, As
         let left = &ast.tokens[left];
         let is_expr = left.ty.parent_type() == Expr;
 
-        if !is_expr || (is_expr && !left.children.is_empty()) {
+        if !is_expr || !left.children.is_empty() {
             return Ok(false);
         }
     }

@@ -1,6 +1,8 @@
 
 //TODO make sure that parents of tokens are still correct after eval.
 
+#![allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+
 use crate::{
     token::{
         Value,
@@ -42,7 +44,7 @@ struct ExprCtx<'a> {
 
 impl<'a> ExprCtx<'a> {
 
-    fn new(constants: &'a Constants<'a>) -> Self {
+    const fn new(constants: &'a Constants<'a>) -> Self {
         Self{
             dependencies: vec![], 
             constants,
@@ -54,10 +56,15 @@ impl<'a> ExprCtx<'a> {
     /// Evaluates the value for an `Expr` token and its content.
     fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
         self.dependencies.push(expr);
-        let mut result = 0;
+        let mut result;
 
         self = match self.eval_scope(expr) {
-            Ok((value, s)) => {
+            Ok((value, mut s)) => {
+                if value < 0 {
+                    s.errors.push(err!(ExprMsg, NegativeResult, expr.into()));
+                    return Err(s);
+                }
+
                 result = value as usize;
                 s
             }
@@ -92,13 +99,11 @@ impl<'a> ExprCtx<'a> {
                 let litx = scope.get(0);            
 
                 match litx.ty() {
-                    LitDec|LitBin|LitHex => {
-                        return Ok((litx.value().as_usize() as isize, self));
-                    }
+                    LitDec|LitBin|LitHex => Ok((litx.value().as_usize() as isize, self)),
 
                     LitStr => {
                         self.errors.push(err!(ExprMsg, StrInExpr, litx.into()));
-                        return Err(self);
+                        Err(self)
                     }
 
                     _ => bug!("Unhandled Lit type in Expr")
@@ -121,11 +126,11 @@ impl<'a> ExprCtx<'a> {
                 match const_expr {
                     ConstExpr::Value(value) => {
                         match value {
-                            Value::Usize(num) => return Ok((*num as isize, self)),
+                            Value::Usize(num) => Ok((*num as isize, self)),
 
                             Value::Str(_) => {
                                 self.errors.push(err!(ExprMsg, StrInExpr, scope.into()));
-                                return Err(self);
+                                Err(self)
                             }
 
                             _ => bug!("Unhandled value type")
@@ -187,11 +192,11 @@ impl<'a> ExprCtx<'a> {
 
                 match s.eval_scope(op.get(1)) {
                     Ok((value, s)) => Ok((f(lhs, value), s)),
-                    Err(s) => return Err(s)
+                    Err(s) => Err(s)
                 }
             }
 
-            Err(s) => return Err(s)
+            Err(s) => Err(s)
         }
     }
 

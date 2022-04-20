@@ -73,7 +73,7 @@ impl<'a> Ast<'a> {
 
             prev = *sibling;
 
-            alone = false
+            alone = false;
         }
 
         None
@@ -85,11 +85,7 @@ impl<'a> Ast<'a> {
 
         while let Some(sibling) = siblings.next() {
             if *sibling == index {
-                return if let Some(right) = siblings.next() {
-                    Some(*right)
-                }else{
-                    None
-                };
+                return siblings.next().copied();
             }
         }
 

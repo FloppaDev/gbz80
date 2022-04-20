@@ -121,11 +121,11 @@ impl<'a> Constants<'a> {
             }
         }
 
-        return if errors.is_empty() {
+        if errors.is_empty() {
             Ok(updates)
         }else {
             Err(errors)
-        };
+        }
     }
 
     pub fn update(&mut self, updates: Vec<(String, usize)>) {
@@ -326,7 +326,7 @@ impl<'a> Constants<'a> {
                 ConstExpr::Value(v) => {
                     match v {
                         Value::Usize(v) => v.to_string(),
-                        Value::Str(v) => v.to_string(),
+                        Value::Str(v) => (*v).to_string(),
                         _ => bug!("Unexpected Value type")
                     }
                 }

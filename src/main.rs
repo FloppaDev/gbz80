@@ -94,3 +94,5 @@ fn main() {
 //TODO forbid LitStr in arithmetics.
 
 //TODO update crate doc
+
+//TODO make sure that all tokens have a word assigned.

@@ -55,13 +55,13 @@ impl TokenType {
     }
 
     /// Checks if the token has a valid parent.
-    pub fn validate(self, parent_type: TokenType) -> bool {
+    pub fn validate(self, parent_type: Self) -> bool {
         match self {
             //[[hierarchy_validation]]
 
             //[[validation]]
 
-            Root|At0|At1|Unknown => true
+            Root|At0|At1 => true
         }
     }
 

@@ -16,7 +16,7 @@ fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
     };
 
     let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
-    eprintln!("{}\n\n{}", msg, ev.iter().enumerate().map(|e| f(e)).collect::<String>());
+    eprintln!("{}\n\n{}", msg, ev.iter().enumerate().map(f).collect::<String>());
 }
 
 macro_rules! stage_err { ($fn:ident, $lit:literal) => {

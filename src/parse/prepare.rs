@@ -38,7 +38,6 @@ pub fn parse<'a>(
         // Error while identifying token type.
         if let Err(err_type) = id_words {
             let err_ctx = ErrCtx::new(
-                Unknown,
                 split.line_number(word.line_index),
                 split.line(word.line_index),
                 word.value);
@@ -72,7 +71,6 @@ pub fn parse<'a>(
                 }
 
                 let err_ctx = ErrCtx::new(
-                    Unknown,
                     split.line_number(word.line_index),
                     split.line(word.line_index),
                     word.value);
@@ -93,7 +91,6 @@ pub fn parse<'a>(
 
             if let Err(err_type) = values {
                 let err_ctx = ErrCtx::new(
-                    Unknown,
                     split.line_number(word.line_index), 
                     split.line(word.line_index), 
                     word_str.as_str());
@@ -106,7 +103,7 @@ pub fn parse<'a>(
 
             let (ty, value) = values.unwrap();
             let parsed_token = ParsedToken { 
-                ty, 
+                ty,
                 value, 
                 line_number: split.line_number(word.line_index),
                 line: split.line(word.line_index), 
@@ -258,11 +255,11 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                 let directive = word.get(1..).ok_or(InvalidDirective)?;
 
                 return match directive {
-                    "db" => Ok(vec![ (DefB, text::no_check("")) ]),
-                    "dw" => Ok(vec![ (DefW, text::no_check("")) ]),
-                    "ds" => Ok(vec![ (DefS, text::no_check("")) ]),
-                    "include" => Ok(vec![ (Include, text::no_check("")) ]),
-                    "macro" => Ok(vec![ (Macro, text::no_check("")) ]),
+                    "db" => Ok(vec![ (DefB, text::no_check(directive)) ]),
+                    "dw" => Ok(vec![ (DefW, text::no_check(directive)) ]),
+                    "ds" => Ok(vec![ (DefS, text::no_check(directive)) ]),
+                    "include" => Ok(vec![ (Include, text::no_check(directive)) ]),
+                    "macro" => Ok(vec![ (Macro, text::no_check(directive)) ]),
                     _ => Err(ParseMsg::InvalidDirectiveIdent)
                 };
             }
