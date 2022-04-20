@@ -204,7 +204,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
     // Find token type by name.
     // Works with registers and instruction names.
     if let Some(ty) = TokenType::get_by_word(word) {
-        return Ok(vec![ (ty, text::no_check("")) ]);
+        return Ok(vec![ (ty, text::no_check(word)) ]);
     }
 
     let c = word.get(0..1).ok_or(Invalid)?.chars().next().unwrap();

@@ -41,6 +41,9 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
         }
 
         else {
+            if line_number == 13 {
+                dbg!(word);
+            }
             strip = strip.faint(&format!("\n    {}\n", line))
         }
 
