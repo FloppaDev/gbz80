@@ -9,58 +9,35 @@ fn stage_err<E: std::fmt::Display + Sized>(e: E, msg: &str) {
 }
 
 fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
+    let f = |(i, e)| if i != ev.len() - 1 {
+        format!("{}\n", e)
+    }else {
+        format!("{}", e)
+    };
+
     let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
-    eprintln!(
-        "{}\n\n{}", 
-        msg, 
-        ev
-            .iter()
-            .enumerate()
-            .map(
-                |(i, e)| if i != ev.len() - 1 {
-                    format!("{}\n", e)
-                }else {
-                    format!("{}", e)
-                })
-            .collect::<String>());
+    eprintln!("{}\n\n{}", msg, ev.iter().enumerate().map(|e| f(e)).collect::<String>());
 }
 
-pub fn clargs<E: std::fmt::Display + Sized>(e: E) {
-    stage_err(e, "Invalid command line arguments.");
-}
+macro_rules! stage_err { ($fn:ident, $lit:literal) => {
+    pub fn $fn<E: std::fmt::Display + Sized>(e: E) {
+        stage_err(e, $lit);
+    }   
+}}
 
-pub fn source<E: std::fmt::Display + Sized>(e: E) {
-    stage_err(e, "Could not read source file.");
-}
+macro_rules! stage_err_vec { ($fn:ident, $lit:literal) => {
+    pub fn $fn<E: std::fmt::Display + Sized>(ev: Vec<E>) {
+        stage_err_vec(ev, $lit);
+    }
+}}
 
-pub fn split<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not split words from source file.");
-}
-
-pub fn parse<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not parse words.");
-}
-
-pub fn ast<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not build the token tree.");
-}
-
-pub fn macros<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not expand macros.");
-}
-
-pub fn ops<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not find instructions.");
-}
-
-pub fn validation<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not validate the token tree.");
-}
-
-pub fn constants<E: std::fmt::Display + Sized>(e: E) {
-    stage_err(e, "Could not collect constants.");
-}
-
-pub fn expressions<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-    stage_err_vec(ev, "Could not evaluate expressions in constants.");
-}
+stage_err!(clargs, "Invalid command line arguments.");
+stage_err!(source, "Could not read source file.");
+stage_err_vec!(split, "Could not split words from source file.");
+stage_err_vec!(parse, "Could not parse words.");
+stage_err_vec!(ast, "Could not build the token tree.");
+stage_err_vec!(macros, "Could not expand macros.");
+stage_err_vec!(ops, "Could not find instructions.");
+stage_err_vec!(validation, "Could not validate the token tree.");
+stage_err!(constants, "Could not collect constants.");
+stage_err_vec!(expressions, "Could not evaluate expressions in constants.");
