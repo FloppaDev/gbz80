@@ -1,4 +1,6 @@
 
+//TODO make sure that parents of tokens are still correct after eval.
+
 use crate::{
     token::{
         Value,
@@ -60,7 +62,7 @@ impl<'a> ExprCtx<'a> {
                 s
             }
 
-            Err(s) => s
+            Err(s) => return Err(s)
         };
 
         self.dependencies.pop();

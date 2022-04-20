@@ -84,7 +84,6 @@ impl<'a> ErrCtx<'a> {
         }
 
         let mut start_byte = word - line;
-        let mut char_index = 0;
 
         for (i, ch) in self.line.chars().enumerate() {
             start_byte -= ch.len_utf8();

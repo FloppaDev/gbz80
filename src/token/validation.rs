@@ -2,7 +2,7 @@
 use crate::{
     token::read::TokenRef,
     parse::{
-        lex::{self, TokenType::*},
+        lex::TokenType::*,
     },
     error::asm::{
         AsmErr, 
