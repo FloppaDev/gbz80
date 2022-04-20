@@ -25,9 +25,7 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
         let mut strip = fmt::strip()
             .debug(&format!("{}\n", self.source_ctx)) 
             .info(&format!("({:?}) ", self.ty))
-            .bold(&format!("{} ", self.ty.msg()))
-            .faint(&format!("l{}:", line_number ))
-            .faint(&(if ty == Unknown { "".into() } else { format!("({:?})", ty) }));
+            .bold(&format!("{}\n", self.ty.msg()));
 
         if let Some(word_start) = self.err_ctx.word_start() {
             let line_a = line.get(..word_start).unwrap();
@@ -35,7 +33,8 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
             let line_b = line.get(word_start+word.len()..).unwrap();
 
             strip = strip
-                .faint(&format!("\n    {}", line_a))
+                .faint(&format!("l{}:", line_number ))
+                .base(&format!("    {}", line_a))
                 .err(&format!("{}", line_word))
                 .faint(&format!("{}\n", line_b));
         }

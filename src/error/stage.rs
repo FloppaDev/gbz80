@@ -5,12 +5,24 @@ use crate::program::fmt;
 
 fn stage_err<E: std::fmt::Display + Sized>(e: E, msg: &str) {
     let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
-    eprintln!("{}\n{}", msg, e);
+    eprintln!("{}\n\n{}", msg, e);
 }
 
 fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
     let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
-    eprintln!("{}\n{}", msg, ev.iter().map(|e| format!("{}\n", e)).collect::<String>());
+    eprintln!(
+        "{}\n\n{}", 
+        msg, 
+        ev
+            .iter()
+            .enumerate()
+            .map(
+                |(i, e)| if i != ev.len() - 1 {
+                    format!("{}\n", e)
+                }else {
+                    format!("{}", e)
+                })
+            .collect::<String>());
 }
 
 pub fn clargs<E: std::fmt::Display + Sized>(e: E) {
