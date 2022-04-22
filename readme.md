@@ -1,3 +1,12 @@
 # gbz80
 
-TODO
+An assembler for the Gameboy written in Rust.
+
+## Features
+
+
+## Reference
+
+
+## Sources
+
