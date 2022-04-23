@@ -39,7 +39,6 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
         }
 
         else {
-            //TODO ideally this branch would be a bug.
             strip = strip.faint(&format!("l{}:    {}\n", line_number, line));
         }
 

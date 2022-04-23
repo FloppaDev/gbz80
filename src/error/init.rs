@@ -10,8 +10,6 @@ fn ln_if(text: &str) -> String {
     };
 }
 
-//TODO impl fmt properly
-
 #[derive(Debug, Copy, Clone)]
 /// Error variants when parsing command line arguments.
 pub enum ClargsErrType {

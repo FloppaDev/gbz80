@@ -331,12 +331,7 @@ impl<'a> Constants<'a> {
                     }
                 }
 
-                //TODO remove {
-                    ConstExpr::Expr(expr) => expr.line().to_string(),
-                    ConstExpr::Mark => "Mark".into(),
-                //}
-                //TODO And uncomment:
-                //_ => bug!("Unexpected ConstExpr type")
+                _ => bug!("Unexpected ConstExpr type")
             };
 
             println!("{}: {}", key, value_str);

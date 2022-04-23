@@ -87,12 +87,7 @@ impl<'a> ExprCtx<'a> {
     }
 
     fn eval_scope(mut self, scope: &'a TokenRef<'a>) -> Result<(isize, Self), Self> {
-        if scope.children().len() != 1 {
-            self.errors.push(err!(ExprMsg, TooManyChildren, scope.into()));
-            return Err(self);
-        }
-
-        let child = scope.children()[0];
+        let children = scope.children();
 
         match scope.ty() {
             Lit => {
@@ -156,24 +151,25 @@ impl<'a> ExprCtx<'a> {
             }
 
             _ => {
-                // A value without an operator parent must be an only-child.
-                // e.g.     #db X0 10
-                //          #db X1 10 + (5)
-                // error:   #db x2 1 2 3
-                let not_op = matches!(scope.ty(), At|Expr);
-                let is_value = matches!(child.ty(), Lit|Identifier);
+                if let Some(child) = children.get(0) {
+                    // A value without an operator parent must be an only-child.
+                    // e.g.     #db X0 10
+                    //          #db X1 10 + (5)
+                    // error:   #db x2 1 2 3
+                    let not_op = matches!(scope.ty(), At|Expr);
+                    let is_value = matches!(child.ty(), Lit|Identifier);
 
+                    if (not_op && is_value) || child.ty() == At {
+                        return self.eval_scope(child);
+                    }
 
-                if (not_op && is_value) || child.ty() == At {
-                    return self.eval_scope(child);
-                }
+                    else if child.ty().parent_type() == Expr {
+                        return self.eval_op(child);
+                    }
 
-                else if child.ty().parent_type() == Expr {
-                    return self.eval_op(child);
-                }
-
-                else if scope.ty().parent_type() == Expr {
-                    return self.eval_op(scope);
+                    else if scope.ty().parent_type() == Expr {
+                        return self.eval_op(scope);
+                    }
                 }
 
                 bug!("Unexpected token in expression.");
