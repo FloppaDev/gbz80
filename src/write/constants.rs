@@ -322,16 +322,14 @@ impl<'a> Constants<'a> {
         title("Constant values");
 
         for (key, value) in &self.constants {
-            let value_str = match value {
-                ConstExpr::Value(v) => {
-                    match v {
-                        Value::Usize(v) => v.to_string(),
-                        Value::Str(v) => (*v).to_string(),
-                        _ => bug!("Unexpected Value type")
-                    }
+            let value_str = if let ConstExpr::Value(v) = value {
+                match v {
+                    Value::Usize(v) => v.to_string(),
+                    Value::Str(v) => (*v).to_string(),
+                    _ => bug!("Unexpected Value type")
                 }
-
-                _ => bug!("Unexpected ConstExpr type")
+            }else {
+                bug!("Unexpected ConstExpr type")
             };
 
             println!("{}: {}", key, value_str);

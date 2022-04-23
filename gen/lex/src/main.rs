@@ -319,6 +319,6 @@ fn fmt_validation(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usi
             break;
         }
 
-        out.push_str("\n");
+        out.push('\n');
     }
 }
