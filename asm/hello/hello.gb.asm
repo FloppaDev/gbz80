@@ -228,7 +228,7 @@
 ;Font (1bpp / Black & White)										
 #dw BITMAP_FONT_SIZE BitmapFontEnd - BitmapFont
 :BitmapFont
-		incbin "Font96.FNT"	    ;Font bitmap,
+		#include "Font96.FNT"	    ;Font bitmap,
 :BitmapFontEnd				    ; this is common to all systems
 
 

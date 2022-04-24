@@ -20,8 +20,6 @@ fn main() {
     let split = split(text);
     let tree = Tree::new(&split);
 
-    //tree.debug();
-
     build(&tree);
 }
 
