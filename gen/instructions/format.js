@@ -32,6 +32,8 @@ for (instr of INSTRUCTIONS) {
 
     if (instr.name == 'prefix') continue;
 
+    let c_is_flag = ['call', 'jp', 'jr', 'ret'].includes(instr.name);
+
     if (name != instr.name) {
         if ((instr.cb && initCb) || (!instr.cb && init)) {
             curOpStr += matchBranchEnd;
@@ -57,7 +59,7 @@ for (instr of INSTRUCTIONS) {
     let args = instr.args.map(arg => {
         let at = false;
 
-        if (['C', 'NC', 'Z', 'NZ'].includes(arg)) {
+        if (['NC', 'Z', 'NZ'].includes(arg) || (arg == 'C' && c_is_flag)) {
             return `Arg::Token(Flag${pascal(arg)})`;
         }
 
