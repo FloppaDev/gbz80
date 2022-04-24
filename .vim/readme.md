@@ -2,5 +2,5 @@
 
 ## Installation
 
-Copy 'syntax/gb.vim' into '~/.vim/syntax/
-Copy 'ftdetect/gb.vim into '~/.vim/ftdetect/'
+Copy 'syntax/gb.vim' into '\~/.vim/syntax/  
+Copy 'ftdetect/gb.vim into '\~/.vim/ftdetect/'
