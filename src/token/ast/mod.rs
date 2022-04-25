@@ -171,7 +171,13 @@ impl<'a> Ast<'a> {
             }
 
             p @ (Register|Flag|Lit) => {
-                self.cascade(*selection, &[p], token);
+                if self.type_of(*selection) == Instruction {
+                    self.cascade(*selection, &[Argument, p], token);
+                }
+
+                else {
+                    self.cascade(*selection, &[p], token);
+                }
             }
 
             Macro => {
@@ -188,13 +194,19 @@ impl<'a> Ast<'a> {
 
             _ => match token.ty {
                 Identifier => {
-                    self.cascade(*selection, &[], token);
-                    
-                    // TODO check what DefS does. It should not be an Expr
-                    // and should accept only a LitStr.
-                    if matches!(self.type_of(*selection), DefB|DefW) {
-                        let t = Self::empty(Expr, line_number, line);
-                        *selection = self.push(*selection, t);
+                    if self.type_of(*selection) == Instruction {
+                        self.cascade(*selection, &[Argument], token);
+                    }
+
+                    else {
+                        self.cascade(*selection, &[], token);
+                        
+                        // TODO check what DefS does. It should not be an Expr
+                        // and should accept only a LitStr.
+                        if matches!(self.type_of(*selection), DefB|DefW) {
+                            let t = Self::empty(Expr, line_number, line);
+                            *selection = self.push(*selection, t);
+                        }
                     }
                 }
 
