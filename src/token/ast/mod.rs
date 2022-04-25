@@ -212,8 +212,15 @@ impl<'a> Ast<'a> {
 
                 // Open parenthesis.
                 At0 => {
-                    let t = Self::empty(At, line_number, line);
-                    *selection = self.push(*selection, t);
+                    if self.type_of(*selection) == Instruction {
+                        //TODO completely replace push by cascade.
+                        self.cascade(*selection, &[Argument, At], token);
+                    }
+
+                    else {
+                        let t = Self::empty(At, line_number, line);
+                        *selection = self.push(*selection, t);
+                    }
                 }
 
                 // Close parenthesis.
