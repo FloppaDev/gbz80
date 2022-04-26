@@ -53,6 +53,18 @@ impl Constant {
 
 }
 
+pub fn ty(ty: TokenType) -> Arg {
+    Arg::Token(ty)
+}
+
+pub fn at(arg: Arg) -> Arg {
+    Arg::At(Box::new(arg))
+}
+
+pub fn imm(c: Constant) -> Arg {
+    Arg::Const(c)
+}
+
 #[derive(Debug)]
 pub enum Arg {
     /// Address.

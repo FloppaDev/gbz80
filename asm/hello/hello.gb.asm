@@ -183,7 +183,7 @@
 	push af
         di
 :LCDWaitAgain
-        ld a (&FF41)  		        ;STAT - LCD Status (R/W)
+        ldh a (&41)  		        ;STAT - LCD Status (R/W)
 			                        ;-LOVHCMM
         and %0000_0010		        ;MM=video mode (0/1 =Vram available)  		
         jr NZ LCDWaitAgain 

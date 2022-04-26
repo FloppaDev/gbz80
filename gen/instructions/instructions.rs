@@ -1,7 +1,7 @@
 const instructions_rs = `\
 \
 use crate::{
-    write::ops::{OpCode, Arg, Constant::*},
+    write::ops::{OpCode, ty, imm, at, Constant::*},
     parse::lex::TokenType::*,
     token::{
         read::TokenRef,

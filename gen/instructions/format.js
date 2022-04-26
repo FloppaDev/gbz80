@@ -60,11 +60,11 @@ for (instr of INSTRUCTIONS) {
         let at = false;
 
         if (['NC', 'Z', 'NZ'].includes(arg) || (arg == 'C' && c_is_flag)) {
-            return `Arg::Token(Flag${pascal(arg)})`;
+            return `ty(Flag${pascal(arg)})`;
         }
 
         if (instr.name == 'rst') {
-            return `Arg::Const(Word)`;
+            return `imm(Word)`;
         }
 
         if (arg.includes('(')) {
@@ -85,17 +85,17 @@ for (instr of INSTRUCTIONS) {
             }
 
             return at 
-                ? `Arg::At(Box::new(Arg::Const(${ty})))` 
-                : `Arg::Const(${ty})`;
+                ? `at(imm(${ty}))` 
+                : `imm(${ty})`;
         }
 
         if (!isNaN(parseInt(arg))) {
-            return 'Arg::Const(Byte)';
+            return 'imm(Byte)';
         }
 
         return at 
-            ? `Arg::At(Box::new(Arg::Token(${pascal(arg)})))` 
-            : `Arg::Token(${pascal(arg)})`;
+            ? `at(ty(${pascal(arg)}))` 
+            : `ty(${pascal(arg)})`;
     }).join(', ');
 
     curOpStr += `${ttt}${tt}(${instr.len}, ${instr.code}, vec![${args}]),\n`;
