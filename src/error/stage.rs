@@ -4,8 +4,8 @@
 use crate::program::fmt;
 
 fn stage_err<E: std::fmt::Display + Sized>(e: E, msg: &str) {
-    let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
-    eprintln!("{}\n\n{}", msg, e);
+    let msg = fmt::strip().err("Compilation Failed.\n\n    ").info(msg).read();
+    eprintln!("{}\n{}\n", e, msg);
 }
 
 fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
@@ -15,8 +15,14 @@ fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
         format!("{}", e)
     };
 
-    let msg = fmt::strip().err("Compilation Failed. ").info(msg).read();
-    eprintln!("{}\n\n{}", msg, ev.iter().enumerate().map(f).collect::<String>());
+    let msg = fmt::strip()
+        .err("Build failed with")
+        .bold(&format!(" {} ", ev.len()))
+        .err("errors:\n\n    ")
+        .info(msg)
+        .read();
+
+    eprintln!("{}\n{}\n", ev.iter().enumerate().map(f).collect::<String>(), msg);
 }
 
 macro_rules! stage_err { ($fn:ident, $lit:literal) => {
