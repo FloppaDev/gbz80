@@ -171,12 +171,20 @@ impl<'a> Ast<'a> {
             }
 
             p @ (Register|Flag|Lit) => {
+                if self.type_of(*selection) == Argument {
+                    *selection = self.parent_of(*selection);
+                }
+
                 if self.type_of(*selection) == Instruction {
                     self.cascade(*selection, &[Argument, p], token);
                 }
 
                 else {
                     self.cascade(*selection, &[p], token);
+
+                    if self.type_of(*selection) == At {
+                        *selection = self.parent_of(*selection);
+                    }
                 }
             }
 
@@ -194,16 +202,25 @@ impl<'a> Ast<'a> {
 
             _ => match token.ty {
                 Identifier => {
+                    if self.type_of(*selection) == Argument {
+                        *selection = self.parent_of(*selection);
+                    }
+
                     if self.type_of(*selection) == Instruction {
                         self.cascade(*selection, &[Argument], token);
                     }
 
                     else {
+                        //TODO completely replace push by cascade.
                         self.cascade(*selection, &[], token);
+
+                        if self.type_of(*selection) == At {
+                            *selection = self.parent_of(*selection);
+                        }
                         
                         // TODO check what DefS does. It should not be an Expr
                         // and should accept only a LitStr.
-                        if matches!(self.type_of(*selection), DefB|DefW) {
+                        else if matches!(self.type_of(*selection), DefB|DefW) {
                             let t = Self::empty(Expr, line_number, line);
                             *selection = self.push(*selection, t);
                         }
@@ -212,14 +229,16 @@ impl<'a> Ast<'a> {
 
                 // Open parenthesis.
                 At0 => {
+                    let at = Self::empty(At, line_number, line);
+
                     if self.type_of(*selection) == Instruction {
-                        //TODO completely replace push by cascade.
-                        self.cascade(*selection, &[Argument, At], token);
+                        let arg = Self::empty(Argument, line_number, line);
+                        *selection = self.push(*selection, arg);
+                        *selection = self.push(*selection, at);
                     }
 
                     else {
-                        let t = Self::empty(At, line_number, line);
-                        *selection = self.push(*selection, t);
+                        *selection = self.push(*selection, at);
                     }
                 }
 
