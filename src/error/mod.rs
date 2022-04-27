@@ -80,12 +80,13 @@ impl<'a> ErrCtx<'a> {
             return None;
         }
 
-        let mut start_byte = word - line;
+        let start_byte = word - line;
+        let mut bytes = 0;
 
         for (i, ch) in self.line.chars().enumerate() {
-            start_byte -= ch.len_utf8();
+            bytes += ch.len_utf8();
 
-            if start_byte == 0 {
+            if bytes >= start_byte {
                 return Some(i+1);
             }
         }

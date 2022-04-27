@@ -200,12 +200,14 @@ impl OpCode {
         cb: bool, 
         ops: Vec<(u8, u8, Vec<Arg>)>
     ) -> Option<Self> {
-        let instr_children = instruction.children();
+        let instr_children = instruction.children()[1..].iter()
+            .map(|c| c.get(0))
+            .collect::<Vec<_>>();
 
         for op in ops {
             let (len, code, op_args) = op;
 
-            if Self::cmp_args(&instr_children[1..], &op_args) {
+            if Self::cmp_args(&instr_children, &op_args) {
                 let opcode = Self{ cb, code, len };
 
                 return Some(opcode);     

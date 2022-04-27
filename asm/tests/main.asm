@@ -47,7 +47,7 @@
     add (hl)
 
 :ScreenOff              ;Turn off the screen so we can define our patterns
-    ld a (&FF44)	;Loop until we are in VBlank
+    ldh a (&44)	        ;Loop until we are in VBlank
     cp 145              ;Is display on scan line 145 yet?
     jr NZ ScreenOff
     
