@@ -19,10 +19,10 @@ pub struct AsmErr<'a, T: AsmMsg> {
 impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ErrCtx{ line_number, line, word } = self.err_ctx;
+        let ErrCtx{ ty, line_number, line, word } = self.err_ctx;
 
         let mut strip = fmt::strip()
-            .debug(&format!("{}\n", self.source_ctx)) 
+            .debug(&format!("{} ({:?})\n", self.source_ctx, ty)) 
             .info(&format!("({:?}) ", self.ty))
             .bold(&format!("{}\n", self.ty.msg()));
 

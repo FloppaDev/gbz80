@@ -38,6 +38,7 @@ pub fn parse<'a>(
         // Error while identifying token type.
         if let Err(err_type) = id_words {
             let err_ctx = ErrCtx::new(
+                Root,
                 split.line_number(word.line_index),
                 split.line(word.line_index),
                 word.value);
@@ -71,6 +72,7 @@ pub fn parse<'a>(
                 }
 
                 let err_ctx = ErrCtx::new(
+                    Root,
                     split.line_number(word.line_index),
                     split.line(word.line_index),
                     word.value);
@@ -91,6 +93,7 @@ pub fn parse<'a>(
 
             if let Err(err_type) = values {
                 let err_ctx = ErrCtx::new(
+                    Root,
                     split.line_number(word.line_index), 
                     split.line(word.line_index), 
                     word_str.as_str());
