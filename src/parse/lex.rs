@@ -378,7 +378,7 @@ impl TokenType {
             104 => Label,
             105 => Repeat,
             106 => MacroCall,
-            _ => bug!()
+            _ => panic!()
         }
     }
 

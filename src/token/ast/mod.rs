@@ -188,7 +188,7 @@ impl<'a> Ast<'a> {
                 }
 
                 if matches!(self.type_of(*selection), AnonMark|NamedMark) {
-                    if p == Lit {
+                    if p == Lit || cfg!(test) {
                         *selection = self.parent_of(*selection);
                         *selection = self.parent_of(*selection);
                     }

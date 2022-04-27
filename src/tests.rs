@@ -7,8 +7,7 @@ use crate::{
     },
     token::{
         Value,
-        ast::Ast,
-        macros::Macros,
+        ast::{ Ast, macros::Macros, },
     },
 };
 

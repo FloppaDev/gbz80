@@ -65,7 +65,7 @@ fn build(tree: &Tree) {
     at_str.push_str(&format!("const COUNT: usize = {};\n\n", len));
     at_str.push_str("match index % COUNT {\n");
     at_str.push_str(&at_arms);
-    at_str.push_str("    _ => bug!()\n}");
+    at_str.push_str("    _ => panic!()\n}");
     at_str = tab(2, &at_str);
 
     let mut char_words_str = String::new();
