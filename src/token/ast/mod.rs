@@ -60,7 +60,7 @@ impl<'a> Ast<'a> {
             // `NamedMark` and `AnonMark` need one child.
             if matches!(ast.type_of(selection), AnonMark|NamedMark)
             && ast.tokens[selection].children.len() == 1 {
-                selection = ast.parent_of(selection);
+                ast.up(&mut selection);
             }
 
             // Is the token on a new line.
@@ -116,7 +116,7 @@ impl<'a> Ast<'a> {
                     // If it's a macro declaration, add a new macro body.
                     Macro => {
                         let t = Self::empty(MacroBody, line_number, line);
-                        *selection = self.push(*selection, t);        
+                        self.cascade(selection, &[], t, Some(0));        
 
                         break;
                     }
@@ -124,13 +124,13 @@ impl<'a> Ast<'a> {
                     At => {
                         let e = err!(AstMsg, UnmatchedParen, err_ctx);
                         errors.push(e);
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
                     }
                     
                     NamedMark|AnonMark if self.tokens[*selection].children.is_empty() => {
                         let e = err!(AstMsg, MarkWithoutLiteral, err_ctx);
                         errors.push(e);
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
                     }
 
                     Expr => {
@@ -138,11 +138,11 @@ impl<'a> Ast<'a> {
                             errors.push(e);
                         }
 
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
                     }
 
                     _ => {
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
                     }
                 }
             }
@@ -166,31 +166,30 @@ impl<'a> Ast<'a> {
 
         // Match parent type of the token.
         match token.ty.parent_type() {
-            p @ InstrName => {
-                *selection = self.cascade(*selection, &[Instruction, p], token);
-            }
+            p @ InstrName =>
+                self.cascade(selection, &[Instruction, p], token, Some(2)),
 
             p @ (Register|Flag|Lit) => {
                 if self.type_of(*selection) == Argument {
-                    *selection = self.parent_of(*selection);
+                    self.up(selection);
                 }
 
                 if self.type_of(*selection) == Instruction {
-                    self.cascade(*selection, &[Argument, p], token);
+                    self.cascade(selection, &[Argument, p], token, None);
                 }
 
                 else {
-                    self.cascade(*selection, &[p], token);
+                    self.cascade(selection, &[p], token, None);
 
                     if self.type_of(*selection) == At {
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
                     }
                 }
 
                 if matches!(self.type_of(*selection), AnonMark|NamedMark) {
                     if p == Lit || cfg!(test) {
-                        *selection = self.parent_of(*selection);
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
+                        self.up(selection);
                     }
 
                     else {
@@ -202,38 +201,35 @@ impl<'a> Ast<'a> {
             Macro => {
                 // Is it a macro call? 
                 if token.ty == MacroIdent && self.type_of(*selection) != Macro {
-                    *selection = self.cascade(*selection, &[MacroCall], token);
+                    self.cascade(selection, &[MacroCall], token, Some(1));
                     macros.calls.push(*selection);
                 }
 
                 else {
-                    self.push(*selection, token);
+                    self.cascade(selection, &[], token, None);
                 }
             }
 
             _ => match token.ty {
                 Identifier => {
                     if self.type_of(*selection) == Argument {
-                        *selection = self.parent_of(*selection);
+                        self.up(selection);
                     }
 
                     if self.type_of(*selection) == Instruction {
-                        self.cascade(*selection, &[Argument], token);
+                        self.cascade(selection, &[Argument], token, None);
                     }
 
                     else {
-                        //TODO completely replace push by cascade.
-                        self.cascade(*selection, &[], token);
+                        self.cascade(selection, &[], token, None);
 
                         if self.type_of(*selection) == At {
-                            *selection = self.parent_of(*selection);
+                            self.up(selection);
                         }
                         
-                        // TODO check what DefS does. It should not be an Expr
-                        // and should accept only a LitStr.
                         else if matches!(self.type_of(*selection), DefB|DefW) {
                             let t = Self::empty(Expr, line_number, line);
-                            *selection = self.push(*selection, t);
+                            self.cascade(selection, &[], t, Some(0));
                         }
                     }
                 }
@@ -243,18 +239,16 @@ impl<'a> Ast<'a> {
                     let at = Self::empty(At, line_number, line);
 
                     if self.type_of(*selection) == Instruction {
-                        let arg = Self::empty(Argument, line_number, line);
-                        *selection = self.push(*selection, arg);
-                        *selection = self.push(*selection, at);
+                        self.cascade(selection, &[Argument], at, Some(0));
                     }
 
                     else {
-                        *selection = self.push(*selection, at);
+                        self.cascade(selection, &[], at, Some(0));
                     }
                 }
 
                 // Close parenthesis.
-                At1 => *selection = self.parent_of(*selection),
+                At1 => self.up(selection),
 
                 // Macro declaration.
                 Macro => {
@@ -262,35 +256,28 @@ impl<'a> Ast<'a> {
                     // (Which starts on the second line of the declaration)
                     if self.type_of(*selection) == MacroBody {
                         // Close macro body and macro declaration. 
-                        *selection = self.parent_of(self.parent_of(*selection));
+                        self.up(selection);
+                        self.up(selection);
                     }
 
                     else {
                         let t = Self::empty(Macro, line_number, line);
-                        *selection = self.push(*selection, t);
+                        self.cascade(selection, &[], t, Some(0));
                         macros.decls.push(*selection);
                     }
                 }
 
-                DefB|DefW|Include => {
-                    let t = Self::empty(Directive, line_number, line);
-                    *selection = self.push(*selection, t);
-                    *selection = self.push(*selection, token);
-                }
+                DefB|DefW|Include => 
+                    self.cascade(selection, &[Directive], token, Some(0)),
 
-                AnonMark|NamedMark => {
-                    let t = Self::empty(Marker, line_number, line);
-                    *selection = self.push(*selection, t);
-                    *selection = self.push(*selection, token);
-                }
+                AnonMark|NamedMark => 
+                    self.cascade(selection, &[Marker], token, Some(0)),
 
-                Label => {
-                    self.cascade(*selection, &[Marker], token);
-                }
+                Label => 
+                    self.cascade(selection, &[Marker], token, None),
 
-                _ => {
-                    self.push(*selection, token);
-                }
+                _ => 
+                    self.cascade(selection, &[], token, None),
             }
         }
     }

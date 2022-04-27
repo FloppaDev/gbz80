@@ -20,7 +20,7 @@ fn split() {
 
     for _ in 0..100 {
         let input = rand_file(); 
-        let split = Split::new(&input, &symbols);
+        let _ = Split::new(&input, &symbols);
     }
 }
 
@@ -86,7 +86,7 @@ fn ast() {
             }
         }
 
-        let ast = Ast::new(tokens, &mut macros);
+        let _ = Ast::new(tokens, &mut macros);
     }
 }
 

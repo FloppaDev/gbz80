@@ -14,8 +14,8 @@ use crate::{
 
 impl<'a> Ast<'a> {
 
-    /// Push a new token as child into destination and return its index.
-    pub fn push(&mut self, dest: usize, token: ParsedToken<'a>) -> usize {
+    /// Push a new token as child into destination.
+    fn push(&mut self, dest: usize, token: ParsedToken<'a>) -> usize {
         // Create the Token
         let index = self.tokens.len();
         let token = Token::new(token, index, dest);
@@ -28,30 +28,43 @@ impl<'a> Ast<'a> {
     }
 
     /// Push new tokens of parent types, and parent them in a cascade with 'token' as final child. 
-    /// Parent tokens inherit line data from 'token' but not the data key.
+    /// Parent tokens inherit line data from 'token'.
+    /// Optionaly sets `dest` to the index of one of the pushed tokens.
     pub fn cascade(
         &mut self, 
-        dest: usize, 
+        dest: &mut usize, 
         parent_types: &[TokenType], 
-        token: ParsedToken<'a>
-    ) -> usize {
+        token: ParsedToken<'a>,
+        select_up: Option<usize>,
+    ) {
         let ParsedToken{ line_number, line, .. } = token;
 
-        let mut selection = dest;
-        let mut oldest_parent = dest;
+        let mut selection = *dest;
+        let mut inserts = vec![];
 
         for ty in parent_types {
             let parent = Self::empty(*ty, line_number, line);
             selection = self.push(selection, parent);
-
-            if oldest_parent== dest {
-                oldest_parent = selection;
-            }
+            inserts.push(self.tokens.len()-1);
         }
 
         self.push(selection, token);
+        inserts.push(self.tokens.len()-1);
 
-        oldest_parent 
+        if let Some(select_up) = select_up {
+            if let Some(i) = inserts.iter().rev().nth(select_up) {
+                *dest = *i;
+            }
+
+            else {
+                bug!("Trying to select a parent token too far up");
+            }
+        }
+    }
+
+    /// Sets index to the index of the parent.
+    pub fn up(&mut self, index: &mut usize) {
+        *index = self.parent_of(*index);
     }
 
     /// Parent of index.
