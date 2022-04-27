@@ -30,7 +30,7 @@
             }
 
             Directive {
-                DefB DefW DefS
+                DefB DefW
                 Include
                 Macro { MacroIdent MacroArg MacroBody }
             }
@@ -70,7 +70,7 @@
 
         Children { Identifier }
         Parents { 
-            DefB DefW DefS 
+            DefB DefW
             Argument Root 
             At Expr ..Expr 
         }

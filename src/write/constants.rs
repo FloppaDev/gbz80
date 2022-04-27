@@ -183,13 +183,6 @@ impl<'a> Constants<'a> {
                             self.insert(ident, value).map_err(|_| err)?;
                         }
 
-                        DefS => {
-                            let ident = child.get(0).value().as_str();
-                            let str_value = child.get(0).value();
-                            let value = ConstExpr::Value(*str_value);
-                            self.insert(ident, value).map_err(|_| err)?;
-                        }
-
                         Include => {
                             let path = child.get(0).get(0).value().as_str();
                             

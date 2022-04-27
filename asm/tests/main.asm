@@ -1,6 +1,5 @@
 ; Arithmetic expressions are only allowed in #def directives.
 #db FOO 10
-#ds BAR "Hey that's a string"
 #dw BAZ &10AB
 #db FLAGS %0110_1010
 

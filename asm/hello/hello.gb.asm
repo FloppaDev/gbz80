@@ -119,7 +119,6 @@
 	call PrintChar
 	jr PrintString
 
-;TODO #ds is useless
 :Message
     "Hello World 323!"
     255

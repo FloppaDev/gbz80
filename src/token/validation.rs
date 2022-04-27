@@ -26,6 +26,9 @@ pub fn run<'a>(root: &TokenRef<'a>) -> Result<(), Vec<AsmErr<'a, ValidationMsg>>
 fn walk<'a>(scope: &TokenRef<'a>, errors: &mut Vec<AsmErr<'a, ValidationMsg>>) {
     for child in scope.children() {
         if !child.ty().validate(scope.ty()) {
+            if child.line_number() == 3 {
+                println!("{:?}:{:?}", scope.ty(), child.ty());
+            }
             errors.push(err!(ValidationMsg, InvalidParent, child.into())); 
         }
 

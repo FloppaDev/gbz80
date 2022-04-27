@@ -50,7 +50,7 @@ pub fn parse<'a>(
 
         let mut id_words = id_words.unwrap();
 
-        if matches!(id_words[0].0, DefB|DefW|DefS) {
+        if matches!(id_words[0].0, DefB|DefW) {
             if let Some(word) = words.next() {
                 let mut is_ident = false;
                 let mut is_allowed = false;
@@ -257,7 +257,6 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                 return match directive {
                     "db" => Ok(vec![ (DefB, text::no_check(directive)) ]),
                     "dw" => Ok(vec![ (DefW, text::no_check(directive)) ]),
-                    "ds" => Ok(vec![ (DefS, text::no_check(directive)) ]),
                     "include" => Ok(vec![ (Include, text::no_check(directive)) ]),
                     "macro" => Ok(vec![ (Macro, text::no_check(directive)) ]),
                     _ => Err(ParseMsg::InvalidDirectiveIdent)
