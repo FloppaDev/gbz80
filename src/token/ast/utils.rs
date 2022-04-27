@@ -5,6 +5,10 @@ use crate::{
         Value, ParsedToken, Token,
         ast::Ast,
     }, 
+};
+
+#[cfg(debug_assertions)]
+use crate::{
     program::fmt::title,
 };
 
