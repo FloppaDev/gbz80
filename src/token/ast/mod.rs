@@ -186,6 +186,17 @@ impl<'a> Ast<'a> {
                         *selection = self.parent_of(*selection);
                     }
                 }
+
+                if matches!(self.type_of(*selection), AnonMark|NamedMark) {
+                    if p == Lit {
+                        *selection = self.parent_of(*selection);
+                        *selection = self.parent_of(*selection);
+                    }
+
+                    else {
+                        bug!("Invalid token after Marker");
+                    }
+                }
             }
 
             Macro => {
@@ -274,9 +285,7 @@ impl<'a> Ast<'a> {
                 }
 
                 Label => {
-                    let t = Self::empty(Marker, line_number, line);
-                    let marker = self.push(*selection, t);
-                    self.push(marker, token);
+                    self.cascade(*selection, &[Marker], token);
                 }
 
                 _ => {
