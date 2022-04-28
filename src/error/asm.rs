@@ -327,7 +327,6 @@ impl AsmMsg for ConstantsMsg {
 #[derive(Debug, Copy, Clone)]
 pub enum ExprMsg {
     StrInExpr,
-    TooManyChildren,
     ConstantNotFound,
     CircularDependency,
     NegativeResult,
@@ -341,9 +340,6 @@ impl AsmMsg for ExprMsg {
         match self {
             StrInExpr =>
                 "String literal not allowed in expressions, unless it is completely alone.",
-
-            TooManyChildren =>
-                "The token is not alone in its scope.",
 
             ConstantNotFound =>
                 "The constant does not exist.",

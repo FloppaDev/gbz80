@@ -17,7 +17,7 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum Constant {
-    BitN(usize), //TODO bits are using Byte rn.
+    BitN(usize),
     Byte,
     Word,
 }
@@ -63,6 +63,10 @@ pub fn at(arg: Arg) -> Arg {
 
 pub fn imm(c: Constant) -> Arg {
     Arg::Const(c)
+}
+
+pub fn bit(n: usize) -> Arg {
+    Arg::Const(Constant::BitN(n))
 }
 
 #[derive(Debug)]

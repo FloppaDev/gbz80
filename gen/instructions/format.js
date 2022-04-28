@@ -67,6 +67,10 @@ for (instr of INSTRUCTIONS) {
             return `imm(Word)`;
         }
 
+        if(["0", "1", "2", "3", "4", "5", "6", "7"].includes(arg)) {
+            return `bit(${arg})`;
+        }
+
         if (arg.includes('(')) {
             let e = arg.length - 1;
             at = true;
