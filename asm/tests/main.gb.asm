@@ -48,12 +48,12 @@
     add (hl)
 
 :ScreenOff              ;Turn off the screen so we can define our patterns
-    ldh a (&44)	        ;Loop until we are in VBlank
+    ldh a (&44)         ;Loop until we are in VBlank
     cp 145              ;Is display on scan line 145 yet?
     jr NZ ScreenOff
     
-    ld hl &FF40		    ;LCDC - LCD Control (R/W)
-    res 7 (hl)      	;Turn off the screen
+    ld hl &FF40         ;LCDC - LCD Control (R/W)
+    res 7 (hl)          ;Turn off the screen
 
 ;-------------------------------------------------------------------
 

@@ -49,7 +49,7 @@
         Directive ..Directive
         InstrName ..InstrName 
         Argument 
-        Register ..Register 
+        ..Register 
         Flag ..Flag 
         ..Lit
         Marker ..Marker
@@ -59,21 +59,12 @@
     }
 
     validation {
-        Children { Expr }       Parents { DefB DefW }
-        Children { ..Expr At }  Parents { Expr At ..Expr } 
-
-        Children { Lit }        
-        Parents { 
-            Argument Expr At ..Expr Root 
-            NamedMark AnonMark
-        }
-
-        Children { Identifier }
-        Parents { 
-            DefB DefW
-            Argument Root 
-            At Expr ..Expr 
-        }
+        Children { Register } Parents { Argument At }
+        Children { Expr } Parents { DefB DefW }
+        Children { ..Expr } Parents { Expr At ..Expr } 
+        Children { At } Parents { Argument Expr At ..Expr } 
+        Children { Lit } Parents { Argument Expr At ..Expr Root NamedMark AnonMark Include }
+        Children { Identifier } Parents { DefB DefW Argument Root At Expr ..Expr }
     }
 
     // Those are identified by their name lowercased.
