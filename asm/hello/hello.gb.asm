@@ -50,7 +50,7 @@
 	xor a					
 	ld hl &FF42				
 	ldi	(hl) a				;FF42: SCY - Tile Scroll Y
-	ld	(hl) a				;FF43: SCX - Tile Scroll X
+	ld (hl) a				;FF43: SCX - Tile Scroll X
 	
 	ld (NEXT_CHAR_X) a		;Set cursor to pos 0,0
 	ld (NEXT_CHAR_Y) a
@@ -119,9 +119,7 @@
 	call PrintChar
 	jr PrintString
 
-:Message
-    "Hello World 323!"
-    255
+:Message "Hello World 323!" 255
 	
 :PrintChar
 	push hl
@@ -228,7 +226,4 @@
 #dw BITMAP_FONT_SIZE BitmapFontEnd - BitmapFont
 :BitmapFont
 		#include "Font96.FNT"	    ;Font bitmap,
-:BitmapFontEnd				    ; this is common to all systems
-
-
-	
+:BitmapFontEnd

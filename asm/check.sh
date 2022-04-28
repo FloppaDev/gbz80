@@ -9,11 +9,9 @@ close="$a-----------------------------------------------------------------------
 r() {
     file=$1
     printf "$build$b        $file:\n\n$close"
-    cargo r -- $file -o tmp 2>&1 >/dev/null
+    cargo r -- $file -o /dev/null 2>&1 >/dev/null
 }
 
 r asm/hello/hello.gb.asm
 r asm/tests/main.gb.asm
 r asm/tests/expr.gb.asm
-
-rm tmp 2>/dev/null

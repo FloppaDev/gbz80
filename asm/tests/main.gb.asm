@@ -3,6 +3,8 @@
 #dw BAZ &10AB
 #db FLAGS %0110_1010
 
+;-------------------------------------------------------------------
+
 ;Interrupts
 &0040: reti     ;v-blank
 &0048: reti     ;LCD-Stat
@@ -38,7 +40,7 @@
     0               ;Rom version
     0 &0000         ;Header & Rom checksum (calculated by the assembler)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;-------------------------------------------------------------------
 
 &0148:Start
     ld sp &FFFF
@@ -50,8 +52,10 @@
     cp 145              ;Is display on scan line 145 yet?
     jr NZ ScreenOff
     
-    ld hl &FF40		;LCDC - LCD Control (R/W)
+    ld hl &FF40		    ;LCDC - LCD Control (R/W)
     res 7 (hl)      	;Turn off the screen
+
+;-------------------------------------------------------------------
 
 #macro mul. .lhs .rhs
     add .lhs .rhs ; bs code
@@ -64,6 +68,8 @@
 
     mul. a 10
 
+;-------------------------------------------------------------------
+
 #db FONT_LEN FontEnd - Font
 
 :Font
@@ -72,6 +78,8 @@
     ld a b
     add Font
 
+;-------------------------------------------------------------------
+
 #macro db. .b
     .b
 #macro
@@ -79,3 +87,12 @@
 2db. 3
 
 2mul. a b
+
+;-------------------------------------------------------------------
+
+#db LABEL1 Label0 + 50
+
+:Label0
+    ;...
+LABEL1:Label1 ;50 bytes later...
+
