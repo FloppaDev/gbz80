@@ -72,6 +72,17 @@ impl<'a> Ast<'a> {
         self.tokens[index].parent
     }
 
+    /// Returns the type of parent number `px` (0 is the parent directly above).
+    pub fn px_ty(&self, index: usize, px: usize) -> TokenType {
+        let mut selection = index;
+
+        for _ in 0..=px {
+            selection = self.parent_of(selection); 
+        }
+
+        self.type_of(selection)
+    }
+
     /// Token type at index.
     pub fn type_of(&self, index: usize) -> TokenType {
         self.tokens[index].ty

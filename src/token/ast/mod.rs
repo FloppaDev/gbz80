@@ -180,11 +180,9 @@ impl<'a> Ast<'a> {
 
                 else {
                     self.cascade(selection, &[p], token, None);
+                    let s = *selection;
 
-                    let p0_is_at = self.type_of(*selection) == At;
-                    let p1_is_argument = self.type_of(self.parent_of(*selection)) == Argument;
-
-                    if p0_is_at && p1_is_argument {
+                    if self.px_ty(s, 0) == At && self.px_ty(s, 1) == Argument {
                         self.up(selection);
                     }
                 }
@@ -225,11 +223,9 @@ impl<'a> Ast<'a> {
 
                     else {
                         self.cascade(selection, &[], token, None);
+                        let s = *selection;
 
-                        let p0_is_at = self.type_of(*selection) == At;
-                        let p1_is_argument = self.type_of(self.parent_of(*selection)) == Argument;
-
-                        if p0_is_at && p1_is_argument {
+                        if self.px_ty(s, 0) == At && self.px_ty(s, 1) == Argument {
                             self.up(selection);
                         }
                         
