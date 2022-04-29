@@ -8,7 +8,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syn match directives '#if\|#else\|#endif\|#macro\|#db\|#dw\|#include'
+syn match directives '#if\|#else\|#endif\|#macro\|#db\|#dw\|#include\|#import'
 syn keyword flags C NC Z NZ
 syn match types contained '[&%]'
 

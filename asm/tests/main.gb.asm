@@ -96,3 +96,14 @@
     ;...
 LABEL1:Label1 ;50 bytes later...
 
+;-------------------------------------------------------------------
+
+;Making sure that it does not somehow exceed 5 bytes.
+
+:Import0
+    #import "constants.gb.asm"
+    #dw IMPORT1 Import0 + CONSTANTS_LEN
+IMPORT1:Import1 
+
+;-------------------------------------------------------------------
+
