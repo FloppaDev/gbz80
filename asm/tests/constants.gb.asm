@@ -1,6 +1,4 @@
 
-#db CONSTANTS_LEN 5
-
 #db _A 1
 #db _B 1
 #db _C 1

@@ -269,11 +269,8 @@ impl<'a> Ast<'a> {
                     }
                 }
 
-                DefB|DefW|Include => 
-                    self.cascade(selection, &[Directive], token, Some(0)),
-
-                AnonMark|NamedMark => 
-                    self.cascade(selection, &[Marker], token, Some(0)),
+                ty@(DefB|DefW|Include|Import|AnonMark|NamedMark) => 
+                    self.cascade(selection, &[ty.parent_type()], token, Some(0)),
 
                 Label => 
                     self.cascade(selection, &[Marker], token, None),

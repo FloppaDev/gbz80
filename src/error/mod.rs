@@ -90,7 +90,7 @@ impl<'a> ErrCtx<'a> {
             bytes += ch.len_utf8();
 
             if bytes >= start_byte {
-                return Some(i+1);
+                return Some(i);
             }
         }
 

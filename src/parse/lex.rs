@@ -113,6 +113,7 @@ pub enum TokenType {
         DefB,
         DefW,
         Include,
+        Import,
         Macro,
             MacroIdent,
             MacroArg,
@@ -152,7 +153,7 @@ impl TokenType {
             BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
             BinXor|UnNot|UnNeg => Expr,
 
-            DefB|DefW|Include|Macro => Directive,
+            DefB|DefW|Include|Import|Macro => Directive,
 
             MacroIdent|MacroArg|MacroBody => Macro,
 
@@ -171,7 +172,7 @@ impl TokenType {
     pub const fn ends_on_newline(self) -> bool {
         matches!(self,
             Instruction|Argument|MacroCall|Directive|Marker|Expr|DefB|DefW|
-            Include|Macro|NamedMark|AnonMark|Label)
+            Include|Import|Macro|NamedMark|AnonMark|Label)
     }
 
     /// Find a token type that can be identified from a word.
@@ -268,7 +269,7 @@ impl TokenType {
     /// Returns a `TokenType` from an index.
     #[cfg(test)]
     pub const fn at(index: usize) -> Self {
-        const COUNT: usize = 107;
+        const COUNT: usize = 108;
 
         match index % COUNT {
             0 => Instruction,
@@ -368,16 +369,17 @@ impl TokenType {
             94 => DefB,
             95 => DefW,
             96 => Include,
-            97 => Macro,
-            98 => MacroIdent,
-            99 => MacroArg,
-            100 => MacroBody,
-            101 => Marker,
-            102 => NamedMark,
-            103 => AnonMark,
-            104 => Label,
-            105 => Repeat,
-            106 => MacroCall,
+            97 => Import,
+            98 => Macro,
+            99 => MacroIdent,
+            100 => MacroArg,
+            101 => MacroBody,
+            102 => Marker,
+            103 => NamedMark,
+            104 => AnonMark,
+            105 => Label,
+            106 => Repeat,
+            107 => MacroCall,
             _ => panic!()
         }
     }
@@ -385,13 +387,13 @@ impl TokenType {
     /// Checks if the token has a valid parent.
     pub fn validate(self, parent_type: Self) -> bool {
         match self {
-            Instruction|Directive|DefB|DefW|Include|Macro|InstrName|Adc|
-            Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|Ld|
-            Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|Rrc|
-            Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|
-            Rlca|Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|FlagNz|
-            FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|AnonMark|
-            Label|Repeat|MacroCall|MacroIdent|MacroArg|MacroBody => self.parent_type() == parent_type,
+            Instruction|Directive|DefB|DefW|Include|Import|Macro|InstrName|
+            Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|
+            Ld|Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|
+            Rrc|Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|
+            Reti|Rlca|Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|
+            FlagNz|FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|
+            AnonMark|Label|Repeat|MacroCall|MacroIdent|MacroArg|MacroBody => self.parent_type() == parent_type,
 
             Register => {
                 matches!(parent_type, Argument|At)

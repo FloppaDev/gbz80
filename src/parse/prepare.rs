@@ -253,7 +253,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                 return Ok(vec![ (LitStr, text::no_check(value)) ]);
             }
 
-            // db, dw, ds, include, or macro
+            // db, dw, ds, include, import, or macro
             '#' => {
                 let directive = word.get(1..).ok_or(InvalidDirective)?;
 
@@ -261,6 +261,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                     "db" => Ok(vec![ (DefB, text::no_check(directive)) ]),
                     "dw" => Ok(vec![ (DefW, text::no_check(directive)) ]),
                     "include" => Ok(vec![ (Include, text::no_check(directive)) ]),
+                    "import" => Ok(vec![ (Import, text::no_check(directive)) ]),
                     "macro" => Ok(vec![ (Macro, text::no_check(directive)) ]),
                     _ => Err(ParseMsg::InvalidDirectiveIdent)
                 };

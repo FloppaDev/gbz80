@@ -97,7 +97,7 @@ fn build(tree: &Tree) {
         .replace(&key("hierarchy_validation"), hierarchy_str.trim_end())
         .replace(&key("validation"), validation_str.trim_end());
 
-    println!("{}", result);
+    //println!("{}", result);
 
     let mut file = File::create("../../src/parse/lex.rs").unwrap();
     file.write_all(result.as_bytes()).unwrap();
