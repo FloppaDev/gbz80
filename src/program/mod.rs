@@ -7,6 +7,7 @@ pub mod fmt;
 
 use crate::{
     parse::{
+        source::Source,
         split::Split,
         prepare::parse,
     },
@@ -33,18 +34,20 @@ pub fn run() -> Result<(), ()> {
     let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
     // Get source file.
-    let input = fs::read_to_string(clargs.path).map_err(stage::source)?; 
+    let input = fs::read_to_string(clargs.path).map_err(stage::entry)?; 
 
     // Split source file into words.
     let split = Split::new(&input, &clargs.symbols).map_err(stage::split)?;
     #[cfg(debug_assertions)] split.debug();
+
+    let source = Source::new(&split);
 
     // Extract type information and data.
     let parsed_tokens = parse(&split).map_err(stage::parse)?;
 
     // Build the token tree.
     let mut macros = Macros::new();
-    let mut ast = Ast::new(parsed_tokens, &mut macros).map_err(stage::ast)?;
+    let mut ast = Ast::new(parsed_tokens, &mut macros, &source).map_err(stage::ast)?;
     macros.expand(&mut ast).map_err(stage::macros)?;
     #[cfg(debug_assertions)] ast.debug();
 

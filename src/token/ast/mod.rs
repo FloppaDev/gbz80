@@ -6,6 +6,7 @@ use crate::{
     parse::{
         lex::TokenType::*,
         prepare::ParsedToken,
+        source::Source,
     },
     token::{
         Token,
@@ -26,6 +27,7 @@ use crate::{
 /// The whole hierarchy of parsed tokens from the source file.
 #[derive(Debug)]
 pub struct Ast<'a> {
+    pub source: &'a Source<'a>,
     pub tokens: Vec<Token<'a>>,
 }
 
@@ -39,6 +41,7 @@ impl<'a> Ast<'a> {
     pub fn new(
         tokens: Vec<ParsedToken<'a>>,
         macros: &mut Macros,
+        source: &'a Source<'a>,
     ) -> Result<Self, Vec<AsmErr<'a, AstMsg>>> {
         if tokens.is_empty() {
             let e = err!(AstMsg, NoTokens, ErrCtx::new(Root, 0, "", ""));
@@ -52,7 +55,7 @@ impl<'a> Ast<'a> {
 
         // Initialize the tree with a Root token and select it.
         let root = Self::create_root();
-        let mut ast = Self { tokens: vec![root] };
+        let mut ast = Self { source, tokens: vec![root] };
         let mut selection = 0;
         let mut current_line = 0;
 

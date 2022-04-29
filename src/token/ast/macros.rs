@@ -179,7 +179,7 @@ impl<'a, 'b> Macros {
         };
 
         // Create a separate `Ast` with call `MacroBody` as root.
-        let mut call_ast = Ast { tokens: vec![call_body] };
+        let mut call_ast = Ast { source: ast.source, tokens: vec![call_body] };
 
         call_ast = Self::copy_decl(
             ast,

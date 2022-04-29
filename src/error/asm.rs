@@ -28,7 +28,7 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
 
         if let Some(word_start) = self.err_ctx.word_start() {
             let line_a = line.get(..word_start).unwrap();
-            dbg!(line);
+            //TODO fix ranges
             let line_word = line.get(word_start..word_start+word.len()).unwrap();
             let line_b = line.get(word_start+word.len()..).unwrap();
 

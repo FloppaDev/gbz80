@@ -1,6 +1,9 @@
 
 use crate::{
-    parse::lex,
+    parse::{
+        lex,
+        source::Source,
+    },
     error::init::{SplitErr, SplitErrType},
 };
 
@@ -45,7 +48,7 @@ impl<'a> Split<'a> {
 
     /// Split source file into lines and words.
     pub fn new(
-        input: &'a str, 
+        input: &'a str,
         symbols: &[&'a str],
     ) -> Result<Split<'a>, Vec<SplitErr<'a>>> {
         let mut errors = vec![];
