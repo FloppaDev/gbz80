@@ -1,4 +1,6 @@
 
+use std::path::Path;
+
 use crate::{
     parse::split::Split,
 };
@@ -19,6 +21,6 @@ impl<'a> Source<'a> {
 
 #[derive(Debug)]
 pub struct Input<'a> {
-    pub path: &'a str,
+    pub path: &'a Path,
     pub content: String,
 }

@@ -184,15 +184,27 @@ impl<'a> Constants<'a> {
                         }
 
                         Include => {
-                            let path = child.get(0).get(0).value().as_str();
-                            
-                            if self.includes.get(path).is_none() {
+                            let local = child.get(0).get(0).value().as_str();
+
+                            if self.includes.get(local).is_none() {
+                                //TODO put this code as a function in `Input`
+                                let source = child.ast().source.input.path;
+
+                                let path = match source.parent() {
+                                    //TODO Path must be validated for to_str when building `Source`
+                                    Some(dir) => format!("{}/{}", dir.to_str().unwrap(), local),
+                                    None => local.into() 
+                                };
+
                                 let mut buffer = vec![];
+
                                 let mut file = File::open(path).map_err(|_| err!(
                                     ConstantsMsg, FileReadFailed, child.into()))?;
+
                                 file.read_to_end(&mut buffer).map_err(|_| err!(
                                     ConstantsMsg, FileReadFailed, child.into()))?;
-                                self.includes.insert(path, buffer);
+
+                                self.includes.insert(local, buffer);
                             }
                         }
 
