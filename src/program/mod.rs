@@ -33,14 +33,12 @@ pub fn run() -> Result<(), ()> {
     let args = std::env::args().collect::<Vec<_>>();
     let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
-    // Get source file.
-    let input = fs::read_to_string(clargs.path).map_err(stage::entry)?; 
+    // Get source files.
+    let source = Source::new(&clargs.path);
 
     // Split source file into words.
-    let split = Split::new(&input, &clargs.symbols).map_err(stage::split)?;
+    let split = Split::new(&source, &clargs.symbols).map_err(stage::split)?;
     #[cfg(debug_assertions)] split.debug();
-
-    let source = Source::new(&split);
 
     // Extract type information and data.
     let parsed_tokens = parse(&split).map_err(stage::parse)?;
