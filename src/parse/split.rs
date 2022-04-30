@@ -30,6 +30,8 @@ pub struct Split<'a> {
 
     /// Word slices along with their line index.
     words: Vec<Word<'a>>,
+    
+    source: Source<'a>,
 }
 
 impl<'a> Split<'a> {
