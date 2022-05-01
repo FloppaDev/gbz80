@@ -1,5 +1,8 @@
 
-use std::path::Path;
+use std::{
+    path::Path,
+    fs,
+};
 
 use crate::{
     parse::split::Split,
@@ -16,23 +19,25 @@ impl Source {
     pub fn new(main_path: &str) -> Self {
         let main_content = fs::read_to_string(main_path)?;
         let mut source = Self{ inputs: vec![] };
-        source.inputs.push(Input::new(main_path, content));
+        source.inputs.push(Input::new(main_path.into(), main_content));
 
-        let stack = vec![main_path];
-        source.search_file(main_content, stack);
+        let stack = vec![main_path.into()];
+        source.search_file(&main_content, stack);
+
+        source
     }
 
     fn search_file(&mut self, content: &str, mut stack: Vec<String>) {
-        for i in content.match_indices("#import") {
+        for (i, _) in content.match_indices("#import") {
             // Must be surrounded by whitespace.
-            if let Some(prev) = content.get(i-1) {
-                if !prev.is_whitespace() {
+            if let Some(prev) = content.get(i-1..=i-1) {
+                if !prev.chars().collect::<Vec<_>>()[0].is_whitespace() {
                     continue;
                 }
             }
 
-            if let Some(next) = content.get(i+1) {
-                if !next.is_whitespace() {
+            if let Some(next) = content.get(i+1..=i+1) {
+                if !next.chars().collect::<Vec<_>>()[0].is_whitespace() {
                     continue;
                 }
             }
@@ -42,20 +47,20 @@ impl Source {
             let mut indices = vec![];
 
             // Find the range of the file path.
-            for (i, ch) in import_to_end.chars().enumerate() {
-                if ch == "\"" {
+            for (ci, ch) in import_to_end.chars().enumerate() {
+                if ch == '"' {
                     if in_quotes {
-                        indices.push(i);
+                        indices.push(ci);
                         break;
                     }
 
                     else {
-                        indices.push(i);
+                        indices.push(ci);
                         in_quotes = true;
                     }
                 }
 
-                else if !in_quotes && !ch.is_whitespace {
+                else if !in_quotes && !ch.is_whitespace() {
                     //TODO push err
                 }
             }
@@ -65,7 +70,7 @@ impl Source {
                 continue;
             }
 
-            let path = content.get(i+indices[0]..i+indices[0]+indices[1]).unwrap();
+            let path = content.get(ci+indices[0]..ci+indices[0]+indices[1]).unwrap();
 
             // Prevent circular dependencies.
             for p in &stack {
@@ -75,12 +80,15 @@ impl Source {
                 }
             }
 
-            if let Some(content) = fs::read_to_string(path) {
-                source.inputs.push(Input::new(path, content));
+            //TODO absolute path for reading the file.
+            //TODO path relative to main for Input.
+
+            if let Ok(content) = fs::read_to_string(path) {
+                self.inputs.push(Input::new(path.into(), content));
 
                 let mut new_stack = stack.clone();
-                new_stack.push(path);
-                source.search_file(content, new_stack);
+                new_stack.push(path.into());
+                self.search_file(&content, new_stack);
             }
 
             else {
@@ -92,12 +100,12 @@ impl Source {
 }
 
 #[derive(Debug)]
-pub struct Input<'a> {
+pub struct Input {
     pub path: String,
     pub content: String,
 }
 
-impl<'a> Input<'a> {
+impl Input {
 
     pub fn new(path: String, content: String) -> Self {
         Self{ path, content }

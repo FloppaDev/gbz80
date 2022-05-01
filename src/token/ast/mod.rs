@@ -27,7 +27,7 @@ use crate::{
 /// The whole hierarchy of parsed tokens from the source file.
 #[derive(Debug)]
 pub struct Ast<'a> {
-    pub source: &'a Source<'a>,
+    pub source: &'a Source,
     pub tokens: Vec<Token<'a>>,
 }
 
@@ -41,7 +41,7 @@ impl<'a> Ast<'a> {
     pub fn new(
         tokens: Vec<ParsedToken<'a>>,
         macros: &mut Macros,
-        source: &'a Source<'a>,
+        source: &'a Source,
     ) -> Result<Self, Vec<AsmErr<'a, AstMsg>>> {
         if tokens.is_empty() {
             let e = err!(AstMsg, NoTokens, ErrCtx::new(Root, 0, "", ""));
