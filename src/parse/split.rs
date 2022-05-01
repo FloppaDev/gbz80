@@ -10,6 +10,17 @@ use crate::{
 #[cfg(debug_assertions)]
 use crate::program::fmt::title;
 
+pub struct SplitSeq<'a> {
+    splits: Vec<Split<'a>>,
+    ranges: Vec<SplitRange<'a>>,
+}
+
+pub struct SplitRanges<'a> {
+    pub split: &'a Split,
+    pub start: usize,
+    pub end: usize,
+}
+
 #[derive(Copy, Clone)]
 pub struct LineIndex {
     value: usize,
@@ -22,6 +33,8 @@ pub struct Word<'a> {
 
 /// Splits source file into words and stores original lines along with their numbers.
 pub struct Split<'a> {
+    file: &'a str,
+
     /// String slice of a whole line.
     lines: Vec<&'a str>,
 

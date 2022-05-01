@@ -51,6 +51,7 @@ impl<'a> Value<'a> {
 #[derive(Debug)]
 pub struct Token<'a> {
     pub ty: TokenType,
+    pub file: &'a str,
     pub line_number: usize,
     pub line: &'a str,
     pub word: &'a str,

@@ -19,6 +19,7 @@ use crate::{
 pub struct ParsedToken<'a> {
     pub ty: TokenType,
     pub value: Value<'a>,
+    pub file: &'a str,
     pub line_number: usize,
     pub line: &'a str,
     pub word: &'a str,
