@@ -55,6 +55,7 @@ impl std::fmt::Display for SourceCtx {
 #[derive(Debug, Copy, Clone)]
 pub struct ErrCtx<'a> {
     ty: TokenType,
+    file: &'a str,
     line_number: usize,
     line: &'a str,
     word: &'a str,
@@ -64,11 +65,12 @@ impl<'a> ErrCtx<'a> {
 
     pub const fn new(
         ty: TokenType,
+        file: &'a str,
         line_number: usize,
         line: &'a str,
         word: &'a str,
     ) -> Self {
-        Self{ ty, line_number, line, word }
+        Self{ ty, file, line_number, line, word }
     }
 
     pub fn word_start(self) -> Option<usize> {
@@ -102,8 +104,8 @@ impl<'a> ErrCtx<'a> {
 impl<'a> From<&ParsedToken<'a>> for ErrCtx<'a> {
 
     fn from(token: &ParsedToken<'a>) -> Self {
-        let ParsedToken{ ty, line_number, line, word, .. } = *token;
-        Self { ty, line_number, line, word }
+        let ParsedToken{ ty, file, line_number, line, word, .. } = *token;
+        Self { ty, file, line_number, line, word }
     }
 
 }
@@ -111,8 +113,8 @@ impl<'a> From<&ParsedToken<'a>> for ErrCtx<'a> {
 impl<'a> From<&Token<'a>> for ErrCtx<'a> {
 
     fn from(token: &Token<'a>) -> Self {
-        let Token{ ty, line_number, line, word, .. } = *token;
-        Self { ty, line_number, line, word }
+        let Token{ ty, file, line_number, line, word, .. } = *token;
+        Self { ty, file, line_number, line, word }
     }
 
 }
@@ -120,8 +122,8 @@ impl<'a> From<&Token<'a>> for ErrCtx<'a> {
 impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
 
     fn from(token_ref: &TokenRef<'a>) -> Self {
-        let Token{ ty, line_number, line, word, .. } = *token_ref.token();
-        Self { ty, line_number, line, word }
+        let Token{ ty, file, line_number, line, word, .. } = *token_ref.token();
+        Self { ty, file, line_number, line, word }
     }
 
 }

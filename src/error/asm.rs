@@ -19,7 +19,7 @@ pub struct AsmErr<'a, T: AsmMsg> {
 impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ErrCtx{ ty, line_number, line, word } = self.err_ctx;
+        let ErrCtx{ ty, file, line_number, line, word } = self.err_ctx;
 
         let mut strip = fmt::strip()
             .debug(&format!("{} ({:?})\n", self.source_ctx, ty)) 
@@ -33,14 +33,14 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
             let line_b = line.get(word_start+word.len()..).unwrap();
 
             strip = strip
-                .faint(&format!("l{}:", line_number ))
+                .faint(&format!("{}:{}:", file, line_number ))
                 .base(&format!("    {}", line_a))
                 .err(line_word)
                 .faint(&format!("{}\n", line_b));
         }
 
         else {
-            strip = strip.faint(&format!("l{}:    {}\n", line_number, line));
+            strip = strip.faint(&format!("{}:{}:    {}\n", file, line_number, line));
         }
 
         write!(f, "{}", strip.read())

@@ -38,7 +38,7 @@ pub fn parse<'a>(
 
         // Error while identifying token type.
         if let Err(err_type) = id_words {
-            let err_ctx = ErrCtx::new(Root, line_number, line, word);
+            let err_ctx = ErrCtx::new(Root, file, line_number, line, word);
             let err = err!(ParseMsg, err_type, err_ctx);
             errors.push(err);
 
@@ -67,7 +67,7 @@ pub fn parse<'a>(
                     }                
                 }
 
-                let err_ctx = ErrCtx::new(Root, line_number, line, word.value);
+                let err_ctx = ErrCtx::new(Root, file, line_number, line, word.value);
 
                 if !is_allowed {
                     errors.push(err!(ParseMsg, ReservedKeyword, err_ctx));

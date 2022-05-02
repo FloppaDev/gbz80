@@ -260,7 +260,7 @@ impl<'a> Split<'a> {
         }
 
         let Splitter{ lines, line_numbers, words, .. } = splitter;
-        Ok(Split { lines, line_numbers, words })
+        Ok(Split { file, lines, line_numbers, words })
     }
 
     #[cfg(debug_assertions)]

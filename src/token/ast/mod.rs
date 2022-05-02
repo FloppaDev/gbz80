@@ -44,7 +44,7 @@ impl<'a> Ast<'a> {
         source: &'a Source,
     ) -> Result<Self, Vec<AsmErr<'a, AstMsg>>> {
         if tokens.is_empty() {
-            let e = err!(AstMsg, NoTokens, ErrCtx::new(Root, 0, "", ""));
+            let e = err!(AstMsg, NoTokens, ErrCtx::new(Root, "", 0, "", ""));
             return Err(vec![e]);
         }
 
@@ -165,7 +165,7 @@ impl<'a> Ast<'a> {
         selection: &mut usize,
         macros: &mut Macros,
     ) {
-        let ParsedToken{ line_number, line, .. } = token;
+        let ParsedToken{ file, line_number, line, .. } = token;
 
         // Match parent type of the token.
         match token.ty.parent_type() {
