@@ -2,7 +2,7 @@
 use crate::{
     parse::{
         lex,
-        source::Source,
+        source::{Source, Input},
     },
     error::init::{SplitErr, SplitErrType},
 };
@@ -15,8 +15,30 @@ pub struct SplitSeq<'a> {
     ranges: Vec<SplitRange<'a>>,
 }
 
-pub struct SplitRanges<'a> {
-    pub split: &'a Split,
+impl<'a> SplitSeq<'a> {
+
+    pub fn new(source: &Source, symbols: &[&'a str]) -> Result<Self, Vec<SplitErr<'a>>> {
+        let splits = vec![];
+        let errors = vec![];
+
+        for input in &source.inputs {
+            match Split::new(input, symbols) {
+                Ok(s) => splits.push(s),
+                Err(e) => errors.push(e),
+            }
+        }
+
+        if !errors.is_empty() {
+            return Err(errors);
+        }
+
+        //TODO make SplitSeq
+    }
+
+}
+
+pub struct SplitRange<'a> {
+    pub split: &'a Split<'a>,
     pub start: usize,
     pub end: usize,
 }
@@ -61,7 +83,7 @@ impl<'a> Split<'a> {
 
     /// Split source file into lines and words.
     pub fn new(
-        input: &'a str,
+        input: &Input<'a>,
         symbols: &[&'a str],
     ) -> Result<Split<'a>, Vec<SplitErr<'a>>> {
         let mut errors = vec![];

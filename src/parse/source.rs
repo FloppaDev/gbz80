@@ -70,7 +70,7 @@ impl Source {
                 continue;
             }
 
-            let path = content.get(ci+indices[0]..ci+indices[0]+indices[1]).unwrap();
+            let path = content.get(i+indices[0]..i+indices[0]+indices[1]).unwrap();
 
             // Prevent circular dependencies.
             for p in &stack {

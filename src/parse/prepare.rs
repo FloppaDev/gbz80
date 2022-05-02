@@ -4,7 +4,7 @@ use crate::{
     parse::{
         text::{self, CheckedStr},
         lex::TokenType::{self, *},
-        split::Split,
+        split::SplitSeq,
     },
     error::{
         ErrCtx,
@@ -27,23 +27,18 @@ pub struct ParsedToken<'a> {
 
 /// Map words to token types and extract their data.
 pub fn parse<'a>(
-    split: &Split<'a>,
+    split_seq: &SplitSeq<'a>,
 ) -> Result<Vec<ParsedToken<'a>>, Vec<AsmErr<'a, ParseMsg>>> {
     let mut parsed_tokens = vec![];
     let mut errors = vec![];
-    let mut words = split.words().iter();
+    let mut words = split_seq.words();
 
-    while let Some(word) = words.next() {
-        let id_words = identify(word.value);
+    while let Some(word, line, line_number, file) = words.next() {
+        let id_words = identify(word);
 
         // Error while identifying token type.
         if let Err(err_type) = id_words {
-            let err_ctx = ErrCtx::new(
-                Root,
-                split.line_number(word.line_index),
-                split.line(word.line_index),
-                word.value);
-
+            let err_ctx = ErrCtx::new(Root, line_number, line, word);
             let err = err!(ParseMsg, err_type, err_ctx);
             errors.push(err);
 
@@ -53,15 +48,15 @@ pub fn parse<'a>(
         let mut id_words = id_words.unwrap();
 
         if matches!(id_words[0].0, DefB|DefW) {
-            if let Some(word) = words.next() {
+            if let Some(word, line, line_number, file) = words.next() {
                 let mut is_ident = false;
                 let mut is_allowed = false;
     
-                if let Some(c) = word.value.get(0..1) {
+                if let Some(c) = word.get(0..1) {
                     let c = c.chars().next().unwrap();
 
                     if text::is_char_ident_first(c) {
-                        if let Some(ident) = text::check_ident(word.value) {
+                        if let Some(ident) = text::check_ident(word) {
                             is_allowed = TokenType::get_by_word(ident.as_str()).is_none();
 
                             if is_allowed {
@@ -72,11 +67,7 @@ pub fn parse<'a>(
                     }                
                 }
 
-                let err_ctx = ErrCtx::new(
-                    Root,
-                    split.line_number(word.line_index),
-                    split.line(word.line_index),
-                    word.value);
+                let err_ctx = ErrCtx::new(Root, line_number, line, word.value);
 
                 if !is_allowed {
                     errors.push(err!(ParseMsg, ReservedKeyword, err_ctx));
@@ -93,12 +84,7 @@ pub fn parse<'a>(
             let values = extract((ty, word_str.as_str()));
 
             if let Err(err_type) = values {
-                let err_ctx = ErrCtx::new(
-                    Root,
-                    split.line_number(word.line_index), 
-                    split.line(word.line_index), 
-                    word_str.as_str());
-
+                let err_ctx = ErrCtx::new(Root, line, line_number, word_str.as_str());
                 let err = err!(ParseMsg, err_type, err_ctx);
                 errors.push(err);
 
@@ -109,8 +95,9 @@ pub fn parse<'a>(
             let parsed_token = ParsedToken { 
                 ty,
                 value, 
-                line_number: split.line_number(word.line_index),
-                line: split.line(word.line_index), 
+                line_number,
+                line,
+                file,
                 word: word_str.as_str(),
             };
 
