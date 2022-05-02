@@ -65,12 +65,12 @@ impl<'a> Token<'a> {
 
     /// Create a new `Token` from `ParsedToken`.
     const fn new(
-        ParsedToken{ ty, line_number, line, word, value }: ParsedToken<'a>, 
+        ParsedToken{ ty, file, line_number, line, word, value }: ParsedToken<'a>, 
         index: usize, 
         parent: usize,
     ) -> Self {
         let children = vec![];
-        Self { ty, line_number, line, word, value, index, parent, children }
+        Self { ty, file, line_number, line, word, value, index, parent, children }
     }
 
 }

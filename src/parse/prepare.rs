@@ -33,7 +33,7 @@ pub fn parse<'a>(
     let mut errors = vec![];
     let mut words = split_seq.words();
 
-    while let Some(word, line, line_number, file) = words.next() {
+    while let Some((word, line, line_number, file)) = words.next() {
         let id_words = identify(word);
 
         // Error while identifying token type.
@@ -48,7 +48,7 @@ pub fn parse<'a>(
         let mut id_words = id_words.unwrap();
 
         if matches!(id_words[0].0, DefB|DefW) {
-            if let Some(word, line, line_number, file) = words.next() {
+            if let Some((word, line, line_number, file)) = words.next() {
                 let mut is_ident = false;
                 let mut is_allowed = false;
     
@@ -84,7 +84,7 @@ pub fn parse<'a>(
             let values = extract((ty, word_str.as_str()));
 
             if let Err(err_type) = values {
-                let err_ctx = ErrCtx::new(Root, line, line_number, word_str.as_str());
+                let err_ctx = ErrCtx::new(Root, file, line, line_number, word_str.as_str());
                 let err = err!(ParseMsg, err_type, err_ctx);
                 errors.push(err);
 

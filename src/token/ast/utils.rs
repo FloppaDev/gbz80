@@ -37,13 +37,13 @@ impl<'a> Ast<'a> {
         token: ParsedToken<'a>,
         select_up: Option<usize>,
     ) {
-        let ParsedToken{ line_number, line, .. } = token;
+        let ParsedToken{ file, line_number, line, .. } = token;
 
         let mut selection = *dest;
         let mut inserts = vec![];
 
         for ty in parent_types {
-            let parent = Self::empty(*ty, line_number, line);
+            let parent = Self::empty(*ty, file, line_number, line);
             selection = self.push(selection, parent);
             inserts.push(self.tokens.len()-1);
         }
@@ -146,20 +146,21 @@ impl<'a> Ast<'a> {
     /// Create a token with only line information and a type.
     pub const fn empty(
         ty: TokenType,
+        file: &'a str,
         line_number: usize, 
         line: &'a str,
     ) -> ParsedToken<'a> {
-        let line_number =  line_number;
         let value = Value::Void;
         let word = "";
 
-        ParsedToken { ty, value, line_number, line, word }
+        ParsedToken { ty, value, file, line_number, line, word }
     }
 
     /// Root of the token tree.
     pub const fn create_root() -> Token<'a> {
         Token {
             ty: Root,
+            file: "",
             line_number: 0,
             line: "",
             word: "",

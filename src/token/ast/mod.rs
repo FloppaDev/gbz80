@@ -97,7 +97,7 @@ impl<'a> Ast<'a> {
         errors: &mut Vec<AsmErr<'a, AstMsg>>,
     ) -> Result<(), ()> {
         let token = &self.tokens[*selection];
-        let Token{ line_number, line, .. } = *token;
+        let Token{ file, line_number, line, .. } = *token;
         let err_ctx = token.into();
         let mut fail_safe = ITERATION_LIMIT;
 
@@ -118,7 +118,7 @@ impl<'a> Ast<'a> {
                 match sel_ty {
                     // If it's a macro declaration, add a new macro body.
                     Macro => {
-                        let t = Self::empty(MacroBody, line_number, line);
+                        let t = Self::empty(MacroBody, file, line_number, line);
                         self.cascade(selection, &[], t, Some(0));        
 
                         break;
@@ -233,7 +233,7 @@ impl<'a> Ast<'a> {
                         }
                         
                         else if matches!(self.type_of(*selection), DefB|DefW) {
-                            let t = Self::empty(Expr, line_number, line);
+                            let t = Self::empty(Expr, file, line_number, line);
                             self.cascade(selection, &[], t, Some(0));
                         }
                     }
@@ -241,7 +241,7 @@ impl<'a> Ast<'a> {
 
                 // Open parenthesis.
                 At0 => {
-                    let at = Self::empty(At, line_number, line);
+                    let at = Self::empty(At, file, line_number, line);
 
                     if self.type_of(*selection) == Instruction {
                         self.cascade(selection, &[Argument], at, Some(0));
@@ -266,7 +266,7 @@ impl<'a> Ast<'a> {
                     }
 
                     else {
-                        let t = Self::empty(Macro, line_number, line);
+                        let t = Self::empty(Macro, file, line_number, line);
                         self.cascade(selection, &[], t, Some(0));
                         macros.decls.push(*selection);
                     }

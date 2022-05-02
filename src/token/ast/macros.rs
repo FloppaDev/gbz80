@@ -144,7 +144,7 @@ impl<'a, 'b> Macros {
         let decl_body_index = decl.children.last().unwrap();
 
         let call = &ast.tokens[macro_call];
-        let Token{ line_number, line, word, value, .. } = *call;
+        let Token{ file, line_number, line, word, value, .. } = *call;
 
         let call_children = &call.children;
         let call_args = call_children.get(1..call_children.len()-1).unwrap();
@@ -169,6 +169,7 @@ impl<'a, 'b> Macros {
 
         let call_body = Token{
             ty: MacroBody,
+            file,
             line_number,
             line,
             word,
@@ -230,12 +231,12 @@ impl<'a, 'b> Macros {
             call_ast.tokens[dest].children.push(offset + index);
 
             let Token{ ty, value, .. } = *child;
-            let Token{ line_number, line, word, .. } = *macro_call;
+            let Token{ file, line_number, line, word, .. } = *macro_call;
             let children = vec![];
             let parent = offset + dest;
 
             let token = Token{
-                ty, line_number, line, word, value, index, parent, children
+                ty, file, line_number, line, word, value, index, parent, children
             };
 
             call_ast.tokens.push(token);

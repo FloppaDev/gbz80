@@ -83,7 +83,7 @@ impl<'a> Split<'a> {
 
     /// Split source file into lines and words.
     pub fn new(
-        input: &Input<'a>,
+        input: &Input,
         symbols: &[&'a str],
     ) -> Result<Split<'a>, Vec<SplitErr<'a>>> {
         let mut errors = vec![];
