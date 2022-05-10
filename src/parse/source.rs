@@ -111,4 +111,8 @@ impl Input {
         Self{ path, content }
     }
 
+    pub fn lines(&self) -> std::str::Lines {
+        self.content.lines() 
+    }
+
 }

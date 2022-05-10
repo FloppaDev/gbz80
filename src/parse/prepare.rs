@@ -84,7 +84,7 @@ pub fn parse<'a>(
             let values = extract((ty, word_str.as_str()));
 
             if let Err(err_type) = values {
-                let err_ctx = ErrCtx::new(Root, file, line, line_number, word_str.as_str());
+                let err_ctx = ErrCtx::new(Root, file, line_number, line, word_str.as_str());
                 let err = err!(ParseMsg, err_type, err_ctx);
                 errors.push(err);
 

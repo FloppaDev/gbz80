@@ -24,7 +24,7 @@ impl<'a> SplitSeq<'a> {
         for input in &source.inputs {
             match Split::new(input, symbols) {
                 Ok(s) => splits.push(s),
-                Err(e) => errors.push(e),
+                Err(mut e) => errors.append(&mut e),
             }
         }
 
@@ -33,6 +33,11 @@ impl<'a> SplitSeq<'a> {
         }
 
         //TODO make SplitSeq
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn debug(&self) {
+        //TODO
     }
 
 }
@@ -83,7 +88,7 @@ impl<'a> Split<'a> {
 
     /// Split source file into lines and words.
     pub fn new(
-        input: &Input,
+        input: &'a Input,
         symbols: &[&'a str],
     ) -> Result<Split<'a>, Vec<SplitErr<'a>>> {
         let mut errors = vec![];
@@ -260,7 +265,7 @@ impl<'a> Split<'a> {
         }
 
         let Splitter{ lines, line_numbers, words, .. } = splitter;
-        Ok(Split { file, lines, line_numbers, words })
+        Ok(Split { file: &input.path, lines, line_numbers, words })
     }
 
     #[cfg(debug_assertions)]
