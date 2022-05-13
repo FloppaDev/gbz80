@@ -12,7 +12,7 @@ An hello world example is available in './asm/hello'
 
 ## Reference
 
-The instruction set is available [here](./gen/instructions/opcode.html).  
+The instruction set is available [here](https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html) or in './gen/instructions/opcode.html'.  
 Some alternative mnemonics from the bottom of the page are used and replace all the other options, such that a plus or minus sign is never used within an instruction.
 
 ## Structure of the project
