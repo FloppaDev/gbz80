@@ -4,11 +4,29 @@ An assembler for the Gameboy written in Rust.
 
 ## Features
 
+- The syntax is a stripped down version of the syntax from the z80
+- Constants, those include labels and math expressions in defines
+- Macros
+
+An hello world example is available in './asm/hello'
 
 ## Reference
 
+The instruction set is available [here](./gen/instructions/opcode.html).  
+Some alternative mnemonics from the bottom of the page are used and replace all the other options, such that a plus or minus sign is never used within an instruction.
+
+## Structure of the project
+
+- ./.vim  Syntax highlighting for 'gb.asm' in vim.
+- ./asm   Examples and tests in assembly.
+- ./gen   Code generation for the lexer.
+- ./sh    Shell scripts
+- ./src   Source code for the assembler.
 
 ## Sources
 
-https://www.chibiakumas.com
+- Assembly tutorials: https://www.chibiakumas.com  
+- Instruction set: https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
+- Cpu manual: http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+
 
