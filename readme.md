@@ -17,7 +17,7 @@ Some alternative mnemonics from the bottom of the page are used and replace all 
 
 ## Structure of the project
 
-- ./.vim  Syntax highlighting for 'gb.asm' in vim.
+- ./.vim  Syntax highlighting for '*.gb.asm' files in vim.
 - ./asm   Examples and tests in assembly.
 - ./gen   Code generation for the lexer.
 - ./sh    Shell scripts
