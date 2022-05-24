@@ -10,42 +10,6 @@ use crate::{
 #[cfg(debug_assertions)]
 use crate::program::fmt::title;
 
-pub struct SplitSeq<'a> {
-    splits: Vec<Split<'a>>,
-    words: Vec<&'a Word<'a>>,
-}
-
-impl<'a> SplitSeq<'a> {
-
-    pub fn new(source: &Source, symbols: &[&'a str]) -> Result<Self, Vec<SplitErr<'a>>> {
-        let splits = vec![];
-        let errors = vec![];
-
-        for input in &source.inputs {
-            match Split::new(input, symbols) {
-                Ok(s) => splits.push(s),
-                Err(mut e) => errors.append(&mut e),
-            }
-        }
-
-        if !errors.is_empty() {
-            return Err(errors);
-        }
-
-        //TODO make SplitSeq
-    }
-
-    pub fn words(&self) -> &[&'a Word<'a>] {
-        &self.words
-    }
-
-    #[cfg(debug_assertions)]
-    pub fn debug(&self) {
-        //TODO
-    }
-
-}
-
 #[derive(Copy, Clone)]
 pub struct LineIndex {
     value: usize,
@@ -54,6 +18,17 @@ pub struct LineIndex {
 pub struct Word<'a> {
     pub line_index: LineIndex,
     pub value: &'a str,
+}
+
+impl<'a> Word<'a> {
+
+    fn read(&self, split: &Split<'a>) -> (&'a str, &'a str, usize, &'a str) {
+        let line = split.lines[self.line_index.value]; 
+        let line_number = split.line_numbers[self.line_index.value]; 
+
+        (self.value, line, line_number, split.file) 
+    }
+
 }
 
 /// Splits source file into words and stores original lines along with their numbers.
@@ -80,8 +55,8 @@ impl<'a> Split<'a> {
         self.line_numbers[index.value]
     }
 
-    pub fn words(&self) -> &[Word<'a>] {
-        &self.words
+    pub fn words(&self) -> Vec<(&'a str, &'a str, usize, &'a str)> {
+        self.words.iter().map(|w| w.read(self)).collect::<Vec<_>>()
     }
 
     /// Split source file into lines and words.

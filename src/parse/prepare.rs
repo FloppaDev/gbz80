@@ -4,7 +4,7 @@ use crate::{
     parse::{
         text::{self, CheckedStr},
         lex::TokenType::{self, *},
-        split::SplitSeq,
+        split::Split,
     },
     error::{
         ErrCtx,
@@ -27,13 +27,15 @@ pub struct ParsedToken<'a> {
 
 /// Map words to token types and extract their data.
 pub fn parse<'a>(
-    split_seq: &SplitSeq<'a>,
+    split: &Split<'a>,
 ) -> Result<Vec<ParsedToken<'a>>, Vec<AsmErr<'a, ParseMsg>>> {
     let mut parsed_tokens = vec![];
     let mut errors = vec![];
-    let mut words = split_seq.words();
+    let mut words_vec = split.words();
+    let mut words = words_vec.iter();
 
     while let Some((word, line, line_number, file)) = words.next() {
+        let line_number = *line_number;
         let id_words = identify(word);
 
         // Error while identifying token type.
@@ -49,6 +51,7 @@ pub fn parse<'a>(
 
         if matches!(id_words[0].0, DefB|DefW) {
             if let Some((word, line, line_number, file)) = words.next() {
+                let line_number = *line_number;
                 let mut is_ident = false;
                 let mut is_allowed = false;
     
@@ -67,7 +70,7 @@ pub fn parse<'a>(
                     }                
                 }
 
-                let err_ctx = ErrCtx::new(Root, file, line_number, line, word.value);
+                let err_ctx = ErrCtx::new(Root, file, line_number, line, word);
 
                 if !is_allowed {
                     errors.push(err!(ParseMsg, ReservedKeyword, err_ctx));

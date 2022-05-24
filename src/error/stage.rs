@@ -38,7 +38,7 @@ macro_rules! stage_err_vec { ($fn:ident, $lit:literal) => {
 }}
 
 stage_err!(clargs, "Invalid command line arguments.");
-stage_err!(entry, "Could not read source file.");
+stage_err!(source, "Could not read source file.");
 stage_err_vec!(split, "Could not split words from source file.");
 stage_err_vec!(parse, "Could not parse words.");
 stage_err_vec!(ast, "Could not build the token tree.");

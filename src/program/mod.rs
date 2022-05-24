@@ -8,7 +8,7 @@ pub mod fmt;
 use crate::{
     parse::{
         source::Source,
-        split::SplitSeq,
+        split::Split,
         prepare::parse,
     },
     token::{
@@ -31,15 +31,15 @@ pub fn run() -> Result<(), ()> {
     let args = std::env::args().collect::<Vec<_>>();
     let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
-    // Get source files.
-    let source = Source::new(&clargs.path);
+    // Get source file.
+    let source = Source::new(&clargs.path).map_err(stage::source)?;
 
     // Split source files into words.
-    let split_seq = SplitSeq::new(&source, &clargs.symbols).map_err(stage::split)?;
-    #[cfg(debug_assertions)] split_seq.debug();
+    let split = Split::new(&source.main(), &clargs.symbols).map_err(stage::split)?;
+    #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.
-    let parsed_tokens = parse(&split_seq).map_err(stage::parse)?;
+    let parsed_tokens = parse(&split).map_err(stage::parse)?;
 
     // Build the token tree.
     let mut macros = Macros::new();

@@ -188,7 +188,7 @@ impl<'a> Constants<'a> {
 
                             if self.includes.get(local).is_none() {
                                 //TODO put this code as a function in `Input`
-                                let source = child.ast().source.input.path;
+                                let source = child.ast().source.main().path();
 
                                 let path = match source.parent() {
                                     //TODO Path must be validated for to_str when building `Source`
