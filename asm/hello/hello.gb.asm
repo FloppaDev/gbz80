@@ -104,7 +104,7 @@
     
 ;Our program                                                    
     ld hl Message               ;Address of string
-    Call PrintString            ;Show String to screen
+    call PrintString            ;Show String to screen
     
     di
     halt

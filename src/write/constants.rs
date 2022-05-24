@@ -283,6 +283,7 @@ impl<'a> Constants<'a> {
     }
     
     fn size_of_ident(&self, ident: &'a str) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
+        dbg!(ident);
         match self.get(ident).unwrap() {
             ConstExpr::Value(value) => {
                 match value {
