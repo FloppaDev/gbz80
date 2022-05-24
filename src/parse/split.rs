@@ -12,7 +12,7 @@ use crate::program::fmt::title;
 
 pub struct SplitSeq<'a> {
     splits: Vec<Split<'a>>,
-    ranges: Vec<SplitRange<'a>>,
+    words: Vec<&'a Word<'a>>,
 }
 
 impl<'a> SplitSeq<'a> {
@@ -35,17 +35,15 @@ impl<'a> SplitSeq<'a> {
         //TODO make SplitSeq
     }
 
+    pub fn words(&self) -> &[&'a Word<'a>] {
+        &self.words
+    }
+
     #[cfg(debug_assertions)]
     pub fn debug(&self) {
         //TODO
     }
 
-}
-
-pub struct SplitRange<'a> {
-    pub split: &'a Split<'a>,
-    pub start: usize,
-    pub end: usize,
 }
 
 #[derive(Copy, Clone)]

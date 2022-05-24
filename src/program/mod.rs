@@ -26,8 +26,6 @@ use crate::{
     error::stage,
 };
 
-use std::fs;
-
 pub fn run() -> Result<(), ()> {
     // Command line arguments.
     let args = std::env::args().collect::<Vec<_>>();

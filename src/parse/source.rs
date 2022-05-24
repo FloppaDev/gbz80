@@ -10,13 +10,12 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Source {
-    //There will be multiple inputs once #import is implemented.
     pub inputs: Vec<Input>,
 }
 
 impl Source {
     
-    pub fn new(main_path: &str) -> Self {
+    pub fn new(main_path: &str) -> std::io::Result<Self> {
         let main_content = fs::read_to_string(main_path)?;
         let mut source = Self{ inputs: vec![] };
         source.inputs.push(Input::new(main_path.into(), main_content));
@@ -24,9 +23,10 @@ impl Source {
         let stack = vec![main_path.into()];
         source.search_file(&main_content, stack);
 
-        source
+        Ok(source)
     }
 
+    // Recursively collects input files for imports.
     fn search_file(&mut self, content: &str, mut stack: Vec<String>) {
         for (i, _) in content.match_indices("#import") {
             // Must be surrounded by whitespace.
@@ -84,6 +84,7 @@ impl Source {
             //TODO path relative to main for Input.
 
             if let Ok(content) = fs::read_to_string(path) {
+                //TODO do not do it if it already exists.
                 self.inputs.push(Input::new(path.into(), content));
 
                 let mut new_stack = stack.clone();
