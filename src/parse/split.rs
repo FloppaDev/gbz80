@@ -15,8 +15,6 @@ pub struct SplitSeq<'a> {
     words: Vec<&'a Word<'a>>,
 }
 
-impl<'a> SplitSeq<'a> {
-
     pub fn new(source: &Source, symbols: &[&'a str]) -> Result<Self, Vec<SplitErr<'a>>> {
         let splits = vec![];
         let errors = vec![];
