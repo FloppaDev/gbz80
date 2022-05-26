@@ -45,7 +45,6 @@
     // For those, validity rules follow the hierarchy defined in types
     // Note: Validation happens before macros expansion.
     validate_from_hierarchy {
-        Instruction 
         Directive ..Directive
         InstrName ..InstrName 
         Argument 
@@ -59,6 +58,7 @@
     }
 
     validation {
+        Children { Instruction } Parents { Root MacroBody }
         Children { Register } Parents { Argument At }
         Children { Expr } Parents { DefB DefW }
         Children { ..Expr } Parents { Expr At ..Expr } 

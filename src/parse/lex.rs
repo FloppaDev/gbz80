@@ -387,13 +387,17 @@ impl TokenType {
     /// Checks if the token has a valid parent.
     pub fn validate(self, parent_type: Self) -> bool {
         match self {
-            Instruction|Directive|DefB|DefW|Include|Import|Macro|InstrName|
-            Adc|Add|And|Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|
-            Ld|Ldh|Ldi|Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|
-            Rrc|Rrca|Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|
-            Reti|Rlca|Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|
-            FlagNz|FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|
-            AnonMark|Label|Repeat|MacroCall|MacroIdent|MacroArg|MacroBody => self.parent_type() == parent_type,
+            Directive|DefB|DefW|Include|Import|Macro|InstrName|Adc|Add|And|
+            Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|Ld|Ldh|Ldi|
+            Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|Rrc|Rrca|
+            Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|Rlca|
+            Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|FlagNz|
+            FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|AnonMark|
+            Label|Repeat|MacroCall|MacroIdent|MacroArg|MacroBody => self.parent_type() == parent_type,
+
+            Instruction => {
+                matches!(parent_type, Root|MacroBody)
+            }
 
             Register => {
                 matches!(parent_type, Argument|At)
