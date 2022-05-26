@@ -23,6 +23,12 @@ Some alternative mnemonics from the bottom of the page are used and replace all 
 - ./sh    Shell scripts
 - ./src   Source code for the assembler.
 
+Build the docs with
+
+```
+cargo doc --open
+```
+
 ## Sources
 
 - Assembly tutorials: https://www.chibiakumas.com  
