@@ -2,12 +2,14 @@
 /// Splits the input file into words.
 pub mod split;
 
-/// Wrapper over token types and helpers to identify them.
+/// Token types and helpers to identify and validate them.
 pub mod lex;
 
-/// Provides tools to work with strings and check for valid characters.
+/// Tools to work with strings and check for valid characters.
 pub mod text;
 
+/// Transforms the source file into tokens.
 pub mod prepare;
 
+/// Gets the source assembly code.
 pub mod source;

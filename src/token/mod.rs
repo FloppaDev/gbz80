@@ -1,10 +1,14 @@
 
+/// Tools to make reading the token tree easier.
 pub mod read;
 
+/// Build the token hierarchy.
 pub mod ast;
 
+/// Evaluate constant expressions.
 pub mod expr;
 
+/// Ensures that tokens respect their intended use.
 pub mod validation;
 
 use crate::{

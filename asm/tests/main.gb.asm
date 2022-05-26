@@ -88,22 +88,3 @@
 
 2mul. a b
 
-;-------------------------------------------------------------------
-
-#db LABEL1 Label0 + 50
-
-:Label0
-    ;...
-LABEL1:Label1 ;50 bytes later...
-
-;-------------------------------------------------------------------
-
-;Making sure that it does not somehow exceed 5 bytes.
-
-:Import0
-    #import "constants.gb.asm"
-    #dw IMPORT1 Import0 + 5
-IMPORT1:Import1 
-
-;-------------------------------------------------------------------
-

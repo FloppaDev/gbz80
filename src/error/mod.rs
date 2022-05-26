@@ -3,8 +3,10 @@
 #[macro_use]
 pub mod stage;
 
+/// Defines errors for the preparation stage.
 pub mod init;
 
+/// Defines errors for the assembler stages.
 #[macro_use]
 pub mod asm;
 
