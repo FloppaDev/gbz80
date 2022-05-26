@@ -48,7 +48,7 @@ impl std::fmt::Display for SourceCtx {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self{ file, line, column } = self;
-        write!(f, "{}", format!("{}:{}:{}", file, line, column))
+        write!(f, "{}:{}:{}", file, line, column)
     }
 
 }

@@ -142,9 +142,8 @@ impl<'a> Constants<'a> {
     ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         *fail_safe -= 1;
 
-        if *fail_safe == 0 {
-            panic!("Recursion limit reached while reading constants");
-        }
+        assert!(*fail_safe != 0, 
+            "Recursion limit reached while reading constants");
 
         for token in ast.children() {
             let err = err!(ConstantsMsg, DuplicateKey, token.into());

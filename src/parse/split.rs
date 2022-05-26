@@ -2,7 +2,7 @@
 use crate::{
     parse::{
         lex,
-        source::{Source, Input},
+        source::Input,
     },
     error::init::{SplitErr, SplitErrType},
 };
@@ -47,10 +47,6 @@ pub struct Split<'a> {
 
 impl<'a> Split<'a> {
 
-    pub fn line(&self, index: LineIndex) -> &'a str {
-        self.lines[index.value]
-    }
-
     pub fn line_number(&self, index: LineIndex) -> usize {
         self.line_numbers[index.value]
     }
@@ -88,15 +84,13 @@ impl<'a> Split<'a> {
                  if ch == '"' {
                     // Push current word, or the string literal that just ended.
                     if has_word {
-                        if let Some(word) = line.get(word_start..c_i) {
-                            splitter.push(word, l_i);
-                            has_word = false;
-                        }
-
-                        else {
+                        line.get(word_start..c_i).map_or_else(|| {
                             errors.push(SplitErr::new(
                                 SplitErrType::InvalidWord, line, l_i + 1));
-                        }
+                        }, |word| {
+                            splitter.push(word, l_i);
+                            has_word = false;
+                        });
                     }
 
                     str_literal = !str_literal;
@@ -105,20 +99,20 @@ impl<'a> Split<'a> {
                         word_start = c_i; 
                     }
 
-                    else if let Some(word) = line.get(word_start..c_i) {
-                        splitter.push(word, l_i);
-                    }
-
                     else {
-                        errors.push(SplitErr::new(
-                            SplitErrType::InvalidWord, line, l_i + 1));
+                        line.get(word_start..c_i).map_or_else(|| {
+                            errors.push(SplitErr::new(
+                                SplitErrType::InvalidWord, line, l_i + 1));
+                        }, |word| {
+                            splitter.push(word, l_i);
+                        });
                     }
 
-                    continue
+                    continue;
                 }
 
                 if str_literal {
-                    continue
+                    continue;
                 }
 
                 if ch == ';' {
@@ -146,39 +140,33 @@ impl<'a> Split<'a> {
                     if lex::is_char_word(ch) {
                         // Push current word.
                         if has_word { 
-                            if let Some(word) = line.get(word_start..c_i) {
-                                splitter.push(word, l_i);
-                                has_word = false;
-                            }
-
-                            else {
+                            line.get(word_start..c_i).map_or_else(|| {
                                 errors.push(SplitErr::new(
                                     SplitErrType::InvalidWord, line, l_i + 1));
-                            }
+                            }, |word| {
+                                splitter.push(word, l_i);
+                                has_word = false;
+                            });
                         }
 
                         // Push character.
-                        if let Some(word) = line.get(c_i..=c_i) {
-                            splitter.push(word, l_i);
-                        }
-
-                        else {
+                        line.get(c_i..=c_i).map_or_else(|| {
                             errors.push(SplitErr::new(
                                 SplitErrType::InvalidWord, line, l_i + 1));
-                        }
+                        }, |word| {
+                            splitter.push(word, l_i);
+                        });
                     }
 
                     else if ch.is_whitespace() {
                         if has_word { 
-                            if let Some(word) = line.get(word_start..c_i) {
-                                splitter.push(word, l_i);
-                                has_word = false;
-                            }
-
-                            else {
+                            line.get(word_start..c_i).map_or_else(|| {
                                 errors.push(SplitErr::new(
                                     SplitErrType::InvalidWord, line, l_i + 1));
-                            }
+                            }, |word| {
+                                splitter.push(word, l_i);
+                                has_word = false;
+                            });
                         }
                     }
 
@@ -191,15 +179,13 @@ impl<'a> Split<'a> {
 
             // End of the line, push the current word.
             if has_word { 
-                if let Some(word) = line.get(word_start..) {
-                    splitter.push(word, l_i);
-                    has_word = false;
-                }
-
-                else {
+                line.get(word_start..).map_or_else(|| {
                     errors.push(SplitErr::new(
                         SplitErrType::InvalidWord, line, l_i + 1));
-                }
+                }, |word| {
+                    splitter.push(word, l_i);
+                    has_word = false;
+                });
             }
 
             // Push the line if any word was pushed.

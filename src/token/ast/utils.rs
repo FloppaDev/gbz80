@@ -52,13 +52,11 @@ impl<'a> Ast<'a> {
         inserts.push(self.tokens.len()-1);
 
         if let Some(select_up) = select_up {
-            if let Some(i) = inserts.iter().rev().nth(select_up) {
-                *dest = *i;
-            }
-
-            else {
+            inserts.iter().rev().nth(select_up).map_or_else(|| {
                 bug!("Trying to select a parent token too far up");
-            }
+            }, |i| {
+                *dest = *i;
+            });
         }
     }
 

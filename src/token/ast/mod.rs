@@ -1,5 +1,8 @@
 
+/// Partial implementation of Ast for manipulating the tree.
 pub mod utils;
+
+/// Expands macros.
 pub mod macros;
 
 use crate::{

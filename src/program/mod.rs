@@ -32,10 +32,10 @@ pub fn run() -> Result<(), ()> {
     let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
     // Get source file.
-    let source = Source::new(&clargs.path).map_err(stage::source)?;
+    let source = Source::new(clargs.path).map_err(stage::source)?;
 
     // Split source files into words.
-    let split = Split::new(&source.main(), &clargs.symbols).map_err(stage::split)?;
+    let split = Split::new(source.main(), &clargs.symbols).map_err(stage::split)?;
     #[cfg(debug_assertions)] split.debug();
 
     // Extract type information and data.

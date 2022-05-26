@@ -34,7 +34,7 @@ pub struct Input {
 
 impl Input {
 
-    pub fn new(path: String, content: String) -> Self {
+    pub const fn new(path: String, content: String) -> Self {
         Self{ path, content }
     }
 

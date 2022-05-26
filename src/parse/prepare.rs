@@ -31,7 +31,7 @@ pub fn parse<'a>(
 ) -> Result<Vec<ParsedToken<'a>>, Vec<AsmErr<'a, ParseMsg>>> {
     let mut parsed_tokens = vec![];
     let mut errors = vec![];
-    let mut words_vec = split.words();
+    let words_vec = split.words();
     let mut words = words_vec.iter();
 
     while let Some((word, line, line_number, file)) = words.next() {
