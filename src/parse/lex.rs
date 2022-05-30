@@ -393,7 +393,7 @@ impl TokenType {
             Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|Rlca|
             Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|FlagNz|
             FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|AnonMark|
-            Label|Repeat|MacroCall|MacroIdent|MacroArg|MacroBody => self.parent_type() == parent_type,
+            Label|Repeat|MacroCall|MacroArg|MacroBody => self.parent_type() == parent_type,
 
             Instruction => {
                 matches!(parent_type, Root|MacroBody)
@@ -428,6 +428,10 @@ impl TokenType {
                 matches!(parent_type, DefB|DefW|Argument|Root|At|Expr|BinAdd|
                     BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
                     UnNot|UnNeg)
+            }
+
+            MacroIdent => {
+                matches!(parent_type, MacroCall)
             }
 
             Root|At0|At1 => true
