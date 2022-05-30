@@ -4,12 +4,9 @@
 
 use crate::{
     parse::{
-        lex::{TokenType::*},
+        lex::TokenType::{self, *},
     },
-    token::{ 
-        Token,
-        ast::Ast,
-    },
+    token::{Token, Value, ast::Ast},
     error::asm::{
         AsmErr,
         MacroMsg::{self, *}
@@ -210,12 +207,12 @@ impl<'a, 'b> Macros {
         dest: usize,
         arg_names: &[&str],
         arg_tokens: &[&'b Token<'a>],
-
         macro_call: &'b Token<'a>,
     ) -> Ast<'a> {
         // Iterate over all tokens inside the declaration's body.
         for child in &ast.tokens[src].children {
             let mut child = &ast.tokens[*child];
+            let parent_ty = ast.type_of(child.parent);
 
             // Macro arguments must be replaced with the corresponding tokens.
             if child.ty == MacroArg {
@@ -227,23 +224,41 @@ impl<'a, 'b> Macros {
                         break;
                     }
                 }
+
+                if parent_ty == Instruction {
+                    // Add Argument.
+                    let ty = Argument;
+                    let value = Value::Void;
+
+                    let index = Self::push_arg(
+                        &mut call_ast, offset, macro_call, ty, value, dest);
+
+                    // Add child.
+                    let Token{ ty, value, .. } = *child;
+
+                    let index = Self::push_arg(
+                        &mut call_ast, offset, macro_call, ty, value, index);
+
+                    call_ast = Self::copy_decl(
+                        ast, 
+                        call_ast, 
+                        offset, 
+                        child.index, 
+                        index, 
+                        arg_names, 
+                        arg_tokens, 
+                        macro_call);
+
+                    break;
+                }
             }
 
-            // `call_ast` will be merged into `ast` after the declaration has been copied.
-            let index = call_ast.tokens.len();
-            call_ast.tokens[dest].children.push(offset + index);
-
+            // Add child.
             let Token{ ty, value, .. } = *child;
-            let Token{ file, line_number, line, word, .. } = *macro_call;
-            let children = vec![];
-            let parent = offset + dest;
 
-            let token = Token{
-                ty, file, line_number, line, word, value, index, parent, children
-            };
-
-            call_ast.tokens.push(token);
-
+            let index = Self::push_arg(
+                &mut call_ast, offset, macro_call, ty, value, dest);
+            
             call_ast = Self::copy_decl(
                 ast, 
                 call_ast, 
@@ -256,6 +271,31 @@ impl<'a, 'b> Macros {
         }
 
         call_ast
+    }
+
+    fn push_arg(
+        call_ast: &mut Ast<'a>,
+        offset: usize,
+        macro_call: &'b Token<'a>,
+        ty: TokenType,
+        value: Value<'a>,
+        dest: usize,
+    ) -> usize {
+        // `call_ast` will be merged into `ast` after the declaration has been copied.
+        let index = call_ast.tokens.len();
+        call_ast.tokens[dest].children.push(offset + index);
+
+        let Token{ file, line_number, line, word, .. } = *macro_call;
+        let children = vec![];
+        let parent = offset + dest;
+
+        let token = Token{
+            ty, file, line_number, line, word, value, index, parent, children
+        };
+
+        call_ast.tokens.push(token);
+
+        index
     }
 
 }

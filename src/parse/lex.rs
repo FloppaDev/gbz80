@@ -393,14 +393,14 @@ impl TokenType {
             Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|Rlca|
             Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|FlagNz|
             FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|AnonMark|
-            Label|Repeat|MacroCall|MacroArg => self.parent_type() == parent_type,
+            Label|Repeat|MacroCall => self.parent_type() == parent_type,
 
             Instruction => {
                 matches!(parent_type, Root|MacroBody)
             }
 
             Register => {
-                matches!(parent_type, Argument|At)
+                matches!(parent_type, Argument|At|MacroCall|MacroBody)
             }
 
             Expr => {
@@ -415,23 +415,28 @@ impl TokenType {
 
             At => {
                 matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
-                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg)
+                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg|
+                    MacroCall)
             }
 
             Lit => {
                 matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
                     BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg|
-                    Root|NamedMark|AnonMark|Include)
+                    Root|NamedMark|AnonMark|Include|MacroCall|MacroBody)
             }
 
             Identifier => {
                 matches!(parent_type, DefB|DefW|Argument|Root|At|Expr|BinAdd|
                     BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
-                    UnNot|UnNeg)
+                    UnNot|UnNeg|MacroCall|MacroBody)
             }
 
             MacroIdent|MacroBody => {
                 matches!(parent_type, MacroCall)
+            }
+
+            MacroArg => {
+                matches!(parent_type, Instruction|Root)
             }
 
             Root|At0|At1 => true
