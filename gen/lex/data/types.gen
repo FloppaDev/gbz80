@@ -54,7 +54,7 @@
         Marker ..Marker
         Repeat
         MacroCall
-        MacroArg MacroBody
+        MacroArg
     }
 
     validation {
@@ -65,7 +65,7 @@
         Children { At } Parents { Argument Expr At ..Expr } 
         Children { Lit } Parents { Argument Expr At ..Expr Root NamedMark AnonMark Include }
         Children { Identifier } Parents { DefB DefW Argument Root At Expr ..Expr }
-        Children { MacroIdent } Parents { MacroCall }
+        Children { MacroIdent MacroBody } Parents { MacroCall }
     }
 
     // Those are identified by their name lowercased.
