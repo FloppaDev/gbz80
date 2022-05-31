@@ -44,7 +44,6 @@ pub fn run() -> Result<(), ()> {
     // Build the token tree.
     let mut macros = Macros::new();
     let mut ast = Ast::new(parsed_tokens, &mut macros, &source).map_err(stage::ast)?;
-    #[cfg(debug_assertions)] ast.debug();
     macros.expand(&mut ast).map_err(stage::macros)?;
     #[cfg(debug_assertions)] ast.debug();
 

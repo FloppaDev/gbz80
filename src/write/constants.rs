@@ -98,19 +98,6 @@ impl<'a> Constants<'a> {
         let mut location = 0;
         result.set_location(op_map, ast, &mut location)?; 
 
-        //TODO remove debug code.
-        println!();
-        for (key, value) in &result.constants {
-            let ty = match value {
-                ConstExpr::Mark => "Mark",
-                ConstExpr::Value(_) => "Value",
-                ConstExpr::Expr(_) => "Expr",
-            };
-
-            println!("{}: {}", key, ty);
-        }
-        println!();
-
         Ok(result)
     }
 
@@ -246,7 +233,6 @@ impl<'a> Constants<'a> {
                 }
 
                 Instruction => {
-                    println!("{}", token.line_number());//TODO remove
                     *location += op_map.get(token).len as usize;
                 }
 
@@ -265,7 +251,7 @@ impl<'a> Constants<'a> {
                 }
 
                 Marker => {
-                    self.set_location(op_map, token.get(0), location)?;
+                    self.set_location(op_map, token, location)?;
                 }
 
                 AnonMark => {
@@ -276,7 +262,6 @@ impl<'a> Constants<'a> {
                     }
 
                     else {
-                        println!("{} != {}", *location, marker_location);//TODO remove
                         return Err(err!(ConstantsMsg, MisplacedMarker, token.into())); 
                     }
                 }
