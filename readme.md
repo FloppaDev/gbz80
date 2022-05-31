@@ -2,6 +2,18 @@
 
 An assembler for the Gameboy written in Rust.
 
+## Build
+
+```
+cargo build --release
+```
+
+## Usage
+
+```
+gbz80 ./asm/hello/hello.gb.asm -o ./hello.gb
+```
+
 ## Features
 
 - The syntax is a stripped down version of the syntax from the z80
@@ -31,8 +43,16 @@ cargo doc --open
 
 ## Sources
 
-- Assembly tutorials: https://www.chibiakumas.com  
-- Instruction set: https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
-- Cpu manual: http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+- Assembly tutorials: 
+    https://www.chibiakumas.com  
+
+- Instruction set:  
+    https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
+
+- Cpu manual:  
+    http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf  
+
+- Memory banks in roms:  
+    https://www.reddit.com/r/EmuDev/comments/dyqz7f/gb_file_mbc_formatting_for_game_boy_emulation/
 
 
