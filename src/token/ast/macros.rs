@@ -249,7 +249,7 @@ impl<'a, 'b> Macros {
                         arg_tokens, 
                         macro_call);
 
-                    break;
+                    continue;
                 }
             }
 
