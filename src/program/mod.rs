@@ -58,22 +58,7 @@ pub fn run() -> Result<(), ()> {
     constants.update(updates);
     #[cfg(debug_assertions)] constants.debug();
 
-    // let instructions = opcodes::get_instructions();
-    // let int_ast = ast::Token::make_ast(split, &instructions);
-
-    // let err = validation::check(&int_ast.root);
-    // if err != 0 {
-        // eprintln!(
-            // "\x1b[0;31mCompilation failed at syntax validation with {} errors.\x1b[0m",
-            // err
-        // );
-        // std::process::exit(1);
-    // }
-    
-    // let ops_map = encode::instruction_ops(&int_ast.root, &instructions);
-    // let markers = encode::get_markers(&int_ast.root, &ops_map);
-
-    //encode::build(int_ast.root, instructions);
+    //encode::build(ast, &op_map);
 
     Ok(())
 }

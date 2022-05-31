@@ -19,6 +19,14 @@ impl Source {
         Ok(source)
     }
 
+    #[cfg(test)]
+    pub fn from_content(content: String) -> Self {
+        let mut source = Self{ inputs: vec![] };
+        source.inputs.push(Input::new("".into(), content));
+
+        source
+    }
+
     // Gets the main source file. 
     pub fn main(&self) -> &Input {
         &self.inputs[0]

@@ -1,9 +1,12 @@
 
+#![allow(unused_must_use)]
+
 use crate::{
     parse::{
         split::Split,
         lex::TokenType,
         prepare::{ self, ParsedToken },
+        source::Source,
     },
     token::{
         Value,
@@ -19,8 +22,8 @@ fn split() {
     let symbols = ["TEST"];
 
     for _ in 0..100 {
-        let input = rand_file(); 
-        let _ = Split::new(&input, &symbols);
+        let source = Source::from_content(rand_file()); 
+        Split::new(source.main(), &symbols);
     }
 }
 
@@ -37,8 +40,9 @@ fn parse1() {
         input.push(' ');
     }
 
-    let split = Split::new(&input, &symbols).unwrap();
-    let _ = prepare::parse(&split);
+    let source = Source::from_content(input); 
+    let split = Split::new(source.main(), &symbols).unwrap();
+    prepare::parse(&split);
 }
 
 #[test]
@@ -55,8 +59,9 @@ fn parse2() {
         input.push(chars[urand(chars.len() - 1)]);
     }
 
-    let split = Split::new(&input, &symbols).unwrap();
-    let _ = prepare::parse(&split);
+    let source = Source::from_content(input); 
+    let split = Split::new(source.main(), &symbols).unwrap();
+    prepare::parse(&split);
 }
 
 #[test]
@@ -77,6 +82,7 @@ fn ast() {
                 value: Value::Str(""),
                 line: "",
                 word: "",
+                file: "",
             };
 
             tokens.push(token);
@@ -86,7 +92,8 @@ fn ast() {
             }
         }
 
-        let _ = Ast::new(tokens, &mut macros);
+        let source = Source::from_content("".into()); 
+        Ast::new(tokens, &mut macros, &source);
     }
 }
 
