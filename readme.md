@@ -43,16 +43,16 @@ cargo doc --open
 
 ## Sources
 
-- Assembly tutorials: 
-    https://www.chibiakumas.com  
+- Assembly tutorials:   
+    - https://www.chibiakumas.com   
 
 - Instruction set:  
-    https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
+    - https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
 
 - Cpu manual:  
-    http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf  
+    - http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf  
 
 - Memory banks in roms:  
-    https://www.reddit.com/r/EmuDev/comments/dyqz7f/gb_file_mbc_formatting_for_game_boy_emulation/
+    - https://www.reddit.com/r/EmuDev/comments/dyqz7f/gb_file_mbc_formatting_for_game_boy_emulation/
 
 
