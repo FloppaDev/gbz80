@@ -60,7 +60,7 @@
 #macro mul. .lhs .rhs
     add .lhs .rhs ; bs code
     nop
-    add (hl) &10
+    add a a
 #macro
 
 ; mul. a 3     mul
