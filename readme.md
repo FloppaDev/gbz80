@@ -44,7 +44,11 @@ cargo doc --open
 ## Sources
 
 - Assembly tutorials:   
+<<<<<<< HEAD
     - https://www.chibiakumas.com   
+=======
+    https://www.chibiakumas.com   
+>>>>>>> 28e2b6203390daab402bfb5ad075b2c74c168276
 
 - Instruction set:  
     - https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  

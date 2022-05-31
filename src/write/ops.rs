@@ -141,7 +141,13 @@ impl<'a> OpMap<'a> {
     ) {
         for token in ast.children() {
             match token.ty() {
-                MacroCall => Self::walk(token, map, errors),
+                MacroCall => {
+                    for child in token.children() {
+                        if child.ty() == MacroBody {
+                            Self::walk(child, map, errors);
+                        }
+                    }
+                }
 
                 Instruction => {
                     let opcode = instructions::find(token);

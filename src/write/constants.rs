@@ -96,11 +96,20 @@ impl<'a> Constants<'a> {
         result = result.get_constants(ast, &mut fail_safe)?; 
 
         let mut location = 0;
+        result.set_location(op_map, ast, &mut location)?; 
 
-        // Calculate the size of labels and validate markers.
-        for child in ast.children() {
-            result.set_location(op_map, child, &mut location)?; 
+        //TODO remove debug code.
+        println!();
+        for (key, value) in &result.constants {
+            let ty = match value {
+                ConstExpr::Mark => "Mark",
+                ConstExpr::Value(_) => "Value",
+                ConstExpr::Expr(_) => "Expr",
+            };
+
+            println!("{}: {}", key, ty);
         }
+        println!();
 
         Ok(result)
     }
@@ -222,67 +231,88 @@ impl<'a> Constants<'a> {
     fn set_location(
         &mut self,
         op_map: &OpMap<'a>,
-        token: &'a TokenRef<'a>,
+        root: &'a TokenRef<'a>,
         location: &mut usize,
     ) -> Result<(), AsmErr<'a, ConstantsMsg>> {
-        match token.ty() {
-            MacroCall => {
-                for child in token.children() {
-                    if child.ty() == MacroBody {
-                        self.set_location(op_map, child, location)?;
-                        break;
+        for token in root.children() {
+            match token.ty() {
+                MacroCall => {
+                    for child in token.children() {
+                        if child.ty() == MacroBody {
+                            self.set_location(op_map, child, location)?;
+                            break;
+                        }
                     }
                 }
-            }
 
-            Instruction => *location += op_map.get(token).len as usize,
+                Instruction => {
+                    println!("{}", token.line_number());//TODO remove
+                    *location += op_map.get(token).len as usize;
+                }
 
-            Lit => *location += Self::size_of_lit(token),
+                Lit => *location += Self::size_of_lit(token),
 
-            Identifier => {
-                let ident = token.value().as_str();
-                *location += self.size_of_ident(ident)?;
-            }
+                Identifier => {
+                    let ident = token.value().as_str();
+                    *location += self.size_of_ident(ident)?;
+                }
 
-            Label => {
-                let value = ConstExpr::Value(Value::Usize(*location));
-                let key = token.value().as_str();
-                *self.get_mut(key).unwrap() = value;
-                *location += 2;
-            }
-
-            AnonMark|NamedMark => {
-                let marker_location = token.get(0).get(0).value().as_usize();
-
-                if *location == marker_location {
+                Label => {
                     let value = ConstExpr::Value(Value::Usize(*location));
                     let key = token.value().as_str();
                     *self.get_mut(key).unwrap() = value;
+                    *location += 2;
                 }
 
-                else {
-                    return Err(err!(ConstantsMsg, MisplacedMarker, token.into())); }
-
-                *location += 2;
-            }
-
-            Directive => {
-                let dir = token.get(0);
-                
-                if dir.ty() == Include {
-                    let path = dir.get(0).get(0).value().as_str();
-                    *location += self.includes.get(path).unwrap().len();
+                Marker => {
+                    self.set_location(op_map, token.get(0), location)?;
                 }
-            }
 
-            _ => {}
+                AnonMark => {
+                    let marker_location = token.get(0).get(0).value().as_usize();
+
+                    if *location <= marker_location {
+                        *location = marker_location;
+                    }
+
+                    else {
+                        println!("{} != {}", *location, marker_location);//TODO remove
+                        return Err(err!(ConstantsMsg, MisplacedMarker, token.into())); 
+                    }
+                }
+
+                NamedMark => {
+                    let marker_location = token.get(0).get(0).value().as_usize();
+
+                    if *location <= marker_location {
+                        let value = ConstExpr::Value(Value::Usize(*location));
+                        let key = token.value().as_str();
+                        *self.get_mut(key).unwrap() = value;
+                        *location = marker_location;
+                    }
+
+                    else {
+                        return Err(err!(ConstantsMsg, MisplacedMarker, token.into())); 
+                    }
+                }
+
+                Directive => {
+                    let dir = token.get(0);
+                    
+                    if dir.ty() == Include {
+                        let path = dir.get(0).get(0).value().as_str();
+                        *location += self.includes.get(path).unwrap().len();
+                    }
+                }
+
+                _ => {}
+            }
         }
 
         Ok(())
     }
     
     fn size_of_ident(&self, ident: &'a str) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
-        dbg!(ident);
         match self.get(ident).unwrap() {
             ConstExpr::Value(value) => {
                 match value {
@@ -296,7 +326,13 @@ impl<'a> Constants<'a> {
 
             ConstExpr::Mark => Ok(2),
 
-            _ => bug!("Unexpected `ConsExtr` type."),
+            ConstExpr::Expr(token) => {
+                match token.parent().ty() {
+                    DefB => Ok(1),
+                    DefW => Ok(2),
+                    _ => bug!("Unexpected token type")
+                }
+            }
         }
     }
 
