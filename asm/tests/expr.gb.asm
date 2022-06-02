@@ -1,31 +1,27 @@
 
-;TODO force idents to start with a _, or warn
-; there are too many potential conflicts (registers, flags...).
+#db N0 15 + -10                                 ;5
+#db N1 20 - -10                                 ;30
+#db N2 -3 + 4                                   ;1
 
-#db N0 15 + -10
-#db N1 20 - -10
-#db N2 -3 + 4
+#db _A 10 + 5                                   ;15
+#db _B (_A + 2) * (10 - 3)                      ;119
+#db _C (-10 + (56 - 1) * 2) SHR 1               ;50 TODO got 22
 
-#db _A 10 + 5
-#db _B (_A + 2) * (10 - 3)
-#db _C (-10 + (56 - 1) * 2) SHR 1 ;TODO wrong 
-
-#dw _D M1 - M0
+#dw _D M1 - M0                                  ;9 TODO got 256
 &100:M0
 &109:M1
 
 ; Should be the same.
 ;TODO They're not the same
-#db E0 5 * 2 + 3 SHL 1 OR %1000
-#db E1 (((5 * 2) + 3) SHL 1) OR %1000
+#db E0 5 * 2 + 3 SHL 1 OR %1000                 ;TODO got 13
+#db E1 (((5 * 2) + 3) SHL 1) OR %1000           ;TODO got 26
 
 ; Circular dependency.
 ; #db X0 X1
 ; #db X1 X0
 
-; TODO both wrong
-#db P0 10 + 2 * 1 - 5 + 3
-#db P1 (10 + 2 * 1 - 5 + 3)
+#db P0 10 + 2 * 1 - 5 + 3                       ;10 TODO got 4, did 10 + 2 * 1 - (5 + 3)
+#db P1 (10 + 2 * 1 - 5 + 3)                     ;10 TODO got 4
 
 ; Reserved identifiers /!\
 ; #db XOR 10

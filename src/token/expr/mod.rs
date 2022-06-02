@@ -7,18 +7,33 @@ use crate::{
     error::asm::{AsmErr, AstMsg::{self, *}},
 };
 
+use Associativity::*;
+
+enum Associativity {
+    LeftToRight,
+    RightToLeft,
+}
+
+struct Prec {
+    ty: Associativity,
+    operators: Vec<TokenType>,
+}
+
+impl Prec {
+
+    const fn new(ty: Associativity, operators: Vec<TokenType>) -> Self {
+        Self{ ty, operators }
+    }
+
+}
+
 /// Precedence from strongest to weakest.
-/// NOT -x
-/// * / MOD
-/// + -
-/// SHL SHR
-/// AND XOR OR
-const PRECEDENCE: [TokenType; 12] = [
-    UnNot, UnNeg,
-    BinMul, BinDiv, BinMod,
-    BinAdd, BinSub,
-    BinShl, BinShr,
-    BinAnd, BinXor, BinOr
+const PRECEDENCE: [Prec; 5] = [
+    Prec::new(RightToLeft, vec![UnNot, UnNeg]),
+    Prec::new(LeftToRight, vec![BinMul, BinDiv, BinMod]),
+    Prec::new(LeftToRight, vec![BinAdd, BinSub]),
+    Prec::new(LeftToRight, vec![BinShl, BinShr]),
+    Prec::new(LeftToRight, vec![BinAnd, BinXor, BinOr]),
 ];
 
 /// Builds an `Expr` token from a `DefB` or `DefW`.
