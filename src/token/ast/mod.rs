@@ -109,10 +109,7 @@ impl<'a> Ast<'a> {
             let sel_ty = self.type_of(*selection);
 
             if fail_safe == 0 {
-                let e = err!(AstMsg, UnhandledNewline, err_ctx);
-                errors.push(e);
-
-                return Err(());
+                bug!("Could not process newline");
             }
 
             fail_safe -= 1;

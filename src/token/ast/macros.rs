@@ -1,7 +1,4 @@
 
-//TODO macro arguments need to be hierarchized.
-// e.g.     mul. a b -> Argument->Register->A...
-
 use crate::{
     parse::{
         lex::TokenType::{self, *},

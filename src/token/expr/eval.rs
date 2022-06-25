@@ -1,4 +1,3 @@
-//TODO make sure that parents of tokens are still correct after eval.
 
 #![allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
 
@@ -166,9 +165,7 @@ impl<'a> ExprCtx<'a> {
                         return self.eval_op(scope);
                     }
 
-                    else {
-                        return self.eval_scope(child);
-                    }
+                    return self.eval_scope(child);
                 }
 
                 bug!("Unexpected token in expression.");

@@ -85,9 +85,6 @@ pub enum ParseMsg {
     InvalidAnonMark,
     InvalidAnonMarkHex,
     ReservedKeyword,
-    //TODO those are bugs
-    UnhandledType,
-    UnexpectedPrefix,
 }
 
 impl AsmMsg for ParseMsg {
@@ -158,12 +155,6 @@ impl AsmMsg for ParseMsg {
 
             ReservedKeyword =>
                 "Identifier cannot be a reserved keyword",
-
-            UnhandledType => 
-                "Parser could not handle the token type",
-
-            UnexpectedPrefix => 
-                "Wrong type identified from prefix",
         }
     }
 
@@ -178,8 +169,6 @@ pub enum AstMsg {
     UnaryWithoutRhs,
     BinaryWithoutLhs,
     BinaryWithoutRhs,
-    //TODO assembler bug
-    UnhandledNewline,
 }
 
 impl AsmMsg for AstMsg {
@@ -205,9 +194,6 @@ impl AsmMsg for AstMsg {
 
             BinaryWithoutRhs =>
                 "Binary operator expected an operand on its right",
-
-            UnhandledNewline =>
-                "Internal error on new line",
         }
     }
 }
@@ -222,7 +208,6 @@ pub enum MacroMsg {
     NoCallIdent,
     DeclNotFound,
     ArgCountMismatch,
-    //TODO ArgNotFound,
 }
 
 impl AsmMsg for MacroMsg {
@@ -251,9 +236,6 @@ impl AsmMsg for MacroMsg {
 
             ArgCountMismatch =>
                 "Argument count in the call does not match the declaration",
-
-            //ArgNotFound =>
-                //"Argument not found in declaration",
         }
     }
 

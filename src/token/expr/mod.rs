@@ -28,7 +28,7 @@ impl Prec {
 }
 
 /// Precedence from strongest to weakest.
-const PRECEDENCE: &'static [Prec] = &[
+const PRECEDENCE: &[Prec] = &[
     Prec::new(Unary, &[UnNot]),
     Prec::new(Binary, &[BinMul, BinDiv, BinMod]),
     Prec::new(Binary, &[BinAdd, BinSub]),

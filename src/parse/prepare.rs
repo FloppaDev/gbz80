@@ -181,7 +181,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
             Ok((ty, Value::Str(str_value)))
         }
 
-        _ => Err(ParseMsg::UnhandledType)
+        _ => bug!("Unhandled type")
     }
 }
 
@@ -269,7 +269,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
             }
 
             // Search by prefix gave a wrong result
-            _ => return Err(ParseMsg::UnexpectedPrefix),
+            _ => bug!("Unexpected prefix")
         }
     }
 
@@ -309,7 +309,6 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
 
     // Decimal literal ?
     if text::is_char_num(c) {
-        //TODO err! macro in identify, it is useless in extract.
         let dec = text::check_dec(word).ok_or(InvalidDec)?;
         return Ok(vec![ (LitDec, dec) ]);
     }
