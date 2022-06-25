@@ -104,10 +104,9 @@ impl<'a> SplitErr<'a> {
 
 impl<'a> std::fmt::Display for SplitErr<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        //TODO same formatting as AsmErr
         let text = fmt::strip()
             .info(&format!("({:?}) ", self.ty))
-            .base(&format!(
+            .bold(&format!(
                 "{}\nl{}:    {}", self.description(), self.line_number, self.line))
             .read();
 

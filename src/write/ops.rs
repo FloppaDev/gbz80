@@ -25,7 +25,6 @@ pub enum Constant {
 impl Constant {
 
     fn cmp(&self, token: &TokenRef) -> bool {
-        //TODO verifiy that the value has the correct len, it's not convenient here.
         if token.ty() == Identifier {
             return true;
         }
@@ -83,7 +82,6 @@ pub enum Arg {
 
 impl Arg {
 
-    //TODO Return Result.
     fn cmp(&self, token: &TokenRef) -> bool {
         match self {
             Arg::At(arg) if token.ty() == At => {

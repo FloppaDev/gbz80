@@ -1,7 +1,8 @@
 
 use std::{
     path::Path,
-    fs,
+    fs::{self, File},
+    io::{self, prelude::*},
 };
 
 #[derive(Debug)]
@@ -48,6 +49,19 @@ impl Input {
 
     pub fn path(&self) -> &Path {
         Path::new(&self.path)
+    }
+
+    pub fn read_local(&self, local: &str) -> Result<Vec<u8>, io::Error> {
+        let path = match self.path().parent() {
+            Some(dir) => format!("{}/{}", dir.to_str().unwrap(), local),
+            None => local.into() 
+        };
+
+        let mut buffer = vec![];
+        let mut file = File::open(path)?;
+        file.read_to_end(&mut buffer)?;
+
+        Ok(buffer)
     }
 
     pub fn lines(&self) -> std::str::Lines {

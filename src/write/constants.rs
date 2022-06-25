@@ -23,8 +23,6 @@ use crate::{
 use crate::program::fmt::title;
 
 use std::collections::HashMap;
-use std::io::prelude::*;
-use std::fs::File;
 
 /// Holds the value of a constant or the token required to calculate it.
 #[derive(Copy, Clone)]
@@ -40,15 +38,14 @@ pub enum ConstExpr<'a> {
 }
 
 pub struct Constants<'a> {
-    pub constants: Vec<(&'a str, ConstExpr<'a>)>,//TODO rename
-    //TODO include data
+    pub const_exprs: Vec<(&'a str, ConstExpr<'a>)>,
     includes: HashMap<&'a str, Vec<u8>>,
 }
 
 impl<'a> Constants<'a> {
 
     pub fn get(&self, ident: &str) -> Option<&ConstExpr<'a>> {
-        for (key, value) in &self.constants {
+        for (key, value) in &self.const_exprs {
             if *key == ident {
                 return Some(value)
             }
@@ -58,7 +55,7 @@ impl<'a> Constants<'a> {
     }
 
     pub fn get_mut(&mut self, ident: &str) -> Option<&mut ConstExpr<'a>> {
-        for (key, value) in &mut self.constants {
+        for (key, value) in &mut self.const_exprs {
             if *key == ident {
                 return Some(value)
             }
@@ -68,19 +65,19 @@ impl<'a> Constants<'a> {
     }
 
     fn insert(&mut self, ident: &'a str, const_expr: ConstExpr<'a>) -> Result<(), ()> {
-        for (key, _) in &self.constants {
+        for (key, _) in &self.const_exprs {
             if *key == ident {
                 return Err(());
             }
         }
 
-        self.constants.push((ident, const_expr));
+        self.const_exprs.push((ident, const_expr));
 
         Ok(()) 
     }
 
     fn entries(&self) -> &[(&'a str, ConstExpr<'a>)] {
-        &self.constants
+        &self.const_exprs
     }
 
     pub fn new(
@@ -89,7 +86,7 @@ impl<'a> Constants<'a> {
     ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         let mut fail_safe = ITERATION_LIMIT;
         let mut result = Self{ 
-            constants: vec![],
+            const_exprs: vec![],
             includes: HashMap::new(),
         };
 
@@ -182,24 +179,10 @@ impl<'a> Constants<'a> {
                             let local = child.get(0).get(0).value().as_str();
 
                             if self.includes.get(local).is_none() {
-                                //TODO put this code as a function in `Input`
-                                let source = child.ast().source.main().path();
+                                let data = child.ast().source.main().read_local(local).map_err(|_|
+                                    err!(ConstantsMsg, FileReadFailed, token.into()))?;
 
-                                let path = match source.parent() {
-                                    //TODO Path must be validated for to_str when building `Source`
-                                    Some(dir) => format!("{}/{}", dir.to_str().unwrap(), local),
-                                    None => local.into() 
-                                };
-
-                                let mut buffer = vec![];
-
-                                let mut file = File::open(path).map_err(|_| err!(
-                                    ConstantsMsg, FileReadFailed, child.into()))?;
-
-                                file.read_to_end(&mut buffer).map_err(|_| err!(
-                                    ConstantsMsg, FileReadFailed, child.into()))?;
-
-                                self.includes.insert(local, buffer);
+                                self.includes.insert(local, data);
                             }
                         }
 
@@ -340,7 +323,7 @@ impl<'a> Constants<'a> {
     pub fn debug(&self) {
         title("Constant values");
 
-        for (key, value) in &self.constants {
+        for (key, value) in &self.const_exprs {
             let value_str = if let ConstExpr::Value(v) = value {
                 match v {
                     Value::Usize(v) => v.to_string(),

@@ -73,7 +73,7 @@
 #db FONT_LEN FontEnd - Font
 
 :Font
-    ;#include "font.bin"
+    #include "../hello/Font96.FNT"
 :FontEnd
     ld a b
     add Font

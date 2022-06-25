@@ -88,5 +88,3 @@ fn main() {
         Err(_) => exit(1)
     }
 }
-
-//TODO memory banks.

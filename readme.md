@@ -42,6 +42,10 @@ Build the docs with
 ```
 cargo doc --open
 ```
+## Unimplemented
+
+- Memory banks
+- Multiple source files
 
 ## Sources
 
