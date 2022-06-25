@@ -7,9 +7,9 @@
 #db _B (_A + 2) * (10 - 3)                      ;119
 #db _C (10 + (56 - 1) * 2) SHR 1                ;60
 
-#dw _D M1 - M0                                  ;9 TODO got 256
-&100:M0                                         ;TODO
-&109:M1                                         ;TODO
+#dw _D M1 - M0                                  ;9
+&100:M0                                         ;256
+&109:M1                                         ;265
 
 ; Should be the same.
 #db E0 5 * 2 + 3 SHL 1 OR %1000                 ;26

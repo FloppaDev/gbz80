@@ -254,25 +254,10 @@ impl<'a> Constants<'a> {
                     self.set_location(op_map, token, location)?;
                 }
 
-                AnonMark => {
+                AnonMark|NamedMark => {
                     let marker_location = token.get(0).get(0).value().as_usize();
 
                     if *location <= marker_location {
-                        *location = marker_location;
-                    }
-
-                    else {
-                        return Err(err!(ConstantsMsg, MisplacedMarker, token.into())); 
-                    }
-                }
-
-                NamedMark => {
-                    let marker_location = token.get(0).get(0).value().as_usize();
-
-                    if *location <= marker_location {
-                        let value = ConstExpr::Value(Value::Usize(*location));
-                        let key = token.value().as_str();
-                        *self.get_mut(key).unwrap() = value;
                         *location = marker_location;
                     }
 
