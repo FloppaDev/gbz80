@@ -173,7 +173,6 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
                 mul *= 10;
             }
 
-            //TODO check for overflows
             Ok((ty, Value::Usize(dec)))
         }
 
@@ -210,7 +209,6 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                     let lit = word.get(1..word.len() - 1).ok_or(InvalidAnonMark)?;
                     let hex = text::check_hex(lit).ok_or(InvalidAnonMarkHex)?;
                     return Ok(vec![ (AnonMark, text::no_check("")), (LitHex, hex) ]);
-                    //TODO put hex in AnonMark?
                 }
 
                 // &2763:label
@@ -222,7 +220,6 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                     let ident = text::check_ident(label).ok_or(InvalidNamedMarkLabelIdent)?;
 
                     return Ok(vec![ (NamedMark, ident), (LitHex, hex) ]);
-                    //TODO put hex in AnonMark?
                 }
 
                 // &2787

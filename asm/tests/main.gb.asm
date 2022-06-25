@@ -88,3 +88,4 @@
 
 2mul. a b
 
+;&99999 ;OK. it fails as expected.

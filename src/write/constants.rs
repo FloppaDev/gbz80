@@ -236,11 +236,12 @@ impl<'a> Constants<'a> {
                     *location += op_map.get(token).len as usize;
                 }
 
-                Lit => *location += Self::size_of_lit(token),
+                Lit => *location += Self::size_of_lit(token)?,
 
                 Identifier => {
                     let ident = token.value().as_str();
-                    *location += self.size_of_ident(ident)?;
+                    *location += self.size_of_ident(ident).map_err(|e|
+                        err!(ConstantsMsg, e, token.into()))?;
                 }
 
                 Label => {
@@ -282,11 +283,20 @@ impl<'a> Constants<'a> {
         Ok(())
     }
     
-    fn size_of_ident(&self, ident: &'a str) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
+    fn size_of_ident(&self, ident: &'a str) -> Result<usize, ConstantsMsg> {
         match self.get(ident).unwrap() {
             ConstExpr::Value(value) => {
                 match value {
-                    Value::Usize(v) => Ok(Self::size_of_num(*v)),
+                    Value::Usize(v) => {
+                        let v = *v; 
+
+                        match v {
+                            v if (0..=255).contains(&v) => Ok(1),
+                            v if (256..=65535).contains(&v) => Ok(2),
+                            _ => Err(Overflow)
+
+                        }
+                    }
 
                     Value::Str(v) => Ok(v.len()),
 
@@ -306,25 +316,23 @@ impl<'a> Constants<'a> {
         }
     }
 
-    fn size_of_lit(lit: &TokenRef<'a>) -> usize {
+    fn size_of_lit(lit: &TokenRef<'a>) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
         let litx = lit.get(0); 
         return match litx.ty() {
-            LitDec|LitHex|LitBin => Self::size_of_num(litx.value().as_usize()),
+            LitDec|LitHex|LitBin => {
+                let value = litx.value().as_usize();
 
-            LitStr => litx.value().as_str().len(),
+                match value {
+                    value if (0..=255).contains(&value) => Ok(1),
+                    value if (256..=65535).contains(&value) => Ok(2),
+                    _ => Err(err!(ConstantsMsg, Overflow, lit.into()))
+
+                }
+            }
+
+            LitStr => Ok(litx.value().as_str().len()),
 
             _ => bug!("Unhandled literal type."),
-        }
-    }
-
-    fn size_of_num(value: usize) -> usize {
-        match value {
-            value if value <= 255 => 1,
-
-            value if (256..=65535).contains(&value) => 2,
-
-            //TODO return Err
-            _ => bug!("Exceeding number capacity.")
         }
     }
 

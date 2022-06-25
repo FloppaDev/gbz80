@@ -303,6 +303,7 @@ pub enum ConstantsMsg {
     DuplicateKey,
     MisplacedMarker,
     FileReadFailed,
+    Overflow,
 }
 
 impl AsmMsg for ConstantsMsg {
@@ -319,6 +320,9 @@ impl AsmMsg for ConstantsMsg {
 
             FileReadFailed =>
                 "The file to include could not be read",
+
+            Overflow =>
+                "The value overflows its capacity",
         }
     }
 
