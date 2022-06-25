@@ -1,6 +1,6 @@
 # gbz80
 
-An assembler for the Gameboy written in Rust.
+This is my attempt at making an assembler for the Gameboy, in Rust.
 
 ## Build
 
@@ -16,9 +16,11 @@ gbz80 ./asm/hello/hello.gb.asm -o ./hello.gb
 
 ## Features
 
-- The syntax is a stripped down version of the syntax from the z80
-- Constants, those include labels and math expressions in defines
+- A stripped down version of the syntax from the z80
+- Constants
+- Build-time expressions
 - Macros
+- Error reporting
 
 An hello world example is available in './asm/hello'
 
