@@ -1,4 +1,3 @@
-
 //TODO make sure that parents of tokens are still correct after eval.
 
 #![allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
@@ -157,18 +156,18 @@ impl<'a> ExprCtx<'a> {
                     //          #db X1 10 + (5)
                     // error:   #db x2 1 2 3
                     let not_op = matches!(scope.ty(), At|Expr);
-                    let is_value = matches!(child.ty(), Lit|Identifier);
+                    let is_value = matches!(child.ty(), Lit|Identifier|At);
 
-                    if (not_op && is_value) || child.ty() == At {
+                    if not_op && is_value {
                         return self.eval_scope(child);
-                    }
-
-                    else if child.ty().parent_type() == Expr {
-                        return self.eval_op(child);
                     }
 
                     else if scope.ty().parent_type() == Expr {
                         return self.eval_op(scope);
+                    }
+
+                    else {
+                        return self.eval_scope(child);
                     }
                 }
 
@@ -201,7 +200,6 @@ impl<'a> ExprCtx<'a> {
         op: &'a TokenRef<'a>,
     ) -> Result<(isize, Self), Self> {
         assert_eq!(op.ty().parent_type(), Expr);
-
         match op.ty() {
             UnNot => {
                 match self.eval_scope(op.get(0)) {
