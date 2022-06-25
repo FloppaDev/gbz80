@@ -7,33 +7,33 @@ use crate::{
     error::asm::{AsmErr, AstMsg::{self, *}},
 };
 
-use Associativity::*;
+use Arity::*;
 
-enum Associativity {
-    LeftToRight,
-    RightToLeft,
+enum Arity {
+    Unary,
+    Binary,
 }
 
 struct Prec {
-    ty: Associativity,
-    operators: Vec<TokenType>,
+    arity: Arity,
+    operators: &'static [TokenType],
 }
 
 impl Prec {
 
-    const fn new(ty: Associativity, operators: Vec<TokenType>) -> Self {
-        Self{ ty, operators }
+    const fn new(arity: Arity, operators: &'static [TokenType]) -> Self {
+        Self{ arity, operators }
     }
 
 }
 
 /// Precedence from strongest to weakest.
-const PRECEDENCE: [Prec; 5] = [
-    Prec::new(RightToLeft, vec![UnNot, UnNeg]),
-    Prec::new(LeftToRight, vec![BinMul, BinDiv, BinMod]),
-    Prec::new(LeftToRight, vec![BinAdd, BinSub]),
-    Prec::new(LeftToRight, vec![BinShl, BinShr]),
-    Prec::new(LeftToRight, vec![BinAnd, BinXor, BinOr]),
+const PRECEDENCE: &'static [Prec] = &[
+    Prec::new(Unary, &[UnNot]),
+    Prec::new(Binary, &[BinMul, BinDiv, BinMod]),
+    Prec::new(Binary, &[BinAdd, BinSub]),
+    Prec::new(Binary, &[BinShl, BinShr]),
+    Prec::new(Binary, &[BinAnd, BinXor, BinOr]),
 ];
 
 /// Builds an `Expr` token from a `DefB` or `DefW`.
@@ -59,31 +59,27 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
         loop {
             let child = ast.tokens[scope].children[i];
             let ty = ast.tokens[child].ty; 
-            let mut is_bin = false;
-            let mut is_neg = false;
+            let mut binary = false;
 
             if ty.parent_type() == Expr {
-                if ty == BinSub && prec == UnNeg {
-                    match build_un_neg(ast, child) {
-                        Ok(n) => is_neg = n,
-                        Err(e) => return Err(e),
-                    }
-                }
+                for op in prec.operators {
+                    if *op == ty {
+                        match prec.arity {
+                            Binary => {
+                                binary = true;
+                                build_bin(ast, child)?;
+                            }
 
-                if !is_neg && ty == prec {
-                    if prec == UnNot {
-                        build_un_not(ast, child)?;
-                    }
-                    
-                    else {
-                        build_bin(ast, child)?;
-                        is_bin = true;
+                            Unary => {
+                                build_un(ast, child)?;
+                            }
+                        }
                     }
                 }
             }
 
-            // if is it was a bin, 2 tokens were removed. Next index is the same index.
-            if !is_bin {
+            // if binary, 2 tokens were removed. Next index is the same index.
+            if !binary {
                 i += 1;
             }
 
@@ -96,32 +92,12 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
     Ok(())
 }
 
-/// Check if a '-' is a unary operator and attempts to move right operand into it.
-fn build_un_neg<'a>(ast: &mut Ast<'a>, neg: usize) -> Result<bool, AsmErr<'a, AstMsg>> {
-    if let Some(left) = ast.left_of(ast.tokens[neg].index) {
-        let left = &ast.tokens[left];
-        let is_expr = left.ty.parent_type() == Expr;
-
-        if !is_expr || !left.children.is_empty() {
-            return Ok(false);
-        }
-    }
-
-    ast.tokens[neg].ty = UnNeg;
-    let right = ast.right_of(neg)
-        .ok_or(err!(AstMsg, UnaryWithoutRhs, (&ast.tokens[neg]).into()))?;
-
-    ast.move_into(right, neg);
-
-    Ok(true)
-}
-
 /// Attempts to move right operand into a unary 'not' operator.
-fn build_un_not<'a>(ast: &mut Ast<'a>, not: usize) -> Result<(), AsmErr<'a, AstMsg>> {
-    let right = ast.right_of(not)
-        .ok_or(err!(AstMsg, UnaryWithoutRhs, (&ast.tokens[not]).into()))?;
+fn build_un<'a>(ast: &mut Ast<'a>, un: usize) -> Result<(), AsmErr<'a, AstMsg>> {
+    let right = ast.right_of(un)
+        .ok_or(err!(AstMsg, UnaryWithoutRhs, (&ast.tokens[un]).into()))?;
 
-    ast.move_into(right, not);
+    ast.move_into(right, un);
 
     Ok(())
 }

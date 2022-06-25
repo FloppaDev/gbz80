@@ -22,7 +22,7 @@
 
                     Expr {
                         BinAdd BinSub BinMul BinDiv BinMod BinShr 
-                        BinShl BinAnd BinOr BinXor UnNot UnNeg 
+                        BinShl BinAnd BinOr BinXor UnNot 
                     }
 
                     Identifier

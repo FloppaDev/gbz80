@@ -107,7 +107,6 @@ pub enum TokenType {
                 BinOr,
                 BinXor,
                 UnNot,
-                UnNeg,
             Identifier,
     Directive,
         DefB,
@@ -151,7 +150,7 @@ impl TokenType {
             FlagZ|FlagNz|FlagC|FlagNc => Flag,
 
             BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
-            BinXor|UnNot|UnNeg => Expr,
+            BinXor|UnNot => Expr,
 
             DefB|DefW|Include|Import|Macro => Directive,
 
@@ -269,7 +268,7 @@ impl TokenType {
     /// Returns a `TokenType` from an index.
     #[cfg(test)]
     pub const fn at(index: usize) -> Self {
-        const COUNT: usize = 108;
+        const COUNT: usize = 107;
 
         match index % COUNT {
             0 => Instruction,
@@ -363,23 +362,22 @@ impl TokenType {
             88 => BinOr,
             89 => BinXor,
             90 => UnNot,
-            91 => UnNeg,
-            92 => Identifier,
-            93 => Directive,
-            94 => DefB,
-            95 => DefW,
-            96 => Include,
-            97 => Import,
-            98 => Macro,
-            99 => MacroIdent,
-            100 => MacroArg,
-            101 => MacroBody,
-            102 => Marker,
-            103 => NamedMark,
-            104 => AnonMark,
-            105 => Label,
-            106 => Repeat,
-            107 => MacroCall,
+            91 => Identifier,
+            92 => Directive,
+            93 => DefB,
+            94 => DefW,
+            95 => Include,
+            96 => Import,
+            97 => Macro,
+            98 => MacroIdent,
+            99 => MacroArg,
+            100 => MacroBody,
+            101 => Marker,
+            102 => NamedMark,
+            103 => AnonMark,
+            104 => Label,
+            105 => Repeat,
+            106 => MacroCall,
             _ => panic!()
         }
     }
@@ -408,27 +406,26 @@ impl TokenType {
             }
 
             BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
-            BinXor|UnNot|UnNeg => {
+            BinXor|UnNot => {
                 matches!(parent_type, Expr|At|BinAdd|BinSub|BinMul|BinDiv|BinMod|
-                    BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg)
+                    BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot)
             }
 
             At => {
                 matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
-                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg|
-                    MacroCall)
+                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|MacroCall)
             }
 
             Lit => {
                 matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
-                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|UnNeg|
-                    Root|NamedMark|AnonMark|Include|MacroCall|MacroBody)
+                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|Root|NamedMark|
+                    AnonMark|Include|MacroCall|MacroBody)
             }
 
             Identifier => {
                 matches!(parent_type, DefB|DefW|Argument|Root|At|Expr|BinAdd|
                     BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
-                    UnNot|UnNeg|MacroCall|MacroBody)
+                    UnNot|MacroCall|MacroBody)
             }
 
             MacroIdent|MacroBody => {

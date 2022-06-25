@@ -205,14 +205,10 @@ impl<'a> ExprCtx<'a> {
         match op.ty() {
             UnNot => {
                 match self.eval_scope(op.get(0)) {
-                    Ok((value, s)) => Ok((!value, s)),
-                    Err(s) => Err(s)
-                }
-            }
-
-            UnNeg => {
-                match self.eval_scope(op.get(0)) {
-                    Ok((value, s)) => Ok((-value, s)),
+                    Ok((value, s)) => {
+                        let value = !(value as u16);
+                        Ok((value as isize, s))
+                    }
                     Err(s) => Err(s)
                 }
             }
