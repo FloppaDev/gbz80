@@ -14,11 +14,24 @@ fn hex_to_byte(hex: &str) -> u8 {
     (hex[0].to_digit(16).unwrap() * 16 + hex[1].to_digit(16).unwrap()) as u8
 }
 
+pub fn write(bytes: &[u8], path: &str) -> Result<(), ()> {
+
+}
+
+pub fn encode(
+    ast: &TokenRef, 
+    op_map: &OpMap, 
+    constants: &Constants
+) -> Result<(), ()> {
+
+}
+
 pub fn build(
     path: &str,
     ast: &TokenRef, 
     op_map: &OpMap, 
     constants: &Constants
-) {
-    todo!();
+) -> Result<(), ()> {
+    let bytes = encode(ast, op_map, constants?;
+    write(&bytes, path)?;
 }
