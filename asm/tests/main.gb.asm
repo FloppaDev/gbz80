@@ -1,3 +1,6 @@
+
+;Various syntax tests.
+
 ; Arithmetic expressions are only allowed in #def directives.
 #db FOO 10
 #dw BAZ &10AB
