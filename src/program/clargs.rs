@@ -11,6 +11,20 @@ pub struct Clargs<'a> {
     pub output: Option<&'a str>,
 }
 
+impl<'a> Clargs<'a> {
+
+    pub fn output(&self) -> String {
+        if let Some(output) = self.output {
+            output.into()
+        }
+
+        else {
+            "./output.gb".into()
+        }
+    }
+
+}
+
 /// Get CLI arguments into a struct.
 ///
 /// List of arguments:

@@ -165,6 +165,7 @@ impl<'a> OpMap<'a> {
 
 }
 
+#[derive(Debug)]
 pub struct OpCode {
     pub cb: bool,
     pub code: u8,

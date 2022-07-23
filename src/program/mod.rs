@@ -22,6 +22,7 @@ use crate::{
     write::{
         ops::OpMap,
         constants::Constants,
+        encode,
     },
     error::stage,
 };
@@ -58,7 +59,7 @@ pub fn run() -> Result<(), ()> {
     constants.update(updates);
     #[cfg(debug_assertions)] constants.debug();
 
-    //encode::build(ast, &op_map);
+    encode::build(clargs.output(), &ast_ref, &op_map, &constants);
 
     Ok(())
 }
