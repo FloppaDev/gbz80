@@ -31,7 +31,7 @@ pub fn encode(
     op_map: &OpMap, 
     constants: &Constants
 ) -> Result<Vec<u8>, ()> {
-    let bytes: Vec<u8> = vec![];
+    let mut bytes: Vec<u8> = vec![];
 
     for child in ast.children() {
         match child.ty() {
@@ -41,7 +41,36 @@ pub fn encode(
 
             Instruction => {
                 let opcode = op_map.get(child);
-                println!("{:?}", opcode);
+                let mut op_bytes = vec![];
+
+                if opcode.cb {
+                    op_bytes.push(0xCB);
+                }
+
+                op_bytes.push(opcode.code);
+
+                if op_bytes.len() != opcode.len as usize {
+                    let children = child.children();
+
+                    if let Some(args) = children.get(1..) {
+                        for arg in args {
+                            match arg.get(0).ty() {
+                                Lit => {
+                                    //TODO handle bit values
+                                    //TODO push literal 
+                                }
+
+                                Identifier => {
+                                    //TODO read identifier and push value
+                                }
+
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+
+                bytes.append(&mut op_bytes);
             }
 
             Identifier => {

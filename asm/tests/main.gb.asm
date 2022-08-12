@@ -94,3 +94,5 @@ FOO ;insert FOO here.
 2mul. a b
 
 ;&99999 ;OK. it fails as expected.
+
+set 1
