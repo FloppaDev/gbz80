@@ -48,6 +48,14 @@ cargo doc --open
 - Memory banks
 - Multiple source files
 
+## Why?
+
+I wanted to push myself and see how I would do this far out from my comfort zone.  
+The way I wrote this is by no means the most straightforward. 
+My goal was to make it complicated on purpose and see if I could keep it under control and finish it.  
+Although I learned many things along the way and it got me interested in old hardware and emulation,
+I doubt I will dive again into that kind of project anytime soon.
+
 ## Sources
 
 - Assembly tutorials:   
