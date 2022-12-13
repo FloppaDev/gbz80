@@ -30,18 +30,11 @@
 //====================================================================
 
 #![deny(
-    // Some enum types are commonly used with '*'. it saves on redundancy but typos
-    // are interpreted as the catch-all pattern '_ => ...' with a named assignment,
-    // which makes the variant and all that follows unhandled.
-    unreachable_patterns,
+    unreachable_patterns, // Catches typos in match patterns.
     non_snake_case,
 )]
 
-#![warn(
-    missing_docs,
-    clippy::pedantic,
-    clippy::nursery,
-)]
+#![warn(clippy::pedantic, clippy::nursery)]
 
 #![allow(
     clippy::too_many_lines,
@@ -60,9 +53,9 @@
 #[macro_use]
 mod error;
 
-#[macro_use]
 /// Controls the execution of the assembler.
 /// It also provides tools for cli arguments and outputs.
+#[macro_use]
 mod program;
 
 /// Tools for reading the source file and transforming it into tokens.
@@ -74,12 +67,11 @@ mod token;
 /// Prepares the final result for the binary output.
 mod write;
 
-/// Various tests to reduce the risk of a crash.
 #[cfg(target_family="unix")]
 #[cfg(test)]
 mod tests;
 
-use crate::program::run;
+use program::run;
 use std::process::exit;
 
 fn main() {

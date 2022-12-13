@@ -174,7 +174,7 @@ pub struct OpCode {
 
 impl OpCode {
 
-    fn cmp_args(instr_args: &[&TokenRef], op_args: &[Arg],) -> bool {
+    fn cmp_args(instr_args: &[&TokenRef], op_args: &[Arg]) -> bool {
         if instr_args.len() > op_args.len() {
             return false;
         }
