@@ -68,7 +68,21 @@ pub fn encode(
                                 }
 
                                 Identifier => {
-                                    //TODO read identifier and push value
+                                    match arg_x.value() {
+                                        //TODO put in common with code in TokenRef::lit_to_bytes(). 
+                                        Value::Usize(u) => {
+                                            let mut b = (*u as u16).to_be_bytes().to_vec();
+                                            op_bytes.append(&mut b);
+                                        }
+                                        
+                                        Value::Str(s) => {
+                                            //TODO check encoding
+                                            let mut b = s.as_bytes().to_vec();
+                                            op_bytes.append(&mut b);
+                                        }
+
+                                        _ => bug!("Invalid constant.")
+                                    }
                                 }
 
                                 _ => {}
@@ -83,17 +97,35 @@ pub fn encode(
             Identifier => {
                 match constants.get(child.value().as_str()).unwrap() {
                     ConstExpr::Value(v) => {
-                        println!("{:?}", v);
+                        match v {
+                            //TODO put in common with code in TokenRef::lit_to_bytes(). 
+                            Value::Usize(u) => {
+                                let mut b = (*u as u16).to_be_bytes().to_vec();
+                                bytes.append(&mut b);
+                            }
+                            
+                            Value::Str(s) => {
+                                //TODO check encoding
+                                let mut b = s.as_bytes().to_vec();
+                                bytes.append(&mut b);
+                            }
+
+                            _ => bug!("Invalid constant.")
+                        }
                     }
 
-                    _ => {
-
-                    }
+                    _ => bug!("Could not read constant.")
                 }
             }
 
             Lit => {
+                if let Some(mut b) = child.lit_to_bytes() {
+                    bytes.append(&mut b);
+                }
 
+                else {
+                    bug!("Could not read literal.");
+                }
             }
 
             _ => {
