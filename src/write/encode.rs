@@ -26,6 +26,8 @@ pub fn write(bytes: &[u8], path: &str) -> Result<(), std::io::Error> {
     Ok(())
 }
 
+//TODO fill with zeroes to reach marks
+//TODO checksums
 pub fn encode(
     ast: &TokenRef, 
     op_map: &OpMap, 
@@ -125,6 +127,20 @@ pub fn encode(
 
                 else {
                     bug!("Could not read literal.");
+                }
+            }
+
+            Directive => {
+                if child.get(0).ty() == Include {
+                    let path = child.leaf().value().as_str();
+                    if let Some(b) = constants.includes.get(path) {
+                        let mut b = b.clone();
+                        bytes.append(&mut b);
+                    }
+
+                    else {
+                        bug!("Could not include file."); 
+                    }
                 }
             }
 

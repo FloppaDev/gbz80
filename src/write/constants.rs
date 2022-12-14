@@ -39,7 +39,7 @@ pub enum ConstExpr<'a> {
 
 pub struct Constants<'a> {
     pub const_exprs: Vec<(&'a str, ConstExpr<'a>)>,
-    includes: HashMap<&'a str, Vec<u8>>,
+    pub includes: HashMap<&'a str, Vec<u8>>,
 }
 
 impl<'a> Constants<'a> {
