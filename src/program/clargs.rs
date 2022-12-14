@@ -19,7 +19,7 @@ impl<'a> Clargs<'a> {
         }
 
         else {
-            "./output.gb".into()
+            "./out.gb".into()
         }
     }
 

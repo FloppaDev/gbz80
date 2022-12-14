@@ -51,6 +51,7 @@ impl Input {
         Path::new(&self.path)
     }
 
+    /// Reads a file to bytes with a relative path.
     pub fn read_local(&self, local: &str) -> Result<Vec<u8>, io::Error> {
         let path = match self.path().parent() {
             Some(dir) => format!("{}/{}", dir.to_str().unwrap(), local),

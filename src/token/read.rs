@@ -140,4 +140,24 @@ impl<'a> TokenRef<'a> {
         current
     }
 
+    /// Converts a `Lit` token to bytes.
+    pub fn lit_to_bytes(&self) -> Option<Vec<u8>> {
+        use TokenType::*;
+
+        if self.ty() == Lit {
+            let value = self.leaf().value();
+            let lit_x = self.get(0);
+            
+            let bytes = match lit_x.ty() {
+                LitDec|LitHex|LitBin => (lit_x.value().as_usize() as u16).to_be_bytes().to_vec(),
+                LitStr => lit_x.value().as_str().as_bytes().to_vec(), //TODO check encoding
+                _ => return None,
+            };
+
+            return Some(bytes);
+        }
+
+        None
+    }
+
 }

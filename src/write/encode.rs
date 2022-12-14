@@ -54,10 +54,17 @@ pub fn encode(
 
                     if let Some(args) = children.get(1..) {
                         for arg in args {
-                            match arg.get(0).ty() {
+                            let arg_x = arg.get(0);
+
+                            match arg_x.ty() {
                                 Lit => {
-                                    //TODO handle bit values
-                                    //TODO push literal 
+                                    if let Some(mut bytes) = arg_x.lit_to_bytes() {
+                                        op_bytes.append(&mut bytes);
+                                    }
+
+                                    else {
+                                        bug!("Could not read literal.");
+                                    }
                                 }
 
                                 Identifier => {
@@ -95,7 +102,7 @@ pub fn encode(
         }
     }
 
-    Ok(vec![])
+    Ok(bytes)
 }
 
 pub fn build(

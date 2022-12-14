@@ -51,6 +51,7 @@ pub fn run() -> Result<(), ()> {
     let ast_ref = TokenRef::new(&ast);
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
 
+    // Validate the AST.
     validation::run(&ast_ref).map_err(stage::validation)?;
 
     // Find and calculate all constants.
@@ -59,6 +60,7 @@ pub fn run() -> Result<(), ()> {
     constants.update(updates);
     #[cfg(debug_assertions)] constants.debug();
 
+    // Write output.
     encode::build(clargs.output(), &ast_ref, &op_map, &constants);
 
     Ok(())
