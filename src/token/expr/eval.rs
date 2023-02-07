@@ -78,7 +78,7 @@ impl<'a> ExprCtx<'a> {
             _ => bug!("Wrong Def type.")
         };
 
-        let ident = expr.parent().get(0).value().as_str();
+        let ident = expr.parent().first().value().as_str();
         self.updates.push((ident.to_string(), result));
         
         Ok((result, self))
@@ -89,7 +89,7 @@ impl<'a> ExprCtx<'a> {
 
         match scope.ty() {
             Lit => {
-                let litx = scope.get(0);            
+                let litx = scope.first();            
 
                 match litx.ty() {
                     LitDec|LitBin|LitHex => Ok((litx.value().as_usize() as isize, self)),
@@ -149,7 +149,7 @@ impl<'a> ExprCtx<'a> {
             }
 
             _ => {
-                if let Some(child) = children.get(0) {
+                if let Some(child) = children.first() {
                     // A value without an operator parent must be an only-child.
                     // e.g.     #db X0 10
                     //          #db X1 10 + (5)
@@ -178,7 +178,7 @@ impl<'a> ExprCtx<'a> {
         f: fn(isize, isize) -> isize,
         op: &'a TokenRef<'a>, 
     ) -> Result<(isize, Self), Self> {
-        match self.eval_scope(op.get(0)) {
+        match self.eval_scope(op.first()) {
             Ok((value, s)) => {
                 let lhs = value;
 
@@ -199,7 +199,7 @@ impl<'a> ExprCtx<'a> {
         assert_eq!(op.ty().parent_type(), Expr);
         match op.ty() {
             UnNot => {
-                match self.eval_scope(op.get(0)) {
+                match self.eval_scope(op.first()) {
                     Ok((value, s)) => {
                         let value = !(value as u16);
                         Ok((value as isize, s))

@@ -140,13 +140,45 @@ impl<'a> TokenRef<'a> {
         current
     }
 
+    /// Returns a reference to the first child.
+    /// Panics:
+    /// There are no children.
+    pub fn first(&self) -> &Self {
+        self.get(0)
+    }
+
+    //TODO use where relevant
+    /// Finds the first child of specified type.
+    /// Panics:
+    /// The token is not found.
+    pub fn first_of(&self, ty: TokenType) -> &Self {
+        for child in &self.children {
+            if child.ty() == ty {
+                return child;
+            }
+        }
+
+        bug!("Could no first Token by type.");
+    }
+
+    /// Finds the first child of specified type.
+    pub fn try_first_of(&self, ty: TokenType) -> Option<&Self> {
+        for child in &self.children {
+            if child.ty() == ty {
+                return Some(child);
+            }
+        }
+
+        None
+    }
+
     //TODO cleanup
     /// Converts a `Lit` token to bytes.
     pub fn lit_to_bytes(&self) -> Option<Vec<u8>> {
         use TokenType::*;
 
         if self.ty() == Lit {
-            let lit_x = self.get(0);
+            let lit_x = self.leaf();
             
             match lit_x.ty() {
                 LitDec|LitHex|LitBin => {

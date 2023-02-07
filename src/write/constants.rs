@@ -146,7 +146,7 @@ impl<'a> Constants<'a> {
                 MacroCall|MacroBody => self = self.get_constants(token, fail_safe)?,
 
                 Marker => {
-                    let child = token.get(0);
+                    let child = token.first();
 
                     match child.ty() {
                         Label => {
@@ -158,7 +158,7 @@ impl<'a> Constants<'a> {
 
                         NamedMark => {
                             let ident = child.value().as_str();
-                            let value = ConstExpr::Value(*child.get(0).get(0).value());
+                            let value = ConstExpr::Value(*child.first().first().value());
                             self.insert(ident, value).map_err(|_| err)?;
                         }
 
@@ -167,17 +167,17 @@ impl<'a> Constants<'a> {
                 }
 
                 Directive => {
-                    let child = token.get(0);
+                    let child = token.first();
 
                     match child.ty() {
                         DefB|DefW => {
-                            let ident = child.get(0).value().as_str();
+                            let ident = child.first().value().as_str();
                             let value = ConstExpr::Expr(child.get(1));
                             self.insert(ident, value).map_err(|_| err)?;
                         }
 
                         Include => {
-                            let local = child.get(0).get(0).value().as_str();
+                            let local = child.first().first().value().as_str();
 
                             if self.includes.get(local).is_none() {
                                 let data = child.ast().source.main().read_local(local).map_err(|_|
@@ -240,7 +240,7 @@ impl<'a> Constants<'a> {
                 }
 
                 AnonMark|NamedMark => {
-                    let marker_location = token.get(0).get(0).value().as_usize();
+                    let marker_location = token.first().first().value().as_usize();
 
                     if *location <= marker_location {
                         *location = marker_location;
@@ -252,10 +252,10 @@ impl<'a> Constants<'a> {
                 }
 
                 Directive => {
-                    let dir = token.get(0);
+                    let dir = token.first();
                     
                     if dir.ty() == Include {
-                        let path = dir.get(0).get(0).value().as_str();
+                        let path = dir.first().first().value().as_str();
                         *location += self.includes.get(path).unwrap().len();
                     }
                 }
@@ -301,7 +301,7 @@ impl<'a> Constants<'a> {
     }
 
     fn size_of_lit(lit: &TokenRef<'a>) -> Result<usize, AsmErr<'a, ConstantsMsg>> {
-        let litx = lit.get(0); 
+        let litx = lit.first(); 
         return match litx.ty() {
             LitDec|LitHex|LitBin => {
                 let value = litx.value().as_usize();

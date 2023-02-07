@@ -15,7 +15,7 @@ use crate::{
 pub fn find(instruction: &TokenRef) -> Option<OpCode> {
     assert_eq!(instruction.ty(), Instruction);
 
-    let instr_ty = instruction.get(0).get(0).ty();
+    let instr_ty = instruction.first().first().ty();
 
     match instr_ty {
             Adc => {

@@ -12,5 +12,10 @@ in
   pkgs.mkShell {
     buildInputs = [
       nixpkgs.latest.rustChannels.stable.rust
+
+      wineWowPackages.staging
+      winetricks
     ];
+
+    WINEDEBUG="fixme-all";
   }

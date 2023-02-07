@@ -210,7 +210,7 @@ impl OpCode {
         ops: Vec<(u8, u8, Vec<Arg>)>
     ) -> Option<Self> {
         let instr_children = instruction.children()[1..].iter()
-            .map(|c| c.get(0))
+            .map(|c| c.first())
             .collect::<Vec<_>>();
 
         for op in ops {
