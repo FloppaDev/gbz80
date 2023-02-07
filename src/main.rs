@@ -27,28 +27,6 @@
 //!
 //! - Result is encoded into the output.
 
-//====================================================================
-
-#![deny(
-    unreachable_patterns, // Catches typos in match patterns.
-    non_snake_case,
-)]
-
-#![warn(clippy::pedantic, clippy::nursery)]
-
-#![allow(
-    clippy::too_many_lines,
-    clippy::too_many_arguments,
-    clippy::enum_glob_use,
-    clippy::cognitive_complexity,
-    clippy::unnecessary_wraps,
-    clippy::if_not_else,
-    clippy::cast_possible_truncation,
-    clippy::non_ascii_literal,
-    clippy::match_wildcard_for_single_variants,
-    clippy::module_name_repetitions,
-)]
-
 /// Error types for the different compilation stages
 #[macro_use]
 mod error;

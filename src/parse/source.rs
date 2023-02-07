@@ -23,7 +23,7 @@ impl Source {
     #[cfg(test)]
     pub fn from_content(content: String) -> Self {
         let mut source = Self{ inputs: vec![] };
-        source.inputs.push(Input::new("".into(), content));
+        source.inputs.push(Input::new(String::new(), content));
 
         source
     }
@@ -53,10 +53,11 @@ impl Input {
 
     /// Reads a file to bytes with a relative path.
     pub fn read_local(&self, local: &str) -> Result<Vec<u8>, io::Error> {
-        let path = match self.path().parent() {
-            Some(dir) => format!("{}/{}", dir.to_str().unwrap(), local),
-            None => local.into() 
-        };
+        let path = self.path().parent().map_or_else(|| {
+            local.into() 
+        }, |dir| {
+            format!("{}/{}", dir.to_str().unwrap(), local)
+        });
 
         let mut buffer = vec![];
         let mut file = File::open(path)?;

@@ -14,13 +14,11 @@ pub struct Clargs<'a> {
 impl<'a> Clargs<'a> {
 
     pub fn output(&self) -> String {
-        if let Some(output) = self.output {
-            output.into()
-        }
-
-        else {
+        self.output.map_or_else(|| {
             "./out.gb".into()
-        }
+        }, |output| {
+            output.into()
+        })
     }
 
 }

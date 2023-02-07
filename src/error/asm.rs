@@ -32,14 +32,14 @@ impl<'a, T: AsmMsg> std::fmt::Display for AsmErr<'a, T> {
             let line_b = line.get(word_start+word.len()..).unwrap();
 
             strip = strip
-                .faint(&format!("{}:{}:", file, line_number ))
-                .base(&format!("    {}", line_a))
+                .faint(&format!("{file}:{line_number}:"))
+                .base(&format!("    {line_a}"))
                 .err(line_word)
-                .faint(&format!("{}\n", line_b));
+                .faint(&format!("{line_b}\n"));
         }
 
         else {
-            strip = strip.faint(&format!("{}:{}:    {}\n", file, line_number, line));
+            strip = strip.faint(&format!("{file}:{line_number}:    {line}\n"));
         }
 
         write!(f, "{}", strip.read())

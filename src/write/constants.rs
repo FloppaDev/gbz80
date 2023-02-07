@@ -334,7 +334,7 @@ impl<'a> Constants<'a> {
                 bug!("Unexpected ConstExpr type")
             };
 
-            println!("{}: {}", key, value_str);
+            println!("{key}: {value_str}");
         }
     }
 

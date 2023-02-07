@@ -236,13 +236,13 @@ impl<'a> Split<'a> {
         }
 
         let mut line_number = self.line_numbers[0];
-        print!("L{}\t│", line_number);
+        print!("L{line_number}\t│");
 
         for word in &self.words {
             let ln = self.line_number(word.line_index);
 
             if line_number != ln {
-                print!("\nL{}\t│", ln);
+                print!("\nL{ln}\t│");
                 line_number = ln;
             }
 

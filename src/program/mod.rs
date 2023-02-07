@@ -61,7 +61,7 @@ pub fn run() -> Result<(), ()> {
     #[cfg(debug_assertions)] constants.debug();
 
     // Write output.
-    encode::build(clargs.output(), &ast_ref, &op_map, &constants);
+    encode::build(&clargs.output(), &ast_ref, &op_map, &constants)?;
 
     Ok(())
 }

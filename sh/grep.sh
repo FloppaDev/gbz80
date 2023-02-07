@@ -1,3 +1,3 @@
 #!/bin/sh
 
-grep -rnH --color=always --exclude-dir={.git,target,sh,.vim} "$1" ./
+grep -rnH --color=always --exclude-dir={.git,target,sh,.vim,tmp} "$1" ./

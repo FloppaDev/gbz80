@@ -38,7 +38,7 @@ pub fn encode(
     for child in ast.children() {
         match child.ty() {
             MacroCall => {
-                //TODO
+                todo!()
             }
 
             Instruction => {
@@ -60,13 +60,11 @@ pub fn encode(
 
                             match arg_x.ty() {
                                 Lit => {
-                                    if let Some(mut bytes) = arg_x.lit_to_bytes() {
-                                        op_bytes.append(&mut bytes);
-                                    }
-
-                                    else {
+                                    arg_x.lit_to_bytes().map_or_else(|| {
                                         bug!("Could not read literal.");
-                                    }
+                                    }, |mut bytes| {
+                                        op_bytes.append(&mut bytes);
+                                    });
                                 }
 
                                 Identifier => {
@@ -97,50 +95,47 @@ pub fn encode(
             }
 
             Identifier => {
-                match constants.get(child.value().as_str()).unwrap() {
-                    ConstExpr::Value(v) => {
-                        match v {
-                            //TODO put in common with code in TokenRef::lit_to_bytes(). 
-                            Value::Usize(u) => {
-                                let mut b = (*u as u16).to_be_bytes().to_vec();
-                                bytes.append(&mut b);
-                            }
-                            
-                            Value::Str(s) => {
-                                //TODO check encoding
-                                let mut b = s.as_bytes().to_vec();
-                                bytes.append(&mut b);
-                            }
-
-                            _ => bug!("Invalid constant.")
+                if let ConstExpr::Value(v) = constants.get(child.value().as_str()).unwrap() {
+                    match v {
+                        //TODO put in common with code in TokenRef::lit_to_bytes(). 
+                        Value::Usize(u) => {
+                            let mut b = (*u as u16).to_be_bytes().to_vec();
+                            bytes.append(&mut b);
                         }
-                    }
+                        
+                        Value::Str(s) => {
+                            //TODO check encoding
+                            let mut b = s.as_bytes().to_vec();
+                            bytes.append(&mut b);
+                        }
 
-                    _ => bug!("Could not read constant.")
+                        _ => bug!("Invalid constant.")
+                    }
+                }
+
+                else {
+                    bug!("Could not read constant.");
                 }
             }
 
             Lit => {
-                if let Some(mut b) = child.lit_to_bytes() {
-                    bytes.append(&mut b);
-                }
-
-                else {
+                child.lit_to_bytes().map_or_else(|| {
                     bug!("Could not read literal.");
-                }
+                }, |mut b| {
+                    bytes.append(&mut b);
+                });
             }
 
             Directive => {
                 if child.get(0).ty() == Include {
                     let path = child.leaf().value().as_str();
-                    if let Some(b) = constants.includes.get(path) {
+
+                    constants.includes.get(path).map_or_else(|| {
+                        bug!("Could not include file."); 
+                    }, |b| {
                         let mut b = b.clone();
                         bytes.append(&mut b);
-                    }
-
-                    else {
-                        bug!("Could not include file."); 
-                    }
+                    });
                 }
             }
 
@@ -154,13 +149,13 @@ pub fn encode(
 }
 
 pub fn build(
-    path: String,
+    path: &str,
     ast: &TokenRef, 
     op_map: &OpMap, 
     constants: &Constants
 ) -> Result<(), ()> {
     let bytes = encode(ast, op_map, constants)?;
-    write(&bytes, &path).map_err(|_| ())?;
+    write(&bytes, path).map_err(|_| ())?;
 
     Ok(())
 }

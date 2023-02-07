@@ -62,7 +62,7 @@ fn build(tree: &Tree) {
     let mut at_arms = String::new();
     let mut len = 0;
     fmt_at(tree, root, &mut at_arms, &mut len);
-    at_str.push_str(&format!("const COUNT: usize = {};\n\n", len));
+    at_str.push_str(&format!("const COUNT: usize = {len};\n\n"));
     at_str.push_str("match index % COUNT {\n");
     at_str.push_str(&at_arms);
     at_str.push_str("    _ => panic!()\n}");
@@ -104,7 +104,7 @@ fn build(tree: &Tree) {
 }
 
 fn key(name: &str) -> String {
-    format!("//[[{}]]", name)
+    format!("//[[{name}]]")
 }
 
 fn tab(n: usize, s: &str) -> String {
@@ -133,7 +133,7 @@ pub fn fmt_types(tree: &Tree, node: &Node, indent: usize, out: &mut String) {
         let line = format!("{}{},\n", tab, &child.value);
         out.push_str(&line); 
 
-        fmt_types(tree, child, indent + 1, out)
+        fmt_types(tree, child, indent + 1, out);
     }
 }
 
@@ -234,7 +234,7 @@ fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
     for (i, index) in node.children.iter().enumerate() {
         let child = &tree.nodes[*index];
         let word = &tree.nodes[child.children[0]].value;
-        let arm = format!("'{}'", word);
+        let arm = format!("'{word}'");
         out.push_str(&arm);
 
         if i != node.children.len() - 1 {
@@ -245,7 +245,7 @@ fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
             }
         }
 
-        ln += arm.len()
+        ln += arm.len();
     }
 
     out.push(')');

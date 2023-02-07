@@ -72,8 +72,8 @@ pub struct Tree {
 impl Tree {
 
     pub fn new(words: &[String]) -> Self {
-        let base = Node{ parent: 0, value: "".into(), children: vec![] };
-        let mut tree = Tree{ nodes: vec![base] };
+        let base = Node{ parent: 0, value: String::new(), children: vec![] };
+        let mut tree = Self{ nodes: vec![base] };
         let mut stack = vec![];
         let mut parent = 0;
         let mut open = true;

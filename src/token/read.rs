@@ -145,7 +145,6 @@ impl<'a> TokenRef<'a> {
         use TokenType::*;
 
         if self.ty() == Lit {
-            let value = self.leaf().value();
             let lit_x = self.get(0);
             
             let bytes = match lit_x.ty() {

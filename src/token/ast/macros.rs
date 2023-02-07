@@ -33,7 +33,7 @@ impl<'a, 'b> Macros {
             let err_ctx = token.into();
 
             // First child must be the macro identifier.
-            if let Some(decl_ident) = token.children.get(0) {
+            if let Some(decl_ident) = token.children.first() {
                 if ast.tokens[*decl_ident].ty != MacroIdent {
                     errors.push(err!(MacroMsg, NoDeclIdent, err_ctx));
                 }
@@ -81,7 +81,7 @@ impl<'a, 'b> Macros {
             let token = &ast.tokens[*macro_call];
 
             // Get the identifier of the macro call.
-            let call_ident = token.children.get(0); 
+            let call_ident = token.children.first();
 
             if call_ident.is_none() {
                 errors.push(err!(MacroMsg, NoCallIdent, token.into()));

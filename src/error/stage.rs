@@ -5,14 +5,14 @@ use crate::program::fmt;
 
 fn stage_err<E: std::fmt::Display + Sized>(e: E, msg: &str) {
     let msg = fmt::strip().err("Compilation Failed.\n\n    ").info(msg).read();
-    eprintln!("{}\n{}\n", e, msg);
+    eprintln!("{e}\n{msg}\n");
 }
 
 fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
     let f = |(i, e)| if i != ev.len() - 1 {
-        format!("{}\n", e)
+        format!("{e}\n")
     }else {
-        format!("{}", e)
+        format!("{e}")
     };
 
     let msg = fmt::strip()

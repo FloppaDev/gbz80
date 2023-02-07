@@ -189,7 +189,7 @@ impl<'a> Ast<'a> {
                 }
 
                 let space = if indent == 0 {
-                    "".to_string()
+                    String::new()
                 }else {
                     "    ".repeat(indent - 1)
                 };
@@ -200,7 +200,7 @@ impl<'a> Ast<'a> {
                     "└── "
                 };
 
-                println!("L{}{}{}{:?}", n, space, sub, ty);
+                println!("L{n}{space}{sub}{ty:?}");
 
                 children(ast, child, indent+1);
             }

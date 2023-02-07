@@ -84,11 +84,11 @@ impl Arg {
 
     fn cmp(&self, token: &TokenRef) -> bool {
         match self {
-            Arg::At(arg) if token.ty() == At => {
+            Self::At(arg) if token.ty() == At => {
                 match &**arg {
-                    Arg::Token(ty) => *ty == token.leaf().ty(),
+                    Self::Token(ty) => *ty == token.leaf().ty(),
 
-                    Arg::Const(constant) => {
+                    Self::Const(constant) => {
                         if token.ty() == At {
                             return constant.cmp(token.leaf());
                         }
@@ -100,9 +100,9 @@ impl Arg {
                 }
             }
 
-            Arg::Token(ty) => token.leaf().ty() == *ty,
+            Self::Token(ty) => token.leaf().ty() == *ty,
                 
-            Arg::Const(constant) => constant.cmp(token.leaf()),
+            Self::Const(constant) => constant.cmp(token.leaf()),
 
             _ => false
         }

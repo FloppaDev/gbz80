@@ -5,7 +5,7 @@
 /// Prints the title for compilation stage.
 pub fn title(title: &str) {
     let decoration = "=".repeat(79);
-    println!("\n{}\n\t\t\t\t{}\n{}\n", decoration, title, decoration);
+    println!("\n{decoration}\n\t\t\t\t{title}\n{decoration}\n");
 }
 
 #[cfg(target_family="unix")]
@@ -29,8 +29,8 @@ mod values {
 }
 
 /// Creates a `Strip` object.
-pub fn strip() -> Strip {
-    Strip{ value: "".into() }
+pub const fn strip() -> Strip {
+    Strip{ value: String::new() }
 }
 
 /// Provides a builder pattern for chaining different colors.

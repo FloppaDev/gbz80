@@ -92,7 +92,7 @@ fn ast() {
             }
         }
 
-        let source = Source::from_content("".into()); 
+        let source = Source::from_content(String::new()); 
         Ast::new(tokens, &mut macros, &source);
     }
 }

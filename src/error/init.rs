@@ -4,9 +4,9 @@ use crate::program::fmt;
 /// Prepends a newline if text is not empty.
 fn ln_if(text: &str) -> String {
     return if text.is_empty() {
-        "".into()
+        String::new()
     }else {
-        format!("\n{}", text)
+        format!("\n{text}")
     };
 }
 
@@ -59,7 +59,7 @@ impl<'a> std::fmt::Display for ClargsErr<'a> {
             .base(&format!("{}{}", self.description(), ln_if(self.msg)))
             .read();
 
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
 }
 
@@ -110,6 +110,6 @@ impl<'a> std::fmt::Display for SplitErr<'a> {
                 "{}\nl{}:    {}", self.description(), self.line_number, self.line))
             .read();
 
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
 }
