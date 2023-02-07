@@ -193,19 +193,16 @@ fn encode_instruction(
     bytes.append(&mut op_bytes);
 }
 
-// header checksum:
-//  x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
-fn patch_checksums(bytes: &mut [u8]) {
+/// Patches header checksum into the rom.
+fn patch_checksum(bytes: &mut [u8]) {
     let mut x = 0u8;
 
-    for i in 0x0134..0x014C {
-        x = x.wrapping_sub(bytes[i].wrapping_sub(1));
+    for i in 0x0134..=0x014C {
+        x = x.wrapping_sub(bytes[i]).wrapping_sub(1);
     }
 
     //TODO handle err: bytes too smol
     bytes[0x014D] = x;
-
-    //TODO calculate both checksums for good measure.
 }
 
 fn write(bytes: &[u8], path: &str) -> Result<(), std::io::Error> {
