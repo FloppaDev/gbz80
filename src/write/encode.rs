@@ -14,6 +14,30 @@ use crate::{
 use std::fs::File;
 use std::io::prelude::*;
 
+pub fn str_to_bytes(s: &str) -> Result<Vec<u8>, ()> {
+    let mut bytes = vec![];
+
+    for c in s.chars() {
+        if !c.is_ascii() {
+            return Err(());
+        }
+
+        bytes.push(c as u8);
+    }
+
+    Ok(bytes)
+}
+
+pub fn usize_to_bytes(u: usize) -> Result<Vec<u8>, ()> {
+    return if u > u16::MAX as usize {
+        Err(())
+    }else if u > u8::MAX as usize {
+        Ok((u as u16).to_be_bytes().to_vec())
+    }else {
+        Ok(vec![u as u8])
+    };
+}
+
 pub fn build(
     path: &str,
     ast: &TokenRef, 
@@ -23,7 +47,7 @@ pub fn build(
     let mut bytes = vec![];
 
     encode(ast, op_map, constants, &mut bytes)?;
-    patch_checksums(&mut bytes);
+    patch_checksum(&mut bytes);
     write(&bytes, path).map_err(|_| ())?;
 
     Ok(())
@@ -68,15 +92,15 @@ pub fn encode(
             Identifier => {
                 if let ConstExpr::Value(v) = constants.get(child.value().as_str()).unwrap() {
                     match v {
-                        //TODO put in common with code in TokenRef::lit_to_bytes(). 
+                        //TODO make sure that validation works for values
                         Value::Usize(u) => {
-                            let mut b = (*u as u16).to_be_bytes().to_vec();
+                            let mut b = usize_to_bytes(*u).unwrap();
                             bytes.append(&mut b);
-                        }
-                        
+                        }            
+
+                        //TODO make sure that validation works for values
                         Value::Str(s) => {
-                            //TODO check encoding
-                            let mut b = s.as_bytes().to_vec();
+                            let mut b = str_to_bytes(s).unwrap();
                             bytes.append(&mut b);
                         }
 
@@ -90,7 +114,7 @@ pub fn encode(
             }
 
             Lit => {
-                child.lit_to_bytes().map_or_else(|| {
+                child.lit_to_bytes().map_or_else(|_| {
                     bug!("Could not read literal.");
                 }, |mut b| {
                     bytes.append(&mut b);
@@ -143,7 +167,7 @@ fn encode_instruction(
 
                 match arg_x.ty() {
                     Lit => {
-                        arg_x.lit_to_bytes().map_or_else(|| {
+                        arg_x.lit_to_bytes().map_or_else(|_| {
                             bug!("Could not read literal.");
                         }, |mut bytes| {
                             op_bytes.append(&mut bytes);
@@ -159,15 +183,15 @@ fn encode_instruction(
 
                                 if let ConstExpr::Value(value) = const_expr {
                                     match value {
+                                        //TODO make sure that validation works for values
                                         Value::Usize(u) => {
-                                            //TODO was it always u16?
-                                            let mut b = (*u as u16).to_be_bytes().to_vec();
+                                            let mut b = usize_to_bytes(*u).unwrap();
                                             op_bytes.append(&mut b);
                                         }            
 
+                                        //TODO make sure that validation works for values
                                         Value::Str(s) => {
-                                            //TODO check encoding
-                                            let mut b = s.as_bytes().to_vec();
+                                            let mut b = str_to_bytes(s).unwrap();
                                             op_bytes.append(&mut b);
                                         }
 

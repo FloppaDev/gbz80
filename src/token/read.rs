@@ -7,6 +7,7 @@ use crate::{
         Token, Value,
         ast::Ast,
     },
+    write::encode,
     error::ITERATION_LIMIT,
 };
 
@@ -172,32 +173,29 @@ impl<'a> TokenRef<'a> {
         None
     }
 
-    //TODO cleanup
     /// Converts a `Lit` token to bytes.
-    pub fn lit_to_bytes(&self) -> Option<Vec<u8>> {
+    pub fn lit_to_bytes(&self) -> Result<Vec<u8>, ()> {
         use TokenType::*;
 
         if self.ty() == Lit {
             let lit_x = self.leaf();
             
-            match lit_x.ty() {
+            return match lit_x.ty() {
                 LitDec|LitHex|LitBin => {
                     let value = lit_x.value().as_usize();
-
-                    if value > u8::MAX as usize {
-                        return Some((value as u16).to_be_bytes().to_vec());
-                    }
-
-                    return Some((value as u8).to_be_bytes().to_vec());
+                    encode::usize_to_bytes(value)
                 }
 
-                LitStr => 
-                    return Some(lit_x.value().as_str().as_bytes().to_vec()), //TODO check encoding
-                _ => return None,
+                LitStr => {
+                    let value = lit_x.value().as_str();
+                    encode::str_to_bytes(value)
+                }
+
+                _ => Err(())
             };
         }
 
-        None
+        Err(())
     }
 
 }
