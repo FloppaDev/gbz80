@@ -24,6 +24,7 @@ use crate::program::fmt::title;
 
 use std::collections::HashMap;
 
+//TODO fn value() for after validation.
 /// Holds the value of a constant or the token required to calculate it.
 #[derive(Copy, Clone)]
 pub enum ConstExpr<'a> {

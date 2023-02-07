@@ -26,7 +26,6 @@ pub fn write(bytes: &[u8], path: &str) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-//TODO fill with zeroes to reach marks
 //TODO checksums
 pub fn encode(
     ast: &TokenRef, 
@@ -39,6 +38,22 @@ pub fn encode(
         match child.ty() {
             MacroCall => {
                 todo!()
+            }
+
+            // Fill empty space with zeroes to reach markers.
+            Marker => {
+                let marker_kind = child.get(0);
+
+                let location = match marker_kind.ty() {
+                    NamedMark | AnonMark => marker_kind.leaf().value().as_usize(),
+                    Label => continue,
+                    _ => bug!("Invalid Marker type."),
+                };
+
+                let diff = location - bytes.len();
+                let mut fill = vec![0; diff];
+
+                bytes.append(&mut fill);
             }
 
             Instruction => {
@@ -69,16 +84,32 @@ pub fn encode(
 
                                 Identifier => {
                                     match arg_x.value() {
-                                        //TODO put in common with code in TokenRef::lit_to_bytes(). 
-                                        Value::Usize(u) => {
-                                            let mut b = (*u as u16).to_be_bytes().to_vec();
-                                            op_bytes.append(&mut b);
-                                        }
+                                        
                                         
                                         Value::Str(s) => {
-                                            //TODO check encoding
-                                            let mut b = s.as_bytes().to_vec();
-                                            op_bytes.append(&mut b);
+                                            let const_expr = constants.get(s).unwrap();
+
+                                            if let ConstExpr::Value(value) = const_expr {
+                                                match value {
+                                                    Value::Usize(u) => {
+                                                        //TODO was it always u16?
+                                                        let mut b = (*u as u16).to_be_bytes().to_vec();
+                                                        op_bytes.append(&mut b);
+                                                    }            
+
+                                                    Value::Str(s) => {
+                                                        //TODO check encoding
+                                                        let mut b = s.as_bytes().to_vec();
+                                                        op_bytes.append(&mut b);
+                                                    }
+
+                                                    _ => bug!("Invalid Value.")
+                                                }
+                                            }
+
+                                            else {
+                                                bug!("Invalid constant.");
+                                            }
                                         }
 
                                         _ => bug!("Invalid constant.")

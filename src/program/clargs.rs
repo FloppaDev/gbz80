@@ -28,7 +28,7 @@ impl<'a> Clargs<'a> {
 /// List of arguments:
 /// source file
 /// -o                      Output file
-/// -D [SYMBOLS]            Defined symbols, optional.
+/// -D \[SYMBOLS\]            Defined symbols, optional.
 pub fn parse(args: &[String]) -> Result<Clargs, ClargsErr> {
     enum Ty { Unknown, Define, Output }
 
