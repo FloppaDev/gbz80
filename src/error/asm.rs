@@ -65,98 +65,55 @@ macro_rules! err {
 pub enum ParseMsg {
     EmptyStr,
     Invalid,
-    InvalidHex,
-    InvalidBin,
-    InvalidDec,
-    InvalidStr,
-    InvalidDirective,
-    InvalidDirectiveIdent,
-    InvalidMacroArg,
-    InvalidMacroArgIdent,
-    InvalidMacroIdent,
-    InvalidIdent,
-    InvalidLabel,
-    InvalidLabelIdent,
-    InvalidNamedMark,
-    InvalidNamedMarkLabel,
-    InvalidNamedMarkLabelIdent,
-    InvalidNamedMarkHex,
-    InvalidAnonMark,
-    InvalidAnonMarkHex,
+    BadHex,
+    BadBin,
+    BadDec,
+    BadStr,
+    BadDirective,
+    BadDirectiveIdent,
+    BadMacroArg,
+    BadMacroArgIdent,
+    BadMacroIdent,
+    BadIdent,
+    BadLabel,
+    BadLabelIdent,
+    BadNamedMark,
+    BadNamedMarkLabel,
+    BadNamedMarkLabelIdent,
+    BadNamedMarkHex,
+    BadAnonMark,
+    BadAnonMarkHex,
     ReservedKeyword,
 }
 
 impl AsmMsg for ParseMsg {
-
     fn msg(&self) -> &'static str {
         use ParseMsg::*;
 
         match self {
-            EmptyStr => 
-                "Empty string",
-
-            Invalid => 
-                "Invalid as any type",
-
-            InvalidHex => 
-                "Invalid as hexadecimal literal",
-
-            InvalidBin => 
-                "Invalid as binary literal",
-
-            InvalidDec => 
-                "Invalid as decimal literal",
-
-            InvalidStr => 
-                "Invalid as string literal",
-
-            InvalidDirective => 
-                "Invalid as directive",
-
-            InvalidDirectiveIdent => 
-                "Invalid as directive identifier",
-
-            InvalidMacroArgIdent => 
-                "Invalid as macro argument's identifier",
-
-            InvalidMacroArg => 
-                "Invalid as macro argument",
-
-            InvalidMacroIdent => 
-                "Invalid as macro call's identifier",
-
-            InvalidLabel =>
-                "Invalid as label",
-
-            InvalidLabelIdent =>
-                "Invalid as label's identifier",
-
-            InvalidNamedMark => 
-                "Invalid as named marker",
-
-            InvalidNamedMarkLabel => 
-                "Invalid as named marker's label",
-
-            InvalidNamedMarkLabelIdent => 
-                "Invalid as named marker label's identifier",
-
-            InvalidNamedMarkHex => 
-                "Invalid as named marker's hexadecimal literal",
-
-            InvalidAnonMark =>
-                "Invalid as anonymous marker",
-
-            InvalidAnonMarkHex =>
-                "Invalid as anonymous marker's hexadecimal literal",
-
-            InvalidIdent => 
-                "Invalid as identifier",
-
-            ReservedKeyword =>
-                "Identifier cannot be a reserved keyword",
+            EmptyStr => "Empty string",
+            Invalid => "Invalid as any type",
+            BadHex => "Bad hexadecimal literal",
+            BadBin => "Bad binary literal",
+            BadDec => "Bad decimal literal",
+            BadStr => "Bad string literal",
+            BadDirective => "Bad directive",
+            BadDirectiveIdent => "Bad directive identifier",
+            BadMacroArgIdent => "Bad macro argument's identifier",
+            BadMacroArg => "Bad macro argument",
+            BadMacroIdent => "Bad macro call's identifier",
+            BadLabel => "Bad label",
+            BadLabelIdent => "Bad label's identifier",
+            BadNamedMark => "Bad named marker",
+            BadNamedMarkLabel => "Bad named marker's label",
+            BadNamedMarkLabelIdent => "Bad named marker label's identifier",
+            BadNamedMarkHex => "Bad named marker's hexadecimal literal",
+            BadAnonMark => "Bad anonymous marker",
+            BadAnonMarkHex => "Bad anonymous marker's hexadecimal literal",
+            BadIdent => "Bad identifier",
+            ReservedKeyword => "Identifier cannot be a reserved keyword",
         }
     }
-
 }
 
 /// Error variants when building the AST.
@@ -171,28 +128,16 @@ pub enum AstMsg {
 }
 
 impl AsmMsg for AstMsg {
-
     fn msg(&self) -> &'static str {
         use AstMsg::*;
 
         match self {
-            NoTokens =>
-                "No tokens were provided",
-
-            UnmatchedParen =>
-                "Parens must come in pair",
-
-            MarkWithoutLiteral => 
-                "marker expected a literal",
-
-            UnaryWithoutRhs =>
-                "Unary operator expected an operand on its right",
-
-            BinaryWithoutLhs =>
-                "Binary operator expected an operand on its left",
-
-            BinaryWithoutRhs =>
-                "Binary operator expected an operand on its right",
+            NoTokens => "No tokens provided",
+            UnmatchedParen => "Unclosed parens",
+            MarkWithoutLiteral => "marker expected a literal",
+            UnaryWithoutRhs => "Unary operator expected an operand on its right",
+            BinaryWithoutLhs => "Binary operator expected an operand on its left",
+            BinaryWithoutRhs => "Binary operator expected an operand on its right",
         }
     }
 }
@@ -201,62 +146,44 @@ impl AsmMsg for AstMsg {
 #[derive(Debug, Copy, Clone)]
 pub enum MacroMsg {
     NoDeclIdent,
-    InvalidDecl,
+    BadDecl,
     NoDeclBody,
-    InvalidDeclToken,
+    BadDeclToken,
     NoCallIdent,
     DeclNotFound,
     ArgCountMismatch,
 }
 
 impl AsmMsg for MacroMsg {
-
     fn msg(&self) -> &'static str {
         use MacroMsg::*;
 
         match self {
-            NoDeclIdent =>
-                "Declaration has no identifier",
-
-            InvalidDecl =>
-                "Declaration is invalid",
-
-            NoDeclBody =>
-                "Declaration has no body",
-
-            InvalidDeclToken =>
-                "Unexpected token in macro declaration",
-
-            NoCallIdent =>
-                "Macro call has no identifier",
-
-            DeclNotFound =>
-                "Declaration not found",
-
-            ArgCountMismatch =>
-                "Argument count in the call does not match the declaration",
+            NoDeclIdent => "Declaration has no identifier",
+            BadDecl => "Declaration is invalid",
+            NoDeclBody => "Declaration has no body",
+            BadDeclToken => "Unexpected token in macro declaration",
+            NoCallIdent => "Macro call has no identifier",
+            DeclNotFound => "Declaration not found",
+            ArgCountMismatch => "Argument count in the call does not match the declaration",
         }
     }
-
 }
 
 /// Error variants when validating the Ast.
 #[derive(Debug, Copy, Clone)]
 pub enum ValidationMsg {
-    InvalidParent,
+    BadParent,
 }
 
 impl AsmMsg for ValidationMsg {
-
     fn msg(&self) -> &'static str {
         use ValidationMsg::*;
 
         match self {
-            InvalidParent =>
-                "Parent of the token is of an unexpected type",
+            BadParent => "Parent of the token is of an unexpected type",
         }
     }
-
 }
 
 /// Error variants when looking for an opcode.
@@ -271,8 +198,7 @@ impl AsmMsg for OpMsg {
         use OpMsg::*;
 
         match self {
-            NotFound =>
-                "Could not find the corresponding opcode",
+            NotFound => "Could not find the corresponding opcode",
         }
     }
 
@@ -288,25 +214,16 @@ pub enum ConstantsMsg {
 }
 
 impl AsmMsg for ConstantsMsg {
-
     fn msg(&self) -> &'static str {
         use ConstantsMsg::*;
 
         match self {
-            DuplicateKey =>
-                "Constant's key already existed",
-            
-            MisplacedMarker =>
-                "The location of the marker does match its value",
-
-            FileReadFailed =>
-                "The file to include could not be read",
-
-            Overflow =>
-                "The value overflows its capacity",
+            DuplicateKey => "Constant's key already existed",
+            MisplacedMarker => "The location of the marker does match its value",
+            FileReadFailed => "The file to include could not be read",
+            Overflow => "The value overflows its capacity",
         }
     }
-
 }
 
 /// Error variants when evaluating expressions.
@@ -319,24 +236,15 @@ pub enum ExprMsg {
 }
 
 impl AsmMsg for ExprMsg {
-
     fn msg(&self) -> &'static str {
         use ExprMsg::*;
 
         match self {
-            StrInExpr =>
-                "String literal not allowed in expressions, unless it is completely alone.",
-
-            ConstantNotFound =>
-                "The constant does not exist.",
-
-            CircularDependency => 
-                "Infinite loop, the constant's dependencies depend on the constant itself.",
-
-            NegativeResult =>
-                "The result of an expression cannot be negative.",
+            StrInExpr => "String literal in expressions must be the only parameter",
+            ConstantNotFound => "The constant does not exist",
+            CircularDependency => "Infinite loop of dependencies",
+            NegativeResult => "The result of an expression cannot be negative",
         }
     }
-
 }
 

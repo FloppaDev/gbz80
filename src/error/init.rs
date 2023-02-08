@@ -51,8 +51,8 @@ impl<'a> std::fmt::Display for ClargsErr<'a> {
 #[derive(Debug, Copy, Clone)]
 pub enum SplitErrType {
     MisplacedDirective,
-    InvalidDirective,
-    InvalidWord,
+    BadDirective,
+    BadWord,
 }
 
 /// Error when reading words from the source file.
@@ -74,8 +74,8 @@ impl<'a> SplitErr<'a> {
 
         match self.ty {
             MisplacedDirective => "Directives must be placed at the start of a line",
-            InvalidDirective => "Invalid directive name",
-            InvalidWord => "Could not read word",
+            BadDirective => "Bad directive name",
+            BadWord => "Could not read word",
         }
     }
 

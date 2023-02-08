@@ -23,6 +23,8 @@ mod token;
 mod tests;
 */
 
+#[deny(clippy::unreachable_patterns, clippy::non_snake_case)]
+
 fn main() {
     match program::run() {
         Ok(_) => std::process::exit(0),

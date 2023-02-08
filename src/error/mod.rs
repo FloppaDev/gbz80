@@ -12,7 +12,7 @@ pub mod asm;
 
 use crate::{
     parse::{ prepare::ParsedToken, lex::TokenType },
-    //token::{ Token, read::TokenRef },
+    token::{ Token, read::TokenRef },
 };
 
 /// Used mostly in recursion fail-safes.
@@ -106,7 +106,6 @@ impl<'a> From<&ParsedToken<'a>> for ErrCtx<'a> {
     }
 }
 
-/*
 impl<'a> From<&Token<'a>> for ErrCtx<'a> {
     fn from(token: &Token<'a>) -> Self {
         let Token{ ty, file, line_number, line, word, .. } = *token;
@@ -120,4 +119,3 @@ impl<'a> From<&TokenRef<'a>> for ErrCtx<'a> {
         Self { ty, file, line_number, line, word }
     }
 }
-*/

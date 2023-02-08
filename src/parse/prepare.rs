@@ -71,7 +71,7 @@ pub fn parse<'a>(
                 }
 
                 else if !is_ident {
-                    errors.push(err!(ParseMsg, InvalidIdent, err_ctx));
+                    errors.push(err!(ParseMsg, BadIdent, err_ctx));
                 }
             }
         }
@@ -200,44 +200,44 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
             '&' => {
                 // &6762:
                 if last == ':' {
-                    let lit = word.get(1..word.len() - 1).ok_or(InvalidAnonMark)?;
-                    let hex = text::check_hex(lit).ok_or(InvalidAnonMarkHex)?;
+                    let lit = word.get(1..word.len() - 1).ok_or(BadAnonMark)?;
+                    let hex = text::check_hex(lit).ok_or(BadAnonMarkHex)?;
                     return Ok(vec![ (AnonMark, text::no_check("")), (LitHex, hex) ]);
                 }
 
                 // &2763:label
                 if let Some(sep) = word.find(':') {
-                    let lit = word.get(1..sep).ok_or(InvalidNamedMark)?;
-                    let hex = text::check_hex(lit).ok_or(InvalidNamedMarkHex)?;
+                    let lit = word.get(1..sep).ok_or(BadNamedMark)?;
+                    let hex = text::check_hex(lit).ok_or(BadNamedMarkHex)?;
 
-                    let label = word.get(sep + 1 ..).ok_or(InvalidNamedMarkLabel)?;
-                    let ident = text::check_ident(label).ok_or(InvalidNamedMarkLabelIdent)?;
+                    let label = word.get(sep + 1 ..).ok_or(BadNamedMarkLabel)?;
+                    let ident = text::check_ident(label).ok_or(BadNamedMarkLabelIdent)?;
 
                     return Ok(vec![ (NamedMark, ident), (LitHex, hex) ]);
                 }
 
                 // &2787
-                let lit = word.get(1..).ok_or(InvalidHex)?;
-                let hex = text::check_hex(lit).ok_or(InvalidHex)?;
+                let lit = word.get(1..).ok_or(BadHex)?;
+                let hex = text::check_hex(lit).ok_or(BadHex)?;
                 return Ok(vec![ (LitHex, hex) ]);
             }
 
             // 0101_0101 or 11010
             '%' => {
-                let lit = word.get(1..).ok_or(InvalidBin)?;
-                let bin = text::check_bin(lit).ok_or(InvalidBin)?;
+                let lit = word.get(1..).ok_or(BadBin)?;
+                let bin = text::check_bin(lit).ok_or(BadBin)?;
                 return Ok(vec![ (LitBin, bin) ]);
             }
 
             // "...
             '"' => {
-                let value = word.get(1..).ok_or(InvalidStr)?;
+                let value = word.get(1..).ok_or(BadStr)?;
                 return Ok(vec![ (LitStr, text::no_check(value)) ]);
             }
 
             // db, dw, ds, include, import, or macro
             '#' => {
-                let directive = word.get(1..).ok_or(InvalidDirective)?;
+                let directive = word.get(1..).ok_or(BadDirective)?;
 
                 return match directive {
                     "db" => Ok(vec![ (DefB, text::no_check(directive)) ]),
@@ -245,20 +245,20 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
                     "include" => Ok(vec![ (Include, text::no_check(directive)) ]),
                     "import" => Ok(vec![ (Import, text::no_check(directive)) ]),
                     "macro" => Ok(vec![ (Macro, text::no_check(directive)) ]),
-                    _ => Err(ParseMsg::InvalidDirectiveIdent)
+                    _ => Err(ParseMsg::BadDirectiveIdent)
                 };
             }
 
             // .arg
             '.' => {
-                let arg = word.get(1..).ok_or(InvalidMacroArg)?;
-                let ident = text::check_ident(arg).ok_or(InvalidMacroArgIdent)?;
+                let arg = word.get(1..).ok_or(BadMacroArg)?;
+                let ident = text::check_ident(arg).ok_or(BadMacroArgIdent)?;
                 return Ok(vec![ (MacroArg, ident) ]);
             }
 
             ':' => {
-                let label = word.get(1..).ok_or(InvalidLabel)?;
-                let ident = text::check_ident(label).ok_or(InvalidLabelIdent)?;
+                let label = word.get(1..).ok_or(BadLabel)?;
+                let ident = text::check_ident(label).ok_or(BadLabelIdent)?;
                 return Ok(vec![ (Label, ident) ]);
             }
 
@@ -271,7 +271,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
 
     // Macro identifier ?
     if word.ends_with('.') {
-        let macro_ident = word.get(..word.len() - 1).ok_or(InvalidMacroIdent)?;
+        let macro_ident = word.get(..word.len() - 1).ok_or(BadMacroIdent)?;
         let mut result = vec![];
 
         // In macro calls, the identifier can come with a repeat count.
@@ -280,16 +280,16 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
         for (i, ident_c) in macro_ident.chars().rev().enumerate() {
             if text::is_char_num(ident_c) {
                 dec_i = macro_ident.len() - i;
-                let lit = macro_ident.get(0 .. dec_i).ok_or(InvalidDec)?;
-                let dec = text::check_dec(lit).ok_or(InvalidDec)?;
+                let lit = macro_ident.get(0 .. dec_i).ok_or(BadDec)?;
+                let dec = text::check_dec(lit).ok_or(BadDec)?;
 
                 result.push((Repeat, dec));
             }
         }
 
         // Split after repeat count.
-        let name = macro_ident.get(dec_i..).ok_or(InvalidMacroIdent)?;
-        let ident = text::check_ident(name).ok_or(InvalidMacroIdent)?;
+        let name = macro_ident.get(dec_i..).ok_or(BadMacroIdent)?;
+        let ident = text::check_ident(name).ok_or(BadMacroIdent)?;
 
         result.push((MacroIdent, ident));
         return Ok(result);
@@ -297,13 +297,13 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
 
     // Identifier ?
     if text::is_char_ident_first(c) {
-        let ident = text::check_ident(word).ok_or(InvalidIdent)?;
+        let ident = text::check_ident(word).ok_or(BadIdent)?;
         return Ok(vec![ (Identifier, ident) ]);
     }
 
     // Decimal literal ?
     if text::is_char_num(c) {
-        let dec = text::check_dec(word).ok_or(InvalidDec)?;
+        let dec = text::check_dec(word).ok_or(BadDec)?;
         return Ok(vec![ (LitDec, dec) ]);
     }
 
@@ -316,7 +316,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
 fn fit(num: usize, len: usize, base: usize) -> Result<Value<'static>, ParseMsg> {
     return match base {
         2 => if len > 16 {
-            Err(ParseMsg::InvalidBin) 
+            Err(ParseMsg::BadBin) 
         }else if len > 8 {
             Ok(Value::U16(num as u16))
         }else {
@@ -324,7 +324,7 @@ fn fit(num: usize, len: usize, base: usize) -> Result<Value<'static>, ParseMsg> 
         }
 
         10 => if len > 5 || num > u16::MAX.into() {
-            Err(ParseMsg::InvalidDec) 
+            Err(ParseMsg::BadDec) 
         }else if len > 3 || num > u8::MAX.into() {
             Ok(Value::U16(num as u16))
         }else {
@@ -332,13 +332,13 @@ fn fit(num: usize, len: usize, base: usize) -> Result<Value<'static>, ParseMsg> 
         }
 
         16 => if len > 4 {
-            Err(ParseMsg::InvalidHex) 
+            Err(ParseMsg::BadHex) 
         }else if len > 2 {
             Ok(Value::U16(num as u16))
         }else {
             Ok(Value::U8(num as u8))
         }
 
-        _ => bug!("Invalid base."),
+        _ => bug!("Bad base."),
     };
 }

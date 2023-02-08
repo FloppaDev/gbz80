@@ -80,7 +80,7 @@ impl<'a> Split<'a> {
                     if has_word {
                         line.get(word_start..c_i).map_or_else(|| {
                             errors.push(SplitErr::new(
-                                SplitErrType::InvalidWord, line, l_i + 1));
+                                SplitErrType::BadWord, line, l_i + 1));
                         }, |word| {
                             splitter.push(word, l_i);
                             has_word = false;
@@ -96,7 +96,7 @@ impl<'a> Split<'a> {
                     else {
                         line.get(word_start..c_i).map_or_else(|| {
                             errors.push(SplitErr::new(
-                                SplitErrType::InvalidWord, line, l_i + 1));
+                                SplitErrType::BadWord, line, l_i + 1));
                         }, |word| {
                             splitter.push(word, l_i);
                         });
@@ -136,7 +136,7 @@ impl<'a> Split<'a> {
                         if has_word { 
                             line.get(word_start..c_i).map_or_else(|| {
                                 errors.push(SplitErr::new(
-                                    SplitErrType::InvalidWord, line, l_i + 1));
+                                    SplitErrType::BadWord, line, l_i + 1));
                             }, |word| {
                                 splitter.push(word, l_i);
                                 has_word = false;
@@ -146,7 +146,7 @@ impl<'a> Split<'a> {
                         // Push character.
                         line.get(c_i..=c_i).map_or_else(|| {
                             errors.push(SplitErr::new(
-                                SplitErrType::InvalidWord, line, l_i + 1));
+                                SplitErrType::BadWord, line, l_i + 1));
                         }, |word| {
                             splitter.push(word, l_i);
                         });
@@ -156,7 +156,7 @@ impl<'a> Split<'a> {
                         if has_word { 
                             line.get(word_start..c_i).map_or_else(|| {
                                 errors.push(SplitErr::new(
-                                    SplitErrType::InvalidWord, line, l_i + 1));
+                                    SplitErrType::BadWord, line, l_i + 1));
                             }, |word| {
                                 splitter.push(word, l_i);
                                 has_word = false;
@@ -175,7 +175,7 @@ impl<'a> Split<'a> {
             if has_word { 
                 line.get(word_start..).map_or_else(|| {
                     errors.push(SplitErr::new(
-                        SplitErrType::InvalidWord, line, l_i + 1));
+                        SplitErrType::BadWord, line, l_i + 1));
                 }, |word| {
                     splitter.push(word, l_i);
                     has_word = false;
@@ -205,8 +205,7 @@ impl<'a> Split<'a> {
                 }
 
                 else {
-                    errors.push(SplitErr::new(
-                        SplitErrType::InvalidDirective, line, l_i + 1));
+                    errors.push(SplitErr::new(SplitErrType::BadDirective, line, l_i + 1));
                 }
 
                 splitter.directive.clear();
