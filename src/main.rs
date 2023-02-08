@@ -15,7 +15,7 @@ mod parse;
 mod token;
 
 /// Prepares the final result for the binary output.
-//mod write;
+mod write;
 
 /*
 #[cfg(target_family="unix")]

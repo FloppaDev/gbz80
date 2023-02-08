@@ -10,6 +10,7 @@ use crate::{
     error::stage, 
     parse::{ source::Source, split::Split, prepare },
     token::{ ast::{ macros::Macros, Ast }, read::TokenRef, validation },
+    write::{ ops::OpMap },
 };
 
 pub fn run() -> Result<(), ()> {
@@ -38,6 +39,9 @@ pub fn run() -> Result<(), ()> {
 
     // Validate the `Ast`.
     validation::run(&ast_ref).map_err(stage::validation)?;
+
+    // Identify intructions.
+    let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
 
     Ok(())
 }

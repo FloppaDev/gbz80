@@ -5,6 +5,7 @@ let output = `
 //  - by code in 'gen/instructions'
 //
 // Do no edit manually.
+
 `;
 
 const queryString = window.location.search;
@@ -25,7 +26,7 @@ let initCb = false;
 
 let cbOpStr = '';
 let opStr = '';
-let matchBranchEnd = ttt + t + '])\n' + ttt + '}\n\n';
+let matchBranchEnd = ']),\n\n';
 
 for (instr of INSTRUCTIONS) {
     let curOpStr = '';
@@ -50,10 +51,11 @@ for (instr of INSTRUCTIONS) {
         }
 
         let pName  = pascal(instr.name);
-        curOpStr += 
-            `${ttt}${pName} => {\n${ttt}${t}OpCode::get_opcode(instruction, ${instr.cb}, vec![\n`;
+        curOpStr += `${tt}${pName} => OpCode::get_opcode(instruction, ${instr.cb}, vec![\n`;
 
         name = instr.name;
+    }else {
+        curOpStr += ",\n";
     }
 
     let args = instr.args.map(arg => {
@@ -102,7 +104,7 @@ for (instr of INSTRUCTIONS) {
             : `ty(${pascal(arg)})`;
     }).join(', ');
 
-    curOpStr += `${ttt}${tt}(${instr.len}, ${instr.code}, vec![${args}]),\n`;
+    curOpStr += `${ttt}(${instr.len}, ${instr.code}, vec![${args}])`;
 
     if (instr.cb) {
         cbOpStr += curOpStr;
@@ -120,7 +122,7 @@ let instructions_output = instructions_rs.replace(
     '// {{{ js }}}',
     `match instr_ty {
 ${opStr}\
-            // CB instructions
+        // CB instructions
 
 ${cbOpStr}\
             _ => bug!("Op not found"),
