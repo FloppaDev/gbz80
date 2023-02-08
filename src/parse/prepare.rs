@@ -6,13 +6,7 @@ use crate::{
         lex::TokenType::{self, *},
         split::Split,
     },
-    error::{
-        ErrCtx,
-        asm::{
-            AsmErr,
-            ParseMsg::{self, *}
-        },
-    },
+    error::{ ErrCtx, asm::{AsmErr, ParseMsg::{self, *}} },
 };
 
 /// Output of the parser. Contains the type and the key to the data.
@@ -35,10 +29,10 @@ pub fn parse<'a>(
     let mut words = words_vec.iter();
 
     while let Some((word, line, line_number, file)) = words.next() {
-        let line_number = *line_number;
+        // Attempt to identify the token. 
         let id_words = identify(word);
+        let line_number = *line_number;
 
-        // Error while identifying token type.
         if let Err(err_type) = id_words {
             let err_ctx = ErrCtx::new(Root, file, line_number, line, word);
             let err = err!(ParseMsg, err_type, err_ctx);
@@ -137,7 +131,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
                 mul *= 16;
             }
 
-            Ok((ty, Value::Usize(hex)))
+            Ok((ty, fit(hex, str_value.len(), 16)?))
         }
 
         LitBin => {
@@ -158,7 +152,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
                 }
             }
 
-            Ok((ty, Value::Usize(bin)))
+            Ok((ty, fit(bin, str_value.len(), 2)?))
         }
 
         LitDec|Repeat => {
@@ -173,7 +167,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
                 mul *= 10;
             }
 
-            Ok((ty, Value::Usize(dec)))
+            Ok((ty, fit(dec, str_value.len(), 10)?))
         }
 
         // Value for those is str_value
@@ -315,4 +309,36 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
 
     // Could not parse word.
     Err(ParseMsg::Invalid)
+}
+
+//TODO check where validation happened, it is here now.
+/// Fits a number into a `Value` based on the literal's length (&00FF would be a u16).
+fn fit(num: usize, len: usize, base: usize) -> Result<Value<'static>, ParseMsg> {
+    return match base {
+        2 => if len > 16 {
+            Err(ParseMsg::InvalidBin) 
+        }else if len > 8 {
+            Ok(Value::U16(num as u16))
+        }else {
+            Ok(Value::U8(num as u8))
+        }
+
+        10 => if len > 5 || num > u16::MAX.into() {
+            Err(ParseMsg::InvalidDec) 
+        }else if len > 3 || num > u8::MAX.into() {
+            Ok(Value::U16(num as u16))
+        }else {
+            Ok(Value::U8(num as u8))
+        }
+
+        16 => if len > 4 {
+            Err(ParseMsg::InvalidHex) 
+        }else if len > 2 {
+            Ok(Value::U16(num as u16))
+        }else {
+            Ok(Value::U8(num as u8))
+        }
+
+        _ => bug!("Invalid base."),
+    };
 }

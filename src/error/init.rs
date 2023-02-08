@@ -1,17 +1,8 @@
 
 use crate::program::fmt;
 
-/// Prepends a newline if text is not empty.
-fn ln_if(text: &str) -> String {
-    return if text.is_empty() {
-        String::new()
-    }else {
-        format!("\n{text}")
-    };
-}
-
-#[derive(Debug, Copy, Clone)]
 /// Error variants when parsing command line arguments.
+#[derive(Debug, Copy, Clone)]
 pub enum ClargsErrType {
     NoSource,
     NoOutput,
@@ -19,8 +10,8 @@ pub enum ClargsErrType {
     UnknownArg,
 }
 
-#[derive(Debug)]
 /// Command line arguments error.
+#[derive(Debug)]
 pub struct ClargsErr<'a> {
     ty: ClargsErrType,
     msg: &'a str,
@@ -36,17 +27,10 @@ impl<'a> ClargsErr<'a> {
         use ClargsErrType::*;
 
         match self.ty {
-            NoSource =>
-                "No source file specified",
-
-            NoOutput =>
-                "No output file specified",
-
-            TooManyParams =>
-                "Too many parameters in argument",
-
-            UnknownArg =>
-                "Unknown argument",
+            NoSource => "No source file specified",
+            NoOutput => "No output file specified",
+            TooManyParams => "Too many parameters in argument",
+            UnknownArg => "Unknown argument",
         }
     }
 
@@ -56,23 +40,23 @@ impl<'a> std::fmt::Display for ClargsErr<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let text = fmt::strip()
             .info(&format!("({:?}) ", self.ty))
-            .base(&format!("{}{}", self.description(), ln_if(self.msg)))
+            .base(&format!("{}{}", self.description(), fmt::ln_if(self.msg)))
             .read();
 
         write!(f, "{text}")
     }
 }
 
-#[derive(Debug, Copy, Clone)]
 /// Error variants when reading word from the source file.
+#[derive(Debug, Copy, Clone)]
 pub enum SplitErrType {
     MisplacedDirective,
     InvalidDirective,
     InvalidWord,
 }
 
-#[derive(Debug)]
 /// Error when reading words from the source file.
+#[derive(Debug)]
 pub struct SplitErr<'a> {
     ty: SplitErrType,
     line: &'a str,
@@ -89,14 +73,9 @@ impl<'a> SplitErr<'a> {
         use SplitErrType::*;
 
         match self.ty {
-            MisplacedDirective =>
-                "Directives must be placed at the start of a line",
-
-            InvalidDirective =>
-                "Invalid directive name",
-
-            InvalidWord =>
-                "Could not read word",
+            MisplacedDirective => "Directives must be placed at the start of a line",
+            InvalidDirective => "Invalid directive name",
+            InvalidWord => "Could not read word",
         }
     }
 
@@ -104,11 +83,9 @@ impl<'a> SplitErr<'a> {
 
 impl<'a> std::fmt::Display for SplitErr<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let text = fmt::strip()
-            .info(&format!("({:?}) ", self.ty))
-            .bold(&format!(
-                "{}\nl{}:    {}", self.description(), self.line_number, self.line))
-            .read();
+        let ty = &format!("({:?}) ", self.ty);
+        let msg = &format!("{}\nl{}:    {}", self.description(), self.line_number, self.line);
+        let text = fmt::strip().info(ty).bold(msg).read();
 
         write!(f, "{text}")
     }

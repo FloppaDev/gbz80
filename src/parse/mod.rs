@@ -1,4 +1,7 @@
 
+/// Gets the source assembly code.
+pub mod source;
+
 /// Splits the input file into words.
 pub mod split;
 
@@ -10,6 +13,3 @@ pub mod text;
 
 /// Transforms the source file into tokens.
 pub mod prepare;
-
-/// Gets the source assembly code.
-pub mod source;

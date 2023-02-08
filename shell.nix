@@ -15,6 +15,8 @@ in
 
       wineWowPackages.staging
       winetricks
+
+      mgba
     ];
 
     WINEDEBUG="fixme-all";

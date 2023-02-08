@@ -31,9 +31,9 @@
 #endif
     0 0             ;Manufacturer code
     0               ;Super gameboy flag (&00 or &03)
-    2               ;Cartridge type
-    2               ;Rom size (0=32k, 1=64k, 2=128k ...)
-    3               ;Cart Ram size (0, 1=2k, 2=8k, 3=32k)
+    0               ;Cartridge type
+    0               ;Rom size (0=32k, 1=64k, 2=128k ...)
+    0               ;Cart Ram size (0, 1=2k, 2=8k, 3=32k)
     1               ;Destination (0=JPN, 1=EU/US)
     &33             ;Old licencee code, must be &33 for SGB
     0               ;Rom version
@@ -200,7 +200,7 @@
         ret z
         push hl
             call LCDWait    ;Wait for VDP Sync
-            ld hl &ff68 
+            ld hl &FF68 
             ld (hl) c       ;FF68 - BCPS/BGPI - CGB Mode Only - Background Palette Index
             inc hl          
             ld (hl) e       ;FF69 - BCPD/BGPD - CGB Mode Only - Background Palette Data
@@ -227,3 +227,5 @@
 :BitmapFont
         #include "Font96.FNT"       ;Font bitmap,
 :BitmapFontEnd
+
+&7FFF:

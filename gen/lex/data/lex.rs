@@ -4,8 +4,7 @@
 use TokenType::*;
 
 pub const fn is_char_word(c: char) -> bool {
-    matches!(c,
-        //[[is_char_word]]
+    //[[is_char_word]]
 }
 
 /// All the different token types than can be identified.

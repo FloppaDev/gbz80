@@ -1,4 +1,4 @@
-
+/*
 /// Tools to make reading the token tree easier.
 pub mod read;
 
@@ -10,6 +10,7 @@ pub mod expr;
 
 /// Ensures that tokens respect their intended use.
 pub mod validation;
+*/
 
 use crate::{
     parse::{
@@ -21,33 +22,39 @@ use crate::{
 #[derive(Debug, Copy, Clone)]
 pub enum Value<'a> {
     Void,
-    Usize(usize),
+    U8(u8),
+    U16(u16),
     Str(&'a str),
 }
 
 impl<'a> Value<'a> {
 
-    /// Returns the contained `usize` value.
-    /// Panics:
-    /// self is not a `Value::Usize`
-    pub fn as_usize(&self) -> usize {
-        if let Value::Usize(v) = *self {
-            return v;
-        }
+    /// Returns the contained `u8` value.
+    pub fn as_u8(&self) -> Result<u8, ()> {
+        return if let Value::U8(v) = *self { Ok(v) }else{ Err(()) };
 
-        panic!("Wrong value type");
+    }
+
+    /// Returns the contained `u16` value.
+    pub fn as_u16(&self) -> Result<u16, ()> {
+        return if let Value::U16(v) = *self { Ok(v) }else{ Err(()) };
     }
 
     /// Returns the contained `str` value.
-    /// Panics:
-    /// self is not a `Value::Str`
-    pub fn as_str(&self) -> &'a str {
-        if let Value::Str(v) = *self {
-            return v;
-        }
-
-        panic!("Wrong value type");
+    pub fn as_str(&self) -> Result<&'a str, ()> {
+        return if let Value::Str(v) = *self { Ok(v) }else{ Err(()) };
     }
+
+    /*
+    pub fn as_bytes(&self) -> Vec<u8> {
+        match self {
+            Self::U8(v) => vec![v],
+            Self::U16(v) => encode::u16_to_bytes(v).unwrap(),
+            Self::Str(v) => encode::str_to_bytes(v).unwrap(),
+            _ => bug!("Wrong value type")
+        }
+    }
+    */
 
 }
 
@@ -73,8 +80,7 @@ impl<'a> Token<'a> {
         index: usize, 
         parent: usize,
     ) -> Self {
-        let children = vec![];
-        Self { ty, file, line_number, line, word, value, index, parent, children }
+        Self { ty, file, line_number, line, word, value, index, parent, children: vec![] }
     }
 
 }

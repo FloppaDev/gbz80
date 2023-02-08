@@ -26,15 +26,11 @@ fn stage_err_vec<E: std::fmt::Display + Sized>(ev: Vec<E>, msg: &str) {
 }
 
 macro_rules! stage_err { ($fn:ident, $lit:literal) => {
-    pub fn $fn<E: std::fmt::Display + Sized>(e: E) {
-        stage_err(e, $lit);
-    }   
+    pub fn $fn<E: std::fmt::Display + Sized>(e: E) { stage_err(e, $lit); }   
 }}
 
 macro_rules! stage_err_vec { ($fn:ident, $lit:literal) => {
-    pub fn $fn<E: std::fmt::Display + Sized>(ev: Vec<E>) {
-        stage_err_vec(ev, $lit);
-    }
+    pub fn $fn<E: std::fmt::Display + Sized>(ev: Vec<E>) { stage_err_vec(ev, $lit); }
 }}
 
 stage_err!(clargs, "Invalid command line arguments.");

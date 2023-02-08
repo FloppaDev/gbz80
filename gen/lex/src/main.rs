@@ -24,87 +24,62 @@ fn main() {
 }
 
 fn build(tree: &Tree) {
-    let template = include_str!("../data/lex.rs");
-
     let types = tree.find("types");
-    let mut types_str= String::new();
-    fmt_types(tree, types, 0, &mut types_str);
-
-    let mut parent_type = String::new();
     let root = &tree.nodes[types.children[0]];
-    fmt_parents(tree, root, &mut parent_type, &mut 0);
-    parent_type = tab(3, &parent_type);
-
     let has_value = tree.find("has_value");
-    let mut has_value_str = String::new();
-    fmt_match_true(tree, has_value, &mut has_value_str, &mut 0);
-    has_value_str = tab(3, &has_value_str);
-
     let ends_on_newline = tree.find("ends_on_newline");
-    let mut ends_on_newline_str = String::new();
-    fmt_match_true(tree, ends_on_newline, &mut ends_on_newline_str, &mut 0);
-    ends_on_newline_str = tab(3, &ends_on_newline_str);
-
     let char_words = tree.find("char_words");
-    
     let are_words = tree.find("are_words");
     let word_pairs = tree.find("word_pairs");
-    let mut words = String::new();
-    fmt_words(tree, are_words, word_pairs, char_words, &mut words);
-    words = tab(3, &words);
-
     let prefixes = tree.find("prefixes");
-    let mut prefixes_str = String::new();
-    fmt_prefixes(tree, prefixes, &mut prefixes_str);
-    prefixes_str = tab(3, &prefixes_str);
-
-    let mut at_str = String::new(); 
-    let mut at_arms = String::new();
-    let mut len = 0;
-    fmt_at(tree, root, &mut at_arms, &mut len);
-    at_str.push_str(&format!("const COUNT: usize = {len};\n\n"));
-    at_str.push_str("match index % COUNT {\n");
-    at_str.push_str(&at_arms);
-    at_str.push_str("    _ => panic!()\n}");
-    at_str = tab(2, &at_str);
-
-    let mut char_words_str = String::new();
-    fmt_char_words(tree, char_words, &mut char_words_str);
-    char_words_str = tab(2, &char_words_str);
-
-    let mut len = 0;
-    let mut hierarchy_str = String::new();
     let hierarchy = tree.find("validate_from_hierarchy");
-    fmt_hierarchy_validation(tree, hierarchy, &mut hierarchy_str, &mut len);
-    hierarchy_str = tab(3, &hierarchy_str);
+    let validation = tree.find("validation");
+
+    let template = include_str!("../data/lex.rs");
+    let mut result = String::from(template);
+    let mut fmt = String::from(NO_TOUCHY);
+    apply(&mut result, "no_touchy", &mut fmt, 0);
+
+    fmt_types(tree, types, 0, &mut fmt);
+    apply(&mut result, "types", &mut fmt, 0);
+
+    fmt_parents(tree, root, &mut fmt, &mut 0);
+    apply(&mut result, "parent_type", &mut fmt, 3);
+
+    fmt_match_true(tree, has_value, &mut fmt, &mut 0);
+    apply(&mut result, "has_value", &mut fmt, 3);
+
+    fmt_match_true(tree, ends_on_newline, &mut fmt, &mut 0);
+    apply(&mut result, "ends_on_newline", &mut fmt, 3);
+
+    fmt_words(tree, are_words, word_pairs, char_words, &mut fmt);
+    apply(&mut result, "get_by_word", &mut fmt, 3);
+
+    fmt_prefixes(tree, prefixes, &mut fmt);
+    apply(&mut result, "prefixes", &mut fmt, 3);
+
+    let mut len = 0;
+    fmt_at(tree, root, &mut fmt, &mut len);
+    apply(&mut result, "at", &mut fmt, 2);
+
+    fmt_char_words(tree, char_words, &mut fmt);
+    apply(&mut result, "is_char_word", &mut fmt, 1);
 
     len = 0;
-    let mut validation_str = String::new();
-    let validation = tree.find("validation");
-    fmt_validation(tree, validation, &mut validation_str, &mut len);
-    validation_str = tab(3, &validation_str);
+    fmt_hierarchy_validation(tree, hierarchy, &mut fmt, &mut len);
+    apply(&mut result, "hierarchy_validation", &mut fmt, 3);
 
-    let result = template
-        .replace(&key("no_touchy"), NO_TOUCHY)
-        .replace(&key("types"), types_str.trim_end())
-        .replace(&key("parent_type"), parent_type.trim_end())
-        .replace(&key("has_value"), has_value_str.trim_end())
-        .replace(&key("ends_on_newline"), ends_on_newline_str.trim_end())
-        .replace(&key("get_by_word"), words.trim_end())
-        .replace(&key("prefixes"), prefixes_str.trim_end())
-        .replace(&key("at"), at_str.trim_end())
-        .replace(&key("is_char_word"), char_words_str.trim_end())
-        .replace(&key("hierarchy_validation"), hierarchy_str.trim_end())
-        .replace(&key("validation"), validation_str.trim_end());
-
-    //println!("{}", result);
+    len = 0;
+    fmt_validation(tree, validation, &mut fmt, &mut len);
+    apply(&mut result, "validation", &mut fmt, 3);
 
     let mut file = File::create("../../src/parse/lex.rs").unwrap();
     file.write_all(result.as_bytes()).unwrap();
 }
 
-fn key(name: &str) -> String {
-    format!("//[[{name}]]")
+fn apply(target: &mut String, key: &str, content: &mut String, indent: usize) {
+    *target = target.replace(&format!("//[[{key}]]"), &tab(indent, content.trim_end()));
+    content.clear();
 }
 
 fn tab(n: usize, s: &str) -> String {
@@ -203,7 +178,7 @@ fn fmt_words(tree: &Tree, words: &Node, pairs: &Node, chars: &Node, out: &mut St
     }
 }
 
-pub fn fmt_prefixes(tree: &Tree, node: &Node, out: &mut String) {
+fn fmt_prefixes(tree: &Tree, node: &Node, out: &mut String) {
     out.push_str("matches!(prefix, ");
 
     for (i, index) in node.children.iter().enumerate() {
@@ -218,17 +193,28 @@ pub fn fmt_prefixes(tree: &Tree, node: &Node, out: &mut String) {
     out.push(')');
 }
 
-pub fn fmt_at(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
+fn fmt_at(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
+    let mut at_arms = String::new();
+    fmt_at_arms(tree, node, &mut at_arms, len);
+
+    out.push_str(&format!("const COUNT: usize = {len};\n\n"));
+    out.push_str("match index % COUNT {\n");
+    out.push_str(&at_arms);
+    out.push_str("    _ => panic!()\n}");
+}
+
+fn fmt_at_arms(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
     for index in &node.children {
         let child = &tree.nodes[*index];
         out.push_str(&format!("    {} => {},\n", *len, child.value));
         *len += 1; 
 
-        fmt_at(tree, child, out, len);
+        fmt_at_arms(tree, child, out, len);
     }
 }
 
 fn fmt_char_words(tree: &Tree, node: &Node, out: &mut String) {
+    out.push_str("matches!(c, ");
     let mut ln = 0;
 
     for (i, index) in node.children.iter().enumerate() {

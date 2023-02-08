@@ -1,11 +1,16 @@
 
-#![allow(dead_code)]
+use values::*;
 
 #[cfg(debug_assertions)]
 /// Prints the title for compilation stage.
 pub fn title(title: &str) {
-    let decoration = "=".repeat(79);
+    let decoration = "=".repeat(80);
     println!("\n{decoration}\n\t\t\t\t{title}\n{decoration}\n");
+}
+
+/// Prepends a newline if text is not empty.
+pub fn ln_if(text: &str) -> String {
+    return if text.is_empty() { String::new() }else{ format!("\n{text}") };
 }
 
 #[cfg(target_family="unix")]
@@ -26,6 +31,8 @@ mod values {
     pub const OK: &str = "";
     pub const ERR: &str = "";
     pub const INFO: &str = "";
+    pub const FAINT: &str = "";
+    pub const BOLD: &str = "";
 }
 
 /// Creates a `Strip` object.
@@ -40,72 +47,30 @@ pub struct Strip {
 
 impl Strip {
 
-    /// Colors text in white.
-    pub fn base(mut self, text: &str) -> Self {
-        self.value.push_str(text);
-
-        self
-    }
-
-    /// Colors text in green.
-    pub fn ok(mut self, text: &str) -> Self {
-        self.value.push_str(values::OK);
-        self.value.push_str(text);
-        self.value.push_str(values::BASE);
-
-        self
-    }
-
-    /// Colors text in red.
-    pub fn err(mut self, text: &str) -> Self {
-        self.value.push_str(values::ERR);
-        self.value.push_str(text);
-        self.value.push_str(values::BASE);
-
-        self
-    }
-
-    /// Colors text in yellow.
-    pub fn info(mut self, text: &str) -> Self {
-        self.value.push_str(values::INFO);
-        self.value.push_str(text);
-        self.value.push_str(values::BASE);
-
-        self
-    }
-
-    /// Appends text when in debug mode, with base color.
-    pub fn debug(mut self, text: &str) -> Self {
-        if cfg!(debug_assertions) {
-            self.value.push_str(text);
-        }
-
-        self
-    }
-
-    /// Appends dimmed text.
-    pub fn faint(mut self, text: &str) -> Self {
-        self.value.push_str(values::FAINT);
-        self.value.push_str(text);
-        self.value.push_str(values::BASE);
-
-        self
-    }
-
-    /// Appends bold text.
-    pub fn bold(mut self, text: &str) -> Self {
-        self.value.push_str(values::BOLD);
-        self.value.push_str(text);
-        self.value.push_str(values::BASE);
-
-        self
-    }
-
     /// Consumes the `Strip` and returns its `String` value.
     // "constant functions cannot evaluate destructors"
     #[allow(clippy::missing_const_for_fn)]
-    pub fn read(self) -> String {
-        self.value
+    pub fn read(self) -> String { self.value }
+
+    pub fn base(self, text: &str) -> Self { self.push(BASE).push(text) }
+    pub fn ok(self, text: &str) -> Self { self.wrap(text, OK) }
+    pub fn err(self, text: &str) -> Self { self.wrap(text, ERR) }
+    pub fn info(self, text: &str) -> Self { self.wrap(text, INFO) }
+    pub fn faint(self, text: &str) -> Self { self.wrap(text, FAINT) }
+    pub fn bold(self, text: &str) -> Self { self.wrap(text, BOLD) }
+
+    /// Appends text when in debug mode, with base color.
+    pub fn debug(self, text: &str) -> Self {
+        return if cfg!(debug_assertions) { self.base(text) }else{ self };
+    }
+
+    fn push(mut self, text: &str) -> Self {
+        self.value.push_str(text); 
+        self
+    }
+
+    fn wrap(self, text: &str, with: &str) -> Self {
+        self.push(with).push(text).push(BASE)        
     }
 
 }

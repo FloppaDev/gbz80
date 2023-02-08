@@ -1,9 +1,6 @@
 
 use crate::{
-    parse::{
-        lex,
-        source::Input,
-    },
+    parse::{ lex, source::Input },
     error::init::{SplitErr, SplitErrType},
 };
 
@@ -34,13 +31,10 @@ impl<'a> Word<'a> {
 /// Splits source file into words and stores original lines along with their numbers.
 pub struct Split<'a> {
     file: &'a str,
-
     /// String slice of a whole line.
     lines: Vec<&'a str>,
-
     /// Maps line indices to line numbers from the source file.
     line_numbers: Vec<usize>,
-
     /// Word slices along with their line index.
     words: Vec<Word<'a>>,
 }
@@ -116,7 +110,7 @@ impl<'a> Split<'a> {
                 }
 
                 if ch == ';' {
-                    break
+                    break;
                 }
 
                 // Has a directive started?
@@ -232,7 +226,7 @@ impl<'a> Split<'a> {
         title("Split words");
         
         if self.line_numbers.is_empty() {
-            return
+            return;
         }
 
         let mut line_number = self.line_numbers[0];
