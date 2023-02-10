@@ -124,8 +124,7 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
             let mut mul = 1;
 
             // Read all characters from right to left.
-            for c in str_value.chars().rev() {
-                // All characters are valid hex.
+            for c in str_value.chars().rev() { // All characters are valid hex.
                 let h = c.to_digit(16).unwrap() as usize; 
                 hex += h * mul;
                 mul *= 16;
@@ -135,24 +134,30 @@ fn extract(word: (TokenType, &str)) -> Result<(TokenType, Value), ParseMsg> {
         }
 
         LitBin => {
+            let mut effective_chars = 0;
             let mut bin = 0;
             let mut mul = 1;
 
             // Read all characters from right to left.
             for c in str_value.chars().rev() {
                 match c {
-                    '0' => mul *= 2,
+                    '0' => {
+                        mul *= 2;
+                        effective_chars += 1;
+                    }
 
                     '1' => {
                         bin += mul;
                         mul *= 2;
+                        effective_chars += 1;
                     }
 
                     _ => {}
                 }
             }
 
-            Ok((ty, fit(bin, str_value.len(), 2)?))
+
+            Ok((ty, fit(bin, effective_chars, 2)?))
         }
 
         LitDec|Repeat => {

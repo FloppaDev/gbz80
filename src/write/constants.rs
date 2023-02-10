@@ -298,18 +298,35 @@ impl<'a> Constants<'a> {
         title("Constant values");
 
         for (key, value) in &self.const_exprs {
-            let value_str = if let ConstExpr::Value(v) = value {
+
+
+            let mut value_str;
+            let mut ty_str;
+
+            if let ConstExpr::Value(v) = value {
                 match v {
-                    Value::U8(v) => v.to_string(),
-                    Value::U16(v) => v.to_string(),
-                    Value::Str(v) => (*v).to_string(),
+                    Value::U8(v) => {
+                        value_str = v.to_string();
+                        ty_str = "BYTE";
+                    }
+                    Value::U16(v) => {
+                        value_str = v.to_string();
+                        ty_str = "WORD";
+                    }
+                    Value::Str(v) => {
+                        value_str = (*v).to_string();
+                        ty_str = "STRG";
+                    }
                     _ => bug!("Unexpected Value type")
                 }
             }else {
                 bug!("Unexpected ConstExpr type");
             };
 
-            println!("{key}: {value_str}");
+            let len = 48usize.saturating_sub(key.len());
+            let bar = "─".repeat(len);
+
+            println!("{ty_str} {key} {bar} {value_str}");
         }
     }
 
