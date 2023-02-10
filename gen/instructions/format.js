@@ -51,7 +51,7 @@ for (instr of INSTRUCTIONS) {
         }
 
         let pName  = pascal(instr.name);
-        curOpStr += `${tt}${pName} => OpCode::get_opcode(instruction, ${instr.cb}, vec![\n`;
+        curOpStr += `${tt}${pName} => (${instr.cb}, vec![\n`;
 
         name = instr.name;
     }else {
@@ -120,7 +120,7 @@ cbOpStr += matchBranchEnd;
 
 let instructions_output = instructions_rs.replace(
     '// {{{ js }}}',
-    `match instr_ty {
+    `match tty {
 ${opStr}\
         // CB instructions
 

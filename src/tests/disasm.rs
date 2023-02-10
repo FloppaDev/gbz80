@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::Read;
 
 use crate::{
+    parse::lex::TokenType,
     program,
 };
 
@@ -19,5 +20,5 @@ fn disasm() {
     let mut buffer = vec![0; metadata.len() as usize];
     file.read(&mut buffer).unwrap();
 
-
+     
 }

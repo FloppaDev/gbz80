@@ -6,8 +6,8 @@
 // Do no edit manually.
 
 use crate::{
-    write::ops::{ OpCode, ty, imm, at, bit, Constant::* },
-    parse::lex::TokenType::*,
+    write::ops::{ Arg, OpCode, ty, imm, at, bit, Constant::* },
+    parse::lex::TokenType::{ self, * },
     token::read::TokenRef,
 };
 
@@ -15,9 +15,23 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
     assert_eq!(instruction.ty(), Instruction);
 
     let instr_ty = instruction.first().first().ty();
+    let (cb, ops) = get_instruction_info(instr_ty);
 
-    match instr_ty {
-        Adc => OpCode::get_opcode(instruction, false, vec![
+    OpCode::get_opcode(instruction, cb, ops)
+}
+
+#[cfg(test)]
+pub fn get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
+    _get_instruction_info(tty)
+}
+
+fn get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
+    _get_instruction_info(tty)
+}
+
+fn _get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
+    match tty {
+        Adc => (false, vec![
             (1, 0x88, vec![ty(A), ty(B)]),
             (1, 0x89, vec![ty(A), ty(C)]),
             (1, 0x8A, vec![ty(A), ty(D)]),
@@ -28,7 +42,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0x8F, vec![ty(A), ty(A)]),
             (2, 0xCE, vec![ty(A), imm(Byte)])]),
 
-        Add => OpCode::get_opcode(instruction, false, vec![
+        Add => (false, vec![
             (1, 0x09, vec![ty(Hl), ty(Bc)]),
             (1, 0x19, vec![ty(Hl), ty(De)]),
             (1, 0x29, vec![ty(Hl), ty(Hl)]),
@@ -44,7 +58,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0xC6, vec![ty(A), imm(Byte)]),
             (2, 0xE8, vec![ty(Sp), imm(Byte)])]),
 
-        And => OpCode::get_opcode(instruction, false, vec![
+        And => (false, vec![
             (1, 0xA0, vec![ty(B)]),
             (1, 0xA1, vec![ty(C)]),
             (1, 0xA2, vec![ty(D)]),
@@ -55,17 +69,17 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0xA7, vec![ty(A)]),
             (2, 0xE6, vec![imm(Byte)])]),
 
-        Call => OpCode::get_opcode(instruction, false, vec![
+        Call => (false, vec![
             (3, 0xC4, vec![ty(FlagNz), imm(Word)]),
             (3, 0xCC, vec![ty(FlagZ), imm(Word)]),
             (3, 0xCD, vec![imm(Word)]),
             (3, 0xD4, vec![ty(FlagNc), imm(Word)]),
             (3, 0xDC, vec![ty(FlagC), imm(Word)])]),
 
-        Ccf => OpCode::get_opcode(instruction, false, vec![
+        Ccf => (false, vec![
             (1, 0x3F, vec![])]),
 
-        Cp => OpCode::get_opcode(instruction, false, vec![
+        Cp => (false, vec![
             (1, 0xB8, vec![ty(B)]),
             (1, 0xB9, vec![ty(C)]),
             (1, 0xBA, vec![ty(D)]),
@@ -76,13 +90,13 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0xBF, vec![ty(A)]),
             (2, 0xFE, vec![imm(Byte)])]),
 
-        Cpl => OpCode::get_opcode(instruction, false, vec![
+        Cpl => (false, vec![
             (1, 0x2F, vec![])]),
 
-        Daa => OpCode::get_opcode(instruction, false, vec![
+        Daa => (false, vec![
             (1, 0x27, vec![])]),
 
-        Dec => OpCode::get_opcode(instruction, false, vec![
+        Dec => (false, vec![
             (1, 0x05, vec![ty(B)]),
             (1, 0x0B, vec![ty(Bc)]),
             (1, 0x0D, vec![ty(C)]),
@@ -96,16 +110,16 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0x3B, vec![ty(Sp)]),
             (1, 0x3D, vec![ty(A)])]),
 
-        Di => OpCode::get_opcode(instruction, false, vec![
+        Di => (false, vec![
             (1, 0xF3, vec![])]),
 
-        Ei => OpCode::get_opcode(instruction, false, vec![
+        Ei => (false, vec![
             (1, 0xFB, vec![])]),
 
-        Halt => OpCode::get_opcode(instruction, false, vec![
+        Halt => (false, vec![
             (1, 0x76, vec![])]),
 
-        Inc => OpCode::get_opcode(instruction, false, vec![
+        Inc => (false, vec![
             (1, 0x03, vec![ty(Bc)]),
             (1, 0x04, vec![ty(B)]),
             (1, 0x0C, vec![ty(C)]),
@@ -119,7 +133,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0x34, vec![at(ty(Hl))]),
             (1, 0x3C, vec![ty(A)])]),
 
-        Jp => OpCode::get_opcode(instruction, false, vec![
+        Jp => (false, vec![
             (3, 0xC2, vec![ty(FlagNz), imm(Word)]),
             (3, 0xC3, vec![imm(Word)]),
             (3, 0xCA, vec![ty(FlagZ), imm(Word)]),
@@ -127,14 +141,14 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (3, 0xDA, vec![ty(FlagC), imm(Word)]),
             (1, 0xE9, vec![at(ty(Hl))])]),
 
-        Jr => OpCode::get_opcode(instruction, false, vec![
+        Jr => (false, vec![
             (2, 0x18, vec![imm(Byte)]),
             (2, 0x20, vec![ty(FlagNz), imm(Byte)]),
             (2, 0x28, vec![ty(FlagZ), imm(Byte)]),
             (2, 0x30, vec![ty(FlagNc), imm(Byte)]),
             (2, 0x38, vec![ty(FlagC), imm(Byte)])]),
 
-        Ld => OpCode::get_opcode(instruction, false, vec![
+        Ld => (false, vec![
             (3, 0x01, vec![ty(Bc), imm(Word)]),
             (1, 0x02, vec![at(ty(Bc)), ty(A)]),
             (2, 0x06, vec![ty(B), imm(Byte)]),
@@ -221,25 +235,25 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0xF9, vec![ty(Sp), ty(Hl)]),
             (3, 0xFA, vec![ty(A), at(imm(Word))])]),
 
-        Ldd => OpCode::get_opcode(instruction, false, vec![
+        Ldd => (false, vec![
             (1, 0x32, vec![at(ty(Hl)), ty(A)]),
             (1, 0x3A, vec![ty(A), at(ty(Hl))])]),
 
-        Ldh => OpCode::get_opcode(instruction, false, vec![
+        Ldh => (false, vec![
             (2, 0xE0, vec![at(imm(Byte)), ty(A)]),
             (2, 0xF0, vec![ty(A), at(imm(Byte))])]),
 
-        Ldhl => OpCode::get_opcode(instruction, false, vec![
+        Ldhl => (false, vec![
             (2, 0xF8, vec![ty(Hl), ty(Sp)])]),
 
-        Ldi => OpCode::get_opcode(instruction, false, vec![
+        Ldi => (false, vec![
             (1, 0x22, vec![at(ty(Hl)), ty(A)]),
             (1, 0x2A, vec![ty(A), at(ty(Hl))])]),
 
-        Nop => OpCode::get_opcode(instruction, false, vec![
+        Nop => (false, vec![
             (1, 0x00, vec![])]),
 
-        Or => OpCode::get_opcode(instruction, false, vec![
+        Or => (false, vec![
             (1, 0xB0, vec![ty(B)]),
             (1, 0xB1, vec![ty(C)]),
             (1, 0xB2, vec![ty(D)]),
@@ -250,41 +264,41 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0xB7, vec![ty(A)]),
             (2, 0xF6, vec![imm(Byte)])]),
 
-        Pop => OpCode::get_opcode(instruction, false, vec![
+        Pop => (false, vec![
             (1, 0xC1, vec![ty(Bc)]),
             (1, 0xD1, vec![ty(De)]),
             (1, 0xE1, vec![ty(Hl)]),
             (1, 0xF1, vec![ty(Af)])]),
 
-        Push => OpCode::get_opcode(instruction, false, vec![
+        Push => (false, vec![
             (1, 0xC5, vec![ty(Bc)]),
             (1, 0xD5, vec![ty(De)]),
             (1, 0xE5, vec![ty(Hl)]),
             (1, 0xF5, vec![ty(Af)])]),
 
-        Ret => OpCode::get_opcode(instruction, false, vec![
+        Ret => (false, vec![
             (1, 0xC0, vec![ty(FlagNz)]),
             (1, 0xC8, vec![ty(FlagZ)]),
             (1, 0xC9, vec![]),
             (1, 0xD0, vec![ty(FlagNc)]),
             (1, 0xD8, vec![ty(FlagC)])]),
 
-        Reti => OpCode::get_opcode(instruction, false, vec![
+        Reti => (false, vec![
             (1, 0xD9, vec![])]),
 
-        Rla => OpCode::get_opcode(instruction, false, vec![
+        Rla => (false, vec![
             (1, 0x17, vec![])]),
 
-        Rlca => OpCode::get_opcode(instruction, false, vec![
+        Rlca => (false, vec![
             (1, 0x07, vec![])]),
 
-        Rra => OpCode::get_opcode(instruction, false, vec![
+        Rra => (false, vec![
             (1, 0x1F, vec![])]),
 
-        Rrca => OpCode::get_opcode(instruction, false, vec![
+        Rrca => (false, vec![
             (1, 0x0F, vec![])]),
 
-        Rst => OpCode::get_opcode(instruction, false, vec![
+        Rst => (false, vec![
             (1, 0xC7, vec![imm(Word)]),
             (1, 0xCF, vec![imm(Word)]),
             (1, 0xD7, vec![imm(Word)]),
@@ -294,7 +308,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0xF7, vec![imm(Word)]),
             (1, 0xFF, vec![imm(Word)])]),
 
-        Sbc => OpCode::get_opcode(instruction, false, vec![
+        Sbc => (false, vec![
             (1, 0x98, vec![ty(A), ty(B)]),
             (1, 0x99, vec![ty(A), ty(C)]),
             (1, 0x9A, vec![ty(A), ty(D)]),
@@ -305,13 +319,13 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0x9F, vec![ty(A), ty(A)]),
             (2, 0xDE, vec![ty(A), imm(Byte)])]),
 
-        Scf => OpCode::get_opcode(instruction, false, vec![
+        Scf => (false, vec![
             (1, 0x37, vec![])]),
 
-        Stop => OpCode::get_opcode(instruction, false, vec![
+        Stop => (false, vec![
             (2, 0x10, vec![bit(0)])]),
 
-        Sub => OpCode::get_opcode(instruction, false, vec![
+        Sub => (false, vec![
             (1, 0x90, vec![ty(B)]),
             (1, 0x91, vec![ty(C)]),
             (1, 0x92, vec![ty(D)]),
@@ -322,7 +336,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (1, 0x97, vec![ty(A)]),
             (2, 0xD6, vec![imm(Byte)])]),
 
-        Xor => OpCode::get_opcode(instruction, false, vec![
+        Xor => (false, vec![
             (1, 0xA8, vec![ty(B)]),
             (1, 0xA9, vec![ty(C)]),
             (1, 0xAA, vec![ty(D)]),
@@ -335,7 +349,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
 
         // CB instructions
 
-        Bit => OpCode::get_opcode(instruction, true, vec![
+        Bit => (true, vec![
             (2, 0x40, vec![bit(0), ty(B)]),
             (2, 0x41, vec![bit(0), ty(C)]),
             (2, 0x42, vec![bit(0), ty(D)]),
@@ -401,7 +415,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x7E, vec![bit(7), at(ty(Hl))]),
             (2, 0x7F, vec![bit(7), ty(A)])]),
 
-        Res => OpCode::get_opcode(instruction, true, vec![
+        Res => (true, vec![
             (2, 0x80, vec![bit(0), ty(B)]),
             (2, 0x81, vec![bit(0), ty(C)]),
             (2, 0x82, vec![bit(0), ty(D)]),
@@ -467,7 +481,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0xBE, vec![bit(7), at(ty(Hl))]),
             (2, 0xBF, vec![bit(7), ty(A)])]),
 
-        Rl => OpCode::get_opcode(instruction, true, vec![
+        Rl => (true, vec![
             (2, 0x10, vec![ty(B)]),
             (2, 0x11, vec![ty(C)]),
             (2, 0x12, vec![ty(D)]),
@@ -477,7 +491,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x16, vec![at(ty(Hl))]),
             (2, 0x17, vec![ty(A)])]),
 
-        Rlc => OpCode::get_opcode(instruction, true, vec![
+        Rlc => (true, vec![
             (2, 0x00, vec![ty(B)]),
             (2, 0x01, vec![ty(C)]),
             (2, 0x02, vec![ty(D)]),
@@ -487,7 +501,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x06, vec![at(ty(Hl))]),
             (2, 0x07, vec![ty(A)])]),
 
-        Rr => OpCode::get_opcode(instruction, true, vec![
+        Rr => (true, vec![
             (2, 0x18, vec![ty(B)]),
             (2, 0x19, vec![ty(C)]),
             (2, 0x1A, vec![ty(D)]),
@@ -497,7 +511,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x1E, vec![at(ty(Hl))]),
             (2, 0x1F, vec![ty(A)])]),
 
-        Rrc => OpCode::get_opcode(instruction, true, vec![
+        Rrc => (true, vec![
             (2, 0x08, vec![ty(B)]),
             (2, 0x09, vec![ty(C)]),
             (2, 0x0A, vec![ty(D)]),
@@ -507,7 +521,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x0E, vec![at(ty(Hl))]),
             (2, 0x0F, vec![ty(A)])]),
 
-        Set => OpCode::get_opcode(instruction, true, vec![
+        Set => (true, vec![
             (2, 0xC0, vec![bit(0), ty(B)]),
             (2, 0xC1, vec![bit(0), ty(C)]),
             (2, 0xC2, vec![bit(0), ty(D)]),
@@ -573,7 +587,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0xFE, vec![bit(7), at(ty(Hl))]),
             (2, 0xFF, vec![bit(7), ty(A)])]),
 
-        Sla => OpCode::get_opcode(instruction, true, vec![
+        Sla => (true, vec![
             (2, 0x20, vec![ty(B)]),
             (2, 0x21, vec![ty(C)]),
             (2, 0x22, vec![ty(D)]),
@@ -583,7 +597,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x26, vec![at(ty(Hl))]),
             (2, 0x27, vec![ty(A)])]),
 
-        Sra => OpCode::get_opcode(instruction, true, vec![
+        Sra => (true, vec![
             (2, 0x28, vec![ty(B)]),
             (2, 0x29, vec![ty(C)]),
             (2, 0x2A, vec![ty(D)]),
@@ -593,7 +607,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x2E, vec![at(ty(Hl))]),
             (2, 0x2F, vec![ty(A)])]),
 
-        Srl => OpCode::get_opcode(instruction, true, vec![
+        Srl => (true, vec![
             (2, 0x38, vec![ty(B)]),
             (2, 0x39, vec![ty(C)]),
             (2, 0x3A, vec![ty(D)]),
@@ -603,7 +617,7 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
             (2, 0x3E, vec![at(ty(Hl))]),
             (2, 0x3F, vec![ty(A)])]),
 
-        Swap => OpCode::get_opcode(instruction, true, vec![
+        Swap => (true, vec![
             (2, 0x30, vec![ty(B)]),
             (2, 0x31, vec![ty(C)]),
             (2, 0x32, vec![ty(D)]),
