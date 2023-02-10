@@ -10,7 +10,7 @@ use crate::{
     error::stage, 
     parse::{ source::Source, split::Split, prepare },
     token::{ ast::{ macros::Macros, Ast }, read::TokenRef, validation },
-    write::{ ops::OpMap, constants::Constants },
+    write::{ ops::OpMap, constants::Constants, encode },
 };
 
 pub fn run() -> Result<(), ()> {
@@ -50,7 +50,9 @@ pub fn run() -> Result<(), ()> {
     #[cfg(debug_assertions)] constants.debug();
 
     // Write output.
-    //encode::build(&clargs.output(), &ast_ref, &op_map, &constants)?;
+    encode::build(&clargs.output(), &ast_ref, &op_map, &constants)?;
+
+    //TODO print OK
 
     Ok(())
 }

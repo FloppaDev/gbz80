@@ -17,11 +17,9 @@ mod token;
 /// Prepares the final result for the binary output.
 mod write;
 
-/*
 #[cfg(target_family="unix")]
 #[cfg(test)]
 mod tests;
-*/
 
 #[deny(clippy::unreachable_patterns, clippy::non_snake_case)]
 

@@ -52,17 +52,6 @@ pub enum ExprValue {
     U16(u16),
 }
 
-impl ExprValue {
-
-    fn as_isize(&self) -> isize {
-        match self {
-            Self::U8(v) => *v as isize,
-            Self::U16(v) => *v as isize,
-        }
-    }
-
-}
-
 struct ExprCtx<'a> {
     dependencies: Vec<&'a TokenRef<'a>>,
     constants: &'a Constants<'a>,
@@ -79,7 +68,7 @@ impl<'a> ExprCtx<'a> {
     /// Evaluates the value for an `Expr` token and its content.
     fn evaluate(mut self, expr: &'a TokenRef<'a>) -> Result<(usize, Self), Self> {
         self.dependencies.push(expr);
-        let mut result;
+        let result;
 
         self = match self.eval_scope(expr) {
             Ok((value, mut s)) => {

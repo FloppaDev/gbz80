@@ -3,3 +3,4 @@
 *.gb
 *.sav
 /tmp
+/build

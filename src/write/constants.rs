@@ -228,7 +228,7 @@ impl<'a> Constants<'a> {
                     let value = ConstExpr::Value(Value::U16(*location as u16));
                     let key = token.value().as_str().unwrap();
                     *self.get_mut(key).unwrap() = value;
-                    *location += 2;
+                    //*location += 2; TODO commented out, make sure it was an error
                 }
 
                 Marker => self.set_location(op_map, token, location)?,
@@ -298,10 +298,8 @@ impl<'a> Constants<'a> {
         title("Constant values");
 
         for (key, value) in &self.const_exprs {
-
-
-            let mut value_str;
-            let mut ty_str;
+            let value_str;
+            let ty_str;
 
             if let ConstExpr::Value(v) = value {
                 match v {
@@ -325,8 +323,9 @@ impl<'a> Constants<'a> {
 
             let len = 48usize.saturating_sub(key.len());
             let bar = "─".repeat(len);
+            let hex = value_str.parse::<usize>().unwrap();
 
-            println!("{ty_str} {key} {bar} {value_str}");
+            println!("{ty_str} {key} {bar} 0x{hex:X} {value_str}");
         }
     }
 

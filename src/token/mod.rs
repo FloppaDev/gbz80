@@ -14,6 +14,7 @@ pub mod validation;
 
 use crate::{
     parse::{ lex::TokenType, prepare::ParsedToken },
+    write::encode,
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -51,16 +52,14 @@ impl<'a> Value<'a> {
         }
     }
 
-    /*
-    pub fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Result<Vec<u8>, ()> {
         match self {
-            Self::U8(v) => vec![v],
-            Self::U16(v) => encode::u16_to_bytes(v).unwrap(),
-            Self::Str(v) => encode::str_to_bytes(v).unwrap(),
+            Self::U8(v) => Ok(vec![*v]),
+            Self::U16(v) => encode::u16_to_bytes(*v),
+            Self::Str(v) => encode::str_to_bytes(v),
             _ => bug!("Wrong value type")
         }
     }
-    */
 
 }
 

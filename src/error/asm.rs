@@ -210,7 +210,6 @@ pub enum ConstantsMsg {
     DuplicateKey,
     MisplacedMarker,
     FileReadFailed,
-    Overflow,
 }
 
 impl AsmMsg for ConstantsMsg {
@@ -221,7 +220,6 @@ impl AsmMsg for ConstantsMsg {
             DuplicateKey => "Constant's key already existed",
             MisplacedMarker => "The location of the marker does match its value",
             FileReadFailed => "The file to include could not be read",
-            Overflow => "The value overflows its capacity",
         }
     }
 }

@@ -21,7 +21,7 @@
     &BB &BB &67 &63 &6E &0E &EC &CC &DD &DC &99 &9F &BB &B9 &33 &3E
 &0134:
 
-    "TITLE"         ;Game name
+    "TITLE" 0 0 0 0 0 0 0 0 0         ;Game name TODO
 &0143:
 
 #if GBC
@@ -31,9 +31,9 @@
 #endif
     0 0             ;Manufacturer code
     0               ;Super gameboy flag (&00 or &03)
-    0               ;Cartridge type
-    0               ;Rom size (0=32k, 1=64k, 2=128k ...)
-    0               ;Cart Ram size (0, 1=2k, 2=8k, 3=32k)
+    8               ;Cartridge type
+    1               ;Rom size (0=32k, 1=64k, 2=128k ...)
+    3               ;Cart Ram size (0, 1=2k, 2=8k, 3=32k)
     1               ;Destination (0=JPN, 1=EU/US)
     &33             ;Old licencee code, must be &33 for SGB
     0               ;Rom version
@@ -59,7 +59,7 @@
 :StopLCD_wait               ;Turn off the screen so we can define our patterns
     ld a (&FF44)            ;Loop until we are in VBlank
     cp 145                  ;Is display on scan line 145 yet?
-    jr NZ StopLCD_wait      ;no? keep waiting!
+    jp NZ StopLCD_wait      ;no? keep waiting! TODO implement jr with labels
     
     ld hl &FF40             ;LCDC - LCD Control (R/W)
     res 7 (hl)              ;Turn off the screen
@@ -77,7 +77,7 @@
     dec bc
     ld a b
     or c
-    jr NZ Copy2Bitloop
+    jp NZ Copy2Bitloop
 
     ;Define palette                                             
     #if GBC
@@ -117,7 +117,7 @@
     ret Z
     inc hl
     call PrintChar
-    jr PrintString
+    jp PrintString
 
 :Message "Hello World 323!" 255
     
@@ -183,7 +183,7 @@
         ldh a (&41)                 ;STAT - LCD Status (R/W)
                                     ;-LOVHCMM
         and %0000_0010              ;MM=video mode (0/1 =Vram available)        
-        jr NZ LCDWaitAgain 
+        jp NZ LCDWaitAgain 
     pop af  
     ret
  
@@ -211,7 +211,7 @@
             ld (hl) d       ;FF69 - BCPD/BGPD - CGB Mode Only - Background Palette Data
             inc c           ;Increase palette address
         pop hl
-        jr SetGBCPalettesb
+        jp SetGBCPalettesb
     #endif
 
 ;xBBBBBGGGGGRRRRR
@@ -228,4 +228,4 @@
         #include "Font96.FNT"       ;Font bitmap,
 :BitmapFontEnd
 
-&7FFF:
+&FFFF:

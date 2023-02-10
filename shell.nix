@@ -17,6 +17,7 @@ in
       winetricks
 
       mgba
+      _0x
     ];
 
     WINEDEBUG="fixme-all";
