@@ -10,7 +10,7 @@ use crate::{
     error::stage, 
     parse::{ source::Source, split::Split, prepare },
     token::{ ast::{ macros::Macros, Ast }, read::TokenRef, validation },
-    write::{ ops::OpMap },
+    write::{ ops::OpMap, constants::Constants },
 };
 
 pub fn run() -> Result<(), ()> {
@@ -42,6 +42,15 @@ pub fn run() -> Result<(), ()> {
 
     // Identify intructions.
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
+
+    // Find and calculate all constants.
+    let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
+    let updates = constants.eval().map_err(stage::expressions)?;
+    constants.update(updates);
+    #[cfg(debug_assertions)] constants.debug();
+
+    // Write output.
+    //encode::build(&clargs.output(), &ast_ref, &op_map, &constants)?;
 
     Ok(())
 }

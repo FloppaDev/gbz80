@@ -1,5 +1,5 @@
 
-//pub mod eval;
+pub mod eval;
 
 use crate::{
     token::{ast::Ast},

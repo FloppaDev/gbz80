@@ -311,7 +311,6 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
     Err(ParseMsg::Invalid)
 }
 
-//TODO check where validation happened, it is here now.
 /// Fits a number into a `Value` based on the literal's length (&00FF would be a u16).
 fn fit(num: usize, len: usize, base: usize) -> Result<Value<'static>, ParseMsg> {
     return match base {

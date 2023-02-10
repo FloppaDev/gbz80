@@ -8,7 +8,8 @@ pub mod expr;
 /// Tools to make reading the token tree easier.
 pub mod read;
 
-/// Ensures that tokens respect their intended use.
+//TODO it's not clear whether the inputs values are ever sanitized or not.
+/// Ensures that tokens fit in their intended hierarchy.
 pub mod validation;
 
 use crate::{
@@ -39,6 +40,15 @@ impl<'a> Value<'a> {
     /// Returns the contained `str` value.
     pub fn as_str(&self) -> Result<&'a str, ()> {
         return if let Value::Str(v) = *self { Ok(v) }else{ Err(()) };
+    }
+
+    //TODO rename to as_usize when cleaning up the code is done
+    pub fn as_num(&self) -> Result<usize, ()> {
+        match self {
+            Value::U8(v) => Ok(*v as usize),
+            Value::U16(v) => Ok(*v as usize),
+            _ => Err(()),
+        }
     }
 
     /*
