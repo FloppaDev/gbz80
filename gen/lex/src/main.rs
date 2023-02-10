@@ -59,8 +59,8 @@ fn build(tree: &Tree) {
     apply(&mut result, "prefixes", &mut fmt, 3);
 
     let mut len = 0;
-    fmt_at(tree, root, &mut fmt, &mut len);
-    apply(&mut result, "at", &mut fmt, 2);
+    fmt_tests(tree, root, &mut fmt, &mut len);
+    apply(&mut result, "tests", &mut fmt, 1);
 
     fmt_char_words(tree, char_words, &mut fmt);
     apply(&mut result, "is_char_word", &mut fmt, 1);
@@ -193,14 +193,19 @@ fn fmt_prefixes(tree: &Tree, node: &Node, out: &mut String) {
     out.push(')');
 }
 
-fn fmt_at(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
+fn fmt_tests(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
     let mut at_arms = String::new();
     fmt_at_arms(tree, node, &mut at_arms, len);
 
-    out.push_str(&format!("const COUNT: usize = {len};\n\n"));
-    out.push_str("match index % COUNT {\n");
-    out.push_str(&at_arms);
-    out.push_str("    _ => panic!()\n}");
+    out.push_str("/// The count of token types.\n");
+    out.push_str("#[cfg(test)]\n");
+    out.push_str(&format!("pub const COUNT: usize = {len};\n\n"));
+    out.push_str("/// Returns a `TokenType` from an index.\n");
+    out.push_str("#[cfg(test)]\n");
+    out.push_str("pub const fn at(index: usize) -> Self {\n");
+    out.push_str("    match index % Self::COUNT {\n    ");
+    out.push_str(&tab(1, &at_arms));
+    out.push_str("\n        _ => panic!()\n    }\n}");
 }
 
 fn fmt_at_arms(tree: &Tree, node: &Node, out: &mut String, len: &mut usize) {
@@ -277,14 +282,13 @@ fn fmt_validation(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usi
             }
         }
 
-        out.push_str(" => {\n    ");
         *ln_start = out.len();
-        out.push_str("matches!(parent_type, ");
+        out.push_str("=> matches!(parent_type, ");
         let children_b = &tree.nodes[children[i+1]].children;
 
         for (i, index) in children_b.iter().enumerate() {
             if out.len() - *ln_start >= 60 {
-                out.push_str("\n        "); 
+                out.push_str("\n    "); 
                 *ln_start = out.len();
             }
 
@@ -296,7 +300,7 @@ fn fmt_validation(tree: &Tree, node: &Node, out: &mut String, ln_start: &mut usi
             }
         }
 
-        out.push_str(")\n}\n");
+        out.push_str("),\n");
         i += 2;
 
         if i >= len {

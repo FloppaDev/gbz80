@@ -263,13 +263,55 @@ impl TokenType {
     pub const fn has_prefix(prefix: char) -> bool {
         matches!(prefix, '&'|'#'|'%'|'"'|'.'|':')
     }
-    
+
+    /// Checks if the token has a valid parent.
+    pub fn validate(self, parent_type: Self) -> bool {
+        match self {
+            Directive|DefB|DefW|Include|Import|Macro|InstrName|Adc|Add|And|
+            Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|Ld|Ldh|Ldi|
+            Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|Rrc|Rrca|
+            Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|Rlca|
+            Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|FlagNz|
+            FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|AnonMark|
+            Label|Repeat|MacroCall => self.parent_type() == parent_type,
+
+            Instruction=> matches!(parent_type, Root|MacroBody),
+
+            Register=> matches!(parent_type, Argument|At|MacroCall|MacroBody),
+
+            Expr=> matches!(parent_type, DefB|DefW),
+
+            BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
+            BinXor|UnNot=> matches!(parent_type, Expr|At|BinAdd|BinSub|BinMul|BinDiv|
+                BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot),
+
+            At=> matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
+                BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|MacroCall),
+
+            Lit=> matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
+                BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|Root|NamedMark|
+                AnonMark|Include|MacroCall|MacroBody),
+
+            Identifier=> matches!(parent_type, DefB|DefW|Argument|Root|At|Expr|BinAdd|
+                BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
+                UnNot|MacroCall|MacroBody),
+
+            MacroIdent|MacroBody=> matches!(parent_type, MacroCall),
+
+            MacroArg=> matches!(parent_type, Instruction|Root),
+
+            Root|At0|At1 => true
+        }
+    }
+
+    /// The count of token types.
+    #[cfg(test)]
+    pub const COUNT: usize = 107;
+
     /// Returns a `TokenType` from an index.
     #[cfg(test)]
     pub const fn at(index: usize) -> Self {
-        const COUNT: usize = 107;
-
-        match index % COUNT {
+        match index % Self::COUNT {
             0 => Instruction,
             1 => InstrName,
             2 => Adc,
@@ -380,63 +422,5 @@ impl TokenType {
             _ => panic!()
         }
     }
-
-    /// Checks if the token has a valid parent.
-    pub fn validate(self, parent_type: Self) -> bool {
-        match self {
-            Directive|DefB|DefW|Include|Import|Macro|InstrName|Adc|Add|And|
-            Bit|Call|Ccf|Cp|Cpl|Daa|Dec|Di|Ei|Halt|Inc|Jp|Jr|Ld|Ldh|Ldi|
-            Ldd|Ldhl|Or|Pop|Push|Res|Ret|Rl|Rla|Rlc|Rld|Rr|Rra|Rrc|Rrca|
-            Rrd|Rst|Sbc|Scf|Set|Sla|Sll|Sra|Srl|Stop|Sub|Swap|Xor|Reti|Rlca|
-            Nop|Argument|A|B|C|D|E|H|L|Af|Bc|De|Hl|Sp|Flag|FlagZ|FlagNz|
-            FlagC|FlagNc|LitBin|LitHex|LitDec|LitStr|Marker|NamedMark|AnonMark|
-            Label|Repeat|MacroCall => self.parent_type() == parent_type,
-
-            Instruction => {
-                matches!(parent_type, Root|MacroBody)
-            }
-
-            Register => {
-                matches!(parent_type, Argument|At|MacroCall|MacroBody)
-            }
-
-            Expr => {
-                matches!(parent_type, DefB|DefW)
-            }
-
-            BinAdd|BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|
-            BinXor|UnNot => {
-                matches!(parent_type, Expr|At|BinAdd|BinSub|BinMul|BinDiv|BinMod|
-                    BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot)
-            }
-
-            At => {
-                matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
-                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|MacroCall)
-            }
-
-            Lit => {
-                matches!(parent_type, Argument|Expr|At|BinAdd|BinSub|BinMul|
-                    BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|UnNot|Root|NamedMark|
-                    AnonMark|Include|MacroCall|MacroBody)
-            }
-
-            Identifier => {
-                matches!(parent_type, DefB|DefW|Argument|Root|At|Expr|BinAdd|
-                    BinSub|BinMul|BinDiv|BinMod|BinShr|BinShl|BinAnd|BinOr|BinXor|
-                    UnNot|MacroCall|MacroBody)
-            }
-
-            MacroIdent|MacroBody => {
-                matches!(parent_type, MacroCall)
-            }
-
-            MacroArg => {
-                matches!(parent_type, Instruction|Root)
-            }
-
-            Root|At0|At1 => true
-        }
-    }
-
+    
 }

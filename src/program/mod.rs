@@ -13,9 +13,13 @@ use crate::{
     write::{ ops::OpMap, constants::Constants, encode },
 };
 
+#[cfg(test)]
+use crate::tests;
+
 pub fn run() -> Result<(), ()> {
     // Command line arguments.
-    let args = std::env::args().collect::<Vec<_>>();
+    #[cfg(test)] let args = tests::args();
+    #[cfg(not(test))] let args = std::env::args().collect::<Vec<_>>();
     let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
     // Get source file.
