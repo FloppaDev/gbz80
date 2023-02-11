@@ -15,23 +15,23 @@ pub fn find(instruction: &TokenRef) -> Option<OpCode> {
     assert_eq!(instruction.ty(), Instruction);
 
     let instr_ty = instruction.first().first().ty();
-    let (cb, ops) = get_instruction_info(instr_ty);
+    let (cb, ops) = get_instruction_info(instr_ty).unwrap();
 
     OpCode::get_opcode(instruction, cb, ops)
 }
 
 #[cfg(test)]
-pub fn get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
+pub fn get_instruction_info(tty: TokenType) -> Option<(bool, Vec<(u8, u8, Vec<Arg>)>)> {
     _get_instruction_info(tty)
 }
 
 #[cfg(not(test))]
-fn get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
+fn get_instruction_info(tty: TokenType) -> Option<(bool, Vec<(u8, u8, Vec<Arg>)>)> {
     _get_instruction_info(tty)
 }
 
-fn _get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
-    match tty {
+fn _get_instruction_info(tty: TokenType) -> Option<(bool, Vec<(u8, u8, Vec<Arg>)>)> {
+    Some(match tty {
         Adc => (false, vec![
             (1, 0x88, vec![ty(A), ty(B)]),
             (1, 0x89, vec![ty(A), ty(C)]),
@@ -628,6 +628,6 @@ fn _get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
             (2, 0x36, vec![at(ty(Hl))]),
             (2, 0x37, vec![ty(A)])]),
 
-            _ => bug!("Op not found"),
-        }
+            _ => return None,
+        })
 }

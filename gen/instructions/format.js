@@ -120,13 +120,13 @@ cbOpStr += matchBranchEnd;
 
 let instructions_output = instructions_rs.replace(
     '// {{{ js }}}',
-    `match tty {
+    `Some(match tty {
 ${opStr}\
         // CB instructions
 
 ${cbOpStr}\
-            _ => bug!("Op not found"),
-        }`
+            _ => return None,
+        })`
 );
 
 output += instructions_output; 

@@ -59,7 +59,8 @@
 :StopLCD_wait               ;Turn off the screen so we can define our patterns
     ld a (&FF44)            ;Loop until we are in VBlank
     cp 145                  ;Is display on scan line 145 yet?
-    jp NZ StopLCD_wait      ;no? keep waiting! TODO implement jr with labels
+                            ;TODO: jr with labels is not implemented, it would save 1B.
+    jp NZ StopLCD_wait      ;no? keep waiting!
     
     ld hl &FF40             ;LCDC - LCD Control (R/W)
     res 7 (hl)              ;Turn off the screen
