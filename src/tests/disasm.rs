@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Read;
 
 use crate::{
-    parse::lex::TokenType,
+    parse::lex::TokenType::{ self, * },
     program,
     write::{ instructions, ops::Arg },
 };
@@ -26,8 +26,6 @@ fn disasm() {
 
     // Entry point.
     let mut pc = 0x100;
-
-    // Instruction starts will be set to non-zero slices from the opcode to the arguments.
     let mut instructions = vec![];
 
     for b in 0..bytes.len() {
@@ -46,9 +44,13 @@ fn decode<'a>(
     pc: &mut usize, 
     bytes: &'a [u8], 
     instructions: &mut [Option<Instruction<'a>>], 
-    jumps: Vec<usize>
+    jumps: &mut Vec<usize>,
 ) {
-    //TODO keep track of jumps to avoid infinite loops
+    //TODO not sure how to do it.
+    if jumps.contains(*pc) {
+        //TODO remove jump
+        return;
+    }
 
     for i in 0..TokenType::COUNT {
         let ty = TokenType::at(i);
@@ -69,19 +71,8 @@ fn decode<'a>(
             for (len, code, args) in list {
                 if code == bytes[*pc] {
                     match ty {
-                        TokenType::Jp => {
-                            //TODO write to ops and inc pc
-                            //TODO recursive decode()
-                        }
-
-                        TokenType::Jr => {
-                            //TODO write to ops and inc pc
-                            //TODO recursive decode()
-                        }
-
-                        _ => {
-                            //TODO write to ops and inc pc
-                        }
+                        Jp|Jr => branch(ty, bytes, instructions, pc, jumps),
+                        _ => write_and_move(ty, instructions, pc)
                     }
                 }
             }
@@ -91,6 +82,44 @@ fn decode<'a>(
             *pc += 1;
         }
     }
+}
+
+/// Branches from a jump instruction to decode at the jump's position then resumes 
+/// at the previous position.
+fn branch(
+    jump_ty: TokenType, 
+    bytes: &[u8],
+    instructions: &mut Vec<Option<Instruction<'a>>>, 
+    pc: &mut usize, 
+    jumps: &mut Vec<usize>,
+) {
+    jumps.push(*pc);
+    let mut jump_pc = jump(jump_ty, bytes, *pc);
+    write_and_move(jump_ty, bytes, instructions, pc);
+    decode(&mut jump_pc, bytes, instructions, jumps);
+}
+
+/// Returns PC's value after a jump.
+fn jump(jump_ty: TokenType, bytes: &[u8], pc: usize) -> Option<usize> {
+    Some(match jump_ty {
+        Jp => u16_from_le(bytes.get((pc + 1)..(pc + 2))?) as usize,
+        Jr => ((pc as i8) + (bytes.get(pc + 1)? as i8) as usize),
+        _ => bug!("Unexpected jump type.")
+    })
+}
+
+/// Writes the decoded instruction and moves PC.
+fn write_and_move(
+    ty: TokenType,
+    bytes: &[u8],
+    instructions: &mut Vec<Option<Instruction<'a>>>, 
+    pc: &mut usize, 
+) {
+    let args = todo!();
+    let arg_bytes = todo!();
+    let instruction = Instruction::new(ty, args, bytes[*pc], arg_bytes);
+    instructions[*pc] = Some(instruction); 
+    //TODO move pc
 }
 
 /// Prints all decoded instructions and data bytes.
@@ -129,14 +158,20 @@ fn fmt<'a>(bytes: &[u8], instructions: &[Option<Instruction<'a>>]) {
 }
 
 struct Instruction<'a> {
-    code: &'a [u8],
+    ty: TokenType,
     args: Vec<Arg>,
+    code: &'a [u8],
+    arg_bytes: &'a [u8],
 }
 
 impl<'a> Instruction<'a> {
 
+    fn new(ty: TokenType, args: Vec<Arg>, code: &'a [u8], arg_bytes: &'a [u8]) -> Self {
+        Self{ ty, args, code, arg_bytes }
+    }
+
     /// Formats an instruction as it would have been written in assembly.
-    fn fmt(&self, bytes: &[u8]) -> String {
+    fn fmt(&self) -> String {
         //TODO instr arg arg
         todo!()
     }
