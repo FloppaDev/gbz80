@@ -125,13 +125,7 @@ impl<'a> TokenRef<'a> {
 
     /// Finds the first child of specified type.
     pub fn try_first_of(&self, ty: TokenType) -> Option<&Self> {
-        for child in &self.children {
-            if child.ty() == ty {
-                return Some(child);
-            }
-        }
-
-        None
+        self.children.iter().find(|&child| child.ty() == ty)
     }
 
 }

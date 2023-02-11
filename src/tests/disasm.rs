@@ -15,10 +15,10 @@ fn disasm() {
     fs::create_dir_all("build").unwrap();
     program::run().unwrap(); 
 
-    let mut file = File::open(&FILE).unwrap();
-    let metadata = fs::metadata(&FILE).unwrap();
+    let mut file = File::open(FILE).unwrap();
+    let metadata = fs::metadata(FILE).unwrap();
     let mut buffer = vec![0; metadata.len() as usize];
-    file.read(&mut buffer).unwrap();
+    file.read_exact(&mut buffer).unwrap();
 
      
 }

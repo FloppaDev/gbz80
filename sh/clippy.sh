@@ -20,7 +20,8 @@ lints="\
     -Aclippy::non_ascii_literal\
     -Aclippy::match_wildcard_for_single_variants\
     -Aclippy::module_name_repetitions\
-
+    -Aclippy::needless_range_loop\
+    -Aclippy::cast_possible_wrap\
 "
 
 cargo clippy --tests 2>&1 -- $lints

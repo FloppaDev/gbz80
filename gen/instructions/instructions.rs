@@ -20,6 +20,7 @@ pub fn get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
     _get_instruction_info(tty)
 }
 
+#[cfg(not(test))]
 fn get_instruction_info(tty: TokenType) -> (bool, Vec<(u8, u8, Vec<Arg>)>) {
     _get_instruction_info(tty)
 }

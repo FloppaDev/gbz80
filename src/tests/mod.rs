@@ -19,7 +19,7 @@ pub fn args() -> Vec<String> {
 }
 
 /// Random number between 0 and max.
-pub(super) fn urand(max: usize) -> usize {
+pub fn urand(max: usize) -> usize {
     let mut buffer = [0u8; 4];
     let mut f = File::open("/dev/urandom").unwrap();
     f.read_exact(&mut buffer).unwrap();
@@ -32,16 +32,16 @@ pub(super) fn urand(max: usize) -> usize {
     rand % max
 }
 
-pub(super) fn rand_file() -> String {
+pub fn rand_file() -> String {
     rand(&mut [0u8; 10_000])
 }
 
-pub(super) fn rand_word() -> String {
+pub fn rand_word() -> String {
     rand(&mut [0u8; 10])
 }
 
 /// Create a string from random bytes.
-pub(super) fn rand(buffer: &mut [u8]) -> String {
+pub fn rand(buffer: &mut [u8]) -> String {
     let mut f = File::open("/dev/urandom").unwrap();
     f.read_exact(buffer).unwrap();
 

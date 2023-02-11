@@ -145,11 +145,7 @@ impl Constant {
         match self {
             Byte => {
                 match token.ty() {
-                    LitDec|LitHex|LitBin => match token.value() {
-                        Value::U8(_) => true,
-                        _ => false,
-                    }
-
+                    LitDec|LitHex|LitBin => matches!(token.value(), Value::U8(_)),
                     LitStr => token.value().as_str().unwrap().len() == 1,
                     _ => false
                 }
@@ -157,21 +153,14 @@ impl Constant {
 
             Word => {
                 match token.ty() {
-                    LitDec|LitHex|LitBin => match token.value() {
-                        Value::U16(_) => true,
-                        _ => false,
-                    }
-
+                    LitDec|LitHex|LitBin => matches!(token.value(), Value::U16(_)),
                     LitStr => token.value().as_str().unwrap().len() == 1,
                     _ => false
                 }
             }
 
-            BitN(b) => if let Ok(value) = token.value().as_u8() {
-                (token.ty() == LitDec) && (value == *b)
-            }else {
-                false
-            }
+            BitN(b) => token.value().as_u8().map_or(false, |value|
+                (token.ty() == LitDec) && (value == *b))
         }
     }
 

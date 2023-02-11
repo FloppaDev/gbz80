@@ -61,7 +61,7 @@ impl Strip {
 
     /// Appends text when in debug mode, with base color.
     pub fn debug(self, text: &str) -> Self {
-        return if cfg!(debug_assertions) { self.base(text) }else{ self };
+        if cfg!(debug_assertions) { self.base(text) }else{ self }
     }
 
     fn push(mut self, text: &str) -> Self {

@@ -1,4 +1,6 @@
 
+#![deny(unreachable_patterns, non_snake_case)]
+
 /// Error types for the different compilation stages
 #[macro_use]
 mod error;
@@ -20,8 +22,6 @@ mod write;
 #[cfg(target_family="unix")]
 #[cfg(test)]
 mod tests;
-
-#[deny(clippy::unreachable_patterns, clippy::non_snake_case)]
 
 fn main() {
     match program::run() {

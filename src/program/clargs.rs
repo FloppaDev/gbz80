@@ -33,8 +33,7 @@ pub fn parse(args: &[String]) -> Result<Clargs, ClargsErr> {
         return Err(ClargsErr::new(NoSource, ""));
     }
 
-    let mut clargs = Clargs::default();
-    clargs.path = &args[1];
+    let mut clargs = Clargs{ path: &args[1], ..Default::default() };
 
     // No more arguments.
     if args.len() == 2 { 

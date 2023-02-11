@@ -22,12 +22,8 @@ pub fn str_to_bytes(s: &str) -> Result<Vec<u8>, ()> {
     Ok(bytes)
 }
 
-pub fn u16_to_bytes(u: u16) -> Result<Vec<u8>, ()> {
-    return if u > u16::MAX {
-        Err(())
-    }else {
-        Ok((u as u16).to_le_bytes().to_vec())
-    };
+pub fn u16_to_bytes(u: u16) -> Vec<u8> {
+    u.to_le_bytes().to_vec()
 }
 
 pub fn build(

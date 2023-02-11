@@ -24,12 +24,8 @@ pub enum ConstExpr<'a> {
 
 impl<'a> ConstExpr<'a> {
 
-    pub fn as_value(&self) -> Result<Value<'a>, ()> {
-        return if let ConstExpr::Value(value) = self {
-            return Ok(*value);
-        }else {
-            Err(())
-        };
+    pub const fn as_value(&self) -> Result<Value<'a>, ()> {
+        if let ConstExpr::Value(value) = self { Ok(*value) }else{ Err(()) }
     }
 
 }

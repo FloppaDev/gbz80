@@ -28,23 +28,23 @@ pub enum Value<'a> {
 impl<'a> Value<'a> {
 
     /// Returns the contained `u8` value.
-    pub fn as_u8(&self) -> Result<u8, ()> {
-        return if let Value::U8(v) = *self { Ok(v) }else{ Err(()) };
+    pub const fn as_u8(&self) -> Result<u8, ()> {
+        if let Value::U8(v) = *self { Ok(v) }else{ Err(()) }
 
     }
 
     /// Returns the contained `u16` value.
-    pub fn as_u16(&self) -> Result<u16, ()> {
-        return if let Value::U16(v) = *self { Ok(v) }else{ Err(()) };
+    pub const fn as_u16(&self) -> Result<u16, ()> {
+        if let Value::U16(v) = *self { Ok(v) }else{ Err(()) }
     }
 
     /// Returns the contained `str` value.
-    pub fn as_str(&self) -> Result<&'a str, ()> {
-        return if let Value::Str(v) = *self { Ok(v) }else{ Err(()) };
+    pub const fn as_str(&self) -> Result<&'a str, ()> {
+        if let Value::Str(v) = *self { Ok(v) }else{ Err(()) }
     }
 
     //TODO rename to as_usize when cleaning up the code is done
-    pub fn as_num(&self) -> Result<usize, ()> {
+    pub const fn as_num(&self) -> Result<usize, ()> {
         match self {
             Value::U8(v) => Ok(*v as usize),
             Value::U16(v) => Ok(*v as usize),
@@ -55,7 +55,7 @@ impl<'a> Value<'a> {
     pub fn as_bytes(&self) -> Result<Vec<u8>, ()> {
         match self {
             Self::U8(v) => Ok(vec![*v]),
-            Self::U16(v) => encode::u16_to_bytes(*v),
+            Self::U16(v) => Ok(encode::u16_to_bytes(*v)),
             Self::Str(v) => encode::str_to_bytes(v),
             _ => bug!("Wrong value type")
         }
