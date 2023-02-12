@@ -44,11 +44,10 @@ fn decode<'a>(
     pc: &mut usize, 
     bytes: &'a [u8], 
     instructions: &mut [Option<Instruction<'a>>], 
-    jumps: &mut Vec<usize>,
+    jumps: Vec<usize>,
 ) {
     //TODO not sure how to do it.
     if jumps.contains(*pc) {
-        //TODO remove jump
         return;
     }
 
@@ -71,7 +70,7 @@ fn decode<'a>(
             for (len, code, args) in list {
                 if code == bytes[*pc] {
                     match ty {
-                        Jp|Jr => branch(ty, bytes, instructions, pc, jumps),
+                        Jp|Jr => branch(ty, bytes, instructions, pc, jumps.clone()),
                         _ => write_and_move(ty, instructions, pc)
                     }
                 }
@@ -86,12 +85,12 @@ fn decode<'a>(
 
 /// Branches from a jump instruction to decode at the jump's position then resumes 
 /// at the previous position.
-fn branch(
+fn branch<'a>(
     jump_ty: TokenType, 
     bytes: &[u8],
     instructions: &mut Vec<Option<Instruction<'a>>>, 
     pc: &mut usize, 
-    jumps: &mut Vec<usize>,
+    mut jumps: Vec<usize>,
 ) {
     jumps.push(*pc);
     let mut jump_pc = jump(jump_ty, bytes, *pc);
@@ -109,7 +108,7 @@ fn jump(jump_ty: TokenType, bytes: &[u8], pc: usize) -> Option<usize> {
 }
 
 /// Writes the decoded instruction and moves PC.
-fn write_and_move(
+fn write_and_move<'a>(
     ty: TokenType,
     bytes: &[u8],
     instructions: &mut Vec<Option<Instruction<'a>>>, 
@@ -148,7 +147,7 @@ fn fmt<'a>(bytes: &[u8], instructions: &[Option<Instruction<'a>>]) {
             }
 
             // Print instruction on a new line.
-            print!("{n}{}", instruction.fmt(&bytes[b..]));
+            print!("{n}{instruction}");
         }
 
         else {
@@ -170,10 +169,12 @@ impl<'a> Instruction<'a> {
         Self{ ty, args, code, arg_bytes }
     }
 
+}
+
+impl<'a> std::fmt::Display for Instruction<'a> {
     /// Formats an instruction as it would have been written in assembly.
-    fn fmt(&self) -> String {
+    fn fmt(&self, f: ()) -> () {
         //TODO instr arg arg
         todo!()
     }
-
 }

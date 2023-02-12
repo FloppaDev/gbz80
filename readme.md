@@ -16,6 +16,8 @@ cargo build --release
 ```
 gbz80 ./asm/hello/hello.gb.asm -o ./hello.gb
 ```
+`-o [FILE]` Set the output destination (required).  
+`-D [SYMBOLS]` Define symbols for conditional compilation.
 
 ## Features
 
@@ -25,26 +27,32 @@ gbz80 ./asm/hello/hello.gb.asm -o ./hello.gb
 - Macros
 - Error reporting
 
-An hello world example is available in './asm/hello'
+An hello world example is available in `asm/hello`.
 
 ## Reference
 
-The instruction set is available [here](https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html) or in './gen/instructions/opcode.html'.  
+The instruction set is available [here](https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html) or in `gen/instructions/opcode.html`.  
 Some alternative mnemonics from the bottom of the page are used and replace all the other options, such that a plus or minus sign is never used within an instruction.
 
 ## Structure of the project
 
-- ./.vim  Syntax highlighting for '*.gb.asm' files in vim.
-- ./asm   Examples and tests in assembly.
-- ./gen   Code generation for the lexer.
-- ./sh    Shell scripts
-- ./src   Source code for the assembler.
+- `.vim`: Syntax highlighting for '*.gb.asm' files in vim.
+- `asm`: Examples and tests in assembly.
+- `gen`: Code generation for the lexer.
+  - `gen/instructions`: Generates the instructions list.
+  - `gen/lex`: Generates syntax rules.
+- `sh`    Scripts and tools
+- `src`   Source code and tests for the assembler.
 
-Build the docs with
-
+Build the docs with:
 ```
 cargo doc --open
 ```
+Or run in debug mode, it will show the result of every step in the process:
+```
+cargo r ./asm/hello/hello.gb.asm -o ./hello.gb
+```
+
 ## Unimplemented
 
 - Memory banks
@@ -54,14 +62,9 @@ cargo doc --open
 
 - Assembly tutorials:   
     - https://www.chibiakumas.com   
-
 - Instruction set:  
     - https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
-
 - Cpu manual:  
     - http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf  
-
 - Memory banks in roms:  
     - https://www.reddit.com/r/EmuDev/comments/dyqz7f/gb_file_mbc_formatting_for_game_boy_emulation/
-
-
