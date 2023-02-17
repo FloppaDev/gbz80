@@ -116,6 +116,10 @@ impl OpCode {
             }
         }
 
+        if op_args.len() != instr_args.len() {
+            return false;
+        }
+
         for i in 0..instr_args.len() {
             if !op_args[i].cmp(instr_args[i]) {
                 return false;
