@@ -68,3 +68,11 @@ cargo r ./asm/hello/hello.gb.asm -o ./hello.gb
     - http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf  
 - Memory banks in roms:  
     - https://www.reddit.com/r/EmuDev/comments/dyqz7f/gb_file_mbc_formatting_for_game_boy_emulation/
+- ROM analyzer:
+    - https://www.romhacking.net/utilities/1343/
+- Xxd (hex viewer):
+    - https://linux.die.net/man/1/xxd
+- Hello World:
+    - https://www.chibiakumas.com/z80/helloworld.php
+- Snake:
+    - https://github.com/theisolinearchip/gb_raw_snake
