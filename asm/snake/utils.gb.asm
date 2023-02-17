@@ -389,7 +389,7 @@
 
 	ld a (_SCORE_DIGIT_3_SPRITE_INDEX)
 	add 1
-    #dw invalid_tiles_start _TILE_NUMBERS_OFFSET_MAX + 1;TODO db?
+    #db invalid_tiles_start _TILE_NUMBERS_OFFSET_MAX + 1
 	cp _invalid_tiles_start
 	jr Z DrawScore2
 
