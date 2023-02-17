@@ -41,6 +41,7 @@ pub struct Split<'a> {
 
 impl<'a> Split<'a> {
 
+    #[allow(dead_code)]
     pub fn line_number(&self, index: LineIndex) -> usize {
         self.line_numbers[index.value]
     }

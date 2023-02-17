@@ -195,12 +195,10 @@ impl Arg {
             return false;
         }
 
-        else {
-            return match self {
-                Self::Token(ty) => token.leaf().ty() == *ty,
-                Self::Const(constant) => constant.cmp(token.leaf()),
-                _ => false
-            };
+        match self {
+            Self::Token(ty) => token.leaf().ty() == *ty,
+            Self::Const(constant) => constant.cmp(token.leaf()),
+            _ => false
         }
     }
 

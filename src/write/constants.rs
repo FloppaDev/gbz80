@@ -224,7 +224,6 @@ impl<'a> Constants<'a> {
                     let value = ConstExpr::Value(Value::U16(*location as u16));
                     let key = token.value().as_str().unwrap();
                     *self.get_mut(key).unwrap() = value;
-                    //*location += 2; TODO commented out, make sure it was an error
                 }
 
                 Marker => self.set_location(op_map, token, location)?,

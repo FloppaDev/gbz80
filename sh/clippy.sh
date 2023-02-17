@@ -22,6 +22,7 @@ lints="\
     -Aclippy::module_name_repetitions\
     -Aclippy::needless_range_loop\
     -Aclippy::cast_possible_wrap\
+    -Aclippy::type_complexity\
 "
 
 cargo clippy --tests 2>&1 -- $lints

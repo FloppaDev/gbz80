@@ -8,7 +8,6 @@ pub mod expr;
 /// Tools to make reading the token tree easier.
 pub mod read;
 
-//TODO it's not clear whether the inputs values are ever sanitized or not.
 /// Ensures that tokens fit in their intended hierarchy.
 pub mod validation;
 
@@ -43,7 +42,6 @@ impl<'a> Value<'a> {
         if let Value::Str(v) = *self { Ok(v) }else{ Err(()) }
     }
 
-    //TODO rename to as_usize when cleaning up the code is done
     pub const fn as_num(&self) -> Result<usize, ()> {
         match self {
             Value::U8(v) => Ok(*v as usize),

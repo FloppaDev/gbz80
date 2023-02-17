@@ -35,7 +35,7 @@ pub fn build(
     let mut bytes = vec![];
 
     encode(ast, op_map, constants, &mut bytes)?;
-    patch_checksum(&mut bytes);
+    patch_checksum(&mut bytes)?;
     write(&bytes, path).map_err(|_| ())?;
 
     Ok(())
@@ -73,7 +73,6 @@ pub fn encode(
             Identifier => {
                 let ident = child.value().as_str().unwrap();
                 let const_expr = constants.get(ident).unwrap();
-                //TODO are markers sanitized?
                 let mut b = const_expr.as_value().unwrap().as_bytes().unwrap();
                 bytes.append(&mut b);
             }
@@ -153,15 +152,20 @@ fn encode_instruction(
 }
 
 /// Patches header checksum into the rom.
-fn patch_checksum(bytes: &mut [u8]) {
+fn patch_checksum(bytes: &mut [u8]) -> Result<(), ()> {
+    if bytes.len() < 0x014E {
+        return Err(());
+    }
+
     let mut x = 0u8;
 
     for i in 0x0134..=0x014C {
         x = x.wrapping_sub(bytes[i]).wrapping_sub(1);
     }
 
-    //TODO handle err: bytes too smol
     bytes[0x014D] = x;
+
+    Ok(())
 }
 
 fn write(bytes: &[u8], path: &str) -> Result<(), std::io::Error> {

@@ -16,7 +16,11 @@ use crate::{
 #[cfg(test)]
 use crate::tests;
 
+use std::time;
+
 pub fn run() -> Result<(), ()> {
+    let start = time::Instant::now();
+
     // Command line arguments.
     #[cfg(test)] let args = tests::args();
     #[cfg(not(test))] let args = std::env::args().collect::<Vec<_>>();
@@ -56,7 +60,16 @@ pub fn run() -> Result<(), ()> {
     // Write output.
     encode::build(&clargs.output(), &ast_ref, &op_map, &constants)?;
 
-    //TODO print OK
+    // Print success.
+    let ms = start.elapsed().as_millis();
+    let success = fmt::strip()
+        .bold(&format!("\n({ms}ms) "))
+        .ok("Compilation successfull!")
+        .bold(" ---> ")
+        .info(&format!("{}\n", clargs.output()))
+        .read();
+
+    println!("{success}");
 
     Ok(())
 }
