@@ -46,7 +46,6 @@ fn decode<'a>(
     instructions: &mut [Option<Instruction<'a>>], 
     jumps: Vec<usize>,
 ) {
-    //TODO not sure how to do it.
     if jumps.contains(*pc) {
         return;
     }
