@@ -88,7 +88,6 @@ impl OpCode {
 
             if Self::cmp_args(&instr_children, &op_args) {
                 let opcode = Self{ cb, code, len };
-
                 return Some(opcode);     
             }
         }
@@ -184,26 +183,20 @@ pub enum Arg {
 impl Arg {
 
     fn cmp(&self, token: &TokenRef) -> bool {
-        match self {
-            Self::At(arg) if token.ty() == At => {
-                match &**arg {
-                    Self::Token(ty) => *ty == token.leaf().ty(),
-
-                    Self::Const(constant) => {
-                        if token.ty() == At {
-                            return constant.cmp(token.leaf());
-                        }
-
-                        false
-                    }
-
-                    _ => bug!("Unexpected `Arg` type.")
-                }
+        if token.ty() == At {
+            if let Self::At(arg) = self {
+                return arg.cmp(token.get(0));
             }
 
-            Self::Token(ty) => token.leaf().ty() == *ty,
-            Self::Const(constant) => constant.cmp(token.leaf()),
-            _ => false
+            return false;
+        }
+
+        else {
+            return match self {
+                Self::Token(ty) => token.leaf().ty() == *ty,
+                Self::Const(constant) => constant.cmp(token.leaf()),
+                _ => false
+            };
         }
     }
 

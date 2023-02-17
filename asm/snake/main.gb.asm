@@ -1,3 +1,10 @@
+
+;--------------------
+; Currently this example cannot compile:
+; #import is not implemented
+; jr is not fully implemented
+;--------------------
+
 #import "hardware.gb.asm"
 
 ;some game definitons
@@ -363,7 +370,7 @@
 	and _JOYPAD_BUTTON_UP
 	jr Z MovePlayerCheckDown
 
-	ld a -8
+	ld a _n8 
 	ld (_PLAYER_DIR_Y) a
 	xor a
 	ld (_PLAYER_DIR_X) a
@@ -711,3 +718,5 @@
 #import "utils.gb.asm"
 #import "tiles.gb.asm"
 #import "maps.gb.asm"
+
+&FFFF:
