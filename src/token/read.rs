@@ -37,26 +37,24 @@ impl<'a> TokenRef<'a> {
 
     /// Creates a `TokenRef` from the root token of an `Ast`.
     pub fn new(ast: &'a Ast) -> Self {
-        let mut fail_safe = ITERATION_LIMIT;
         let root = ast.get_root();
         let mut current = Self{ ast, token: root, parent: std::ptr::null(), children: vec![] };
         current.parent = &current;
-        Self::walk(ast, &mut current, &mut fail_safe); 
+        Self::walk(ast, &mut current, 0); 
 
         current
     }
 
-    fn walk(ast: &'a Ast, current: &mut Self, fail_safe: &mut usize) {
-        if *fail_safe == 0 {
+    fn walk(ast: &'a Ast, current: &mut Self, fail_safe: usize) {
+        if fail_safe >= ITERATION_LIMIT {
             bug!("Recursion limit reached while building TokenRef tree.");
         }
 
         for child in &current.token.children {
-            *fail_safe -= 1;
             let token = &ast.tokens[*child];
             let token_ref = Self{ ast, token, parent: current, children: vec![] };
             current.children.push(token_ref);
-            Self::walk(ast, current.children.last_mut().unwrap(), fail_safe);
+            Self::walk(ast, current.children.last_mut().unwrap(), fail_safe + 1);
         }
     }
 

@@ -203,7 +203,7 @@
         ldi a (hl)      ;xBBBBBGG
         ld d a
         inc a           ;cp 255
-        ret z
+        ret Z
         push hl
             call LCDWait    ;Wait for VDP Sync
             ld hl &FF68 
