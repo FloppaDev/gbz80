@@ -125,6 +125,7 @@ pub enum AstMsg {
     UnaryWithoutRhs,
     BinaryWithoutLhs,
     BinaryWithoutRhs,
+    EmptyExpr,
 }
 
 impl AsmMsg for AstMsg {
@@ -138,6 +139,7 @@ impl AsmMsg for AstMsg {
             UnaryWithoutRhs => "Unary operator expected an operand on its right",
             BinaryWithoutLhs => "Binary operator expected an operand on its left",
             BinaryWithoutRhs => "Binary operator expected an operand on its right",
+            EmptyExpr => "Constant expression is empty",
         }
     }
 }
@@ -246,3 +248,35 @@ impl AsmMsg for ExprMsg {
     }
 }
 
+/// Error variants when encoding the binary.
+#[derive(Debug, Copy, Clone)]
+pub enum EncodeErr {
+    BadHeader,
+    WriteFailed,
+    CreateFailed,
+}
+
+impl EncodeErr {
+
+    const fn msg(self) -> &'static str {
+        use EncodeErr::*;
+
+        match self {
+            BadHeader => "Bad ROM header",
+            WriteFailed => "Could not write output file",
+            CreateFailed => "Could not create output file",
+        }
+    }
+
+}
+
+impl std::fmt::Display for EncodeErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = fmt::strip()
+            .info(&format!("({self:?}) "))
+            .base(self.msg())
+            .read();
+
+        write!(f, "{text}")
+    }
+}

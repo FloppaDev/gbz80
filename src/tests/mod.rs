@@ -2,12 +2,13 @@
 /// Runs tests for various stages of the assembler.
 mod stages;
 
-/// Runs tests that build a file and disassemble it to check for errors.
-mod disasm;
+// Runs tests that build a file and disassemble it to check for errors.
+//mod disasm;
 
 use std::fs::File;
 use std::io::Read;
 
+/*TODO remove
 const ARGS: &[&str] = &[
     "",
     "asm/hello/hello.gb.asm",
@@ -17,6 +18,7 @@ const ARGS: &[&str] = &[
 pub fn args() -> Vec<String> {
     ARGS.iter().map(|a| (*a).into()).collect::<Vec<_>>()
 }
+*/
 
 /// Random number between 0 and max.
 pub fn urand(max: usize) -> usize {

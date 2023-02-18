@@ -3,6 +3,7 @@ use crate::{
     write::{ ops::OpMap, constants::Constants },
     token::read::TokenRef,
     parse::lex::TokenType::*,
+    error::asm::EncodeErr,
 };
 
 use std::fs::File;
@@ -31,12 +32,12 @@ pub fn build(
     ast: &TokenRef, 
     op_map: &OpMap, 
     constants: &Constants
-) -> Result<(), ()> {
+) -> Result<(), EncodeErr> {
     let mut bytes = vec![];
 
     encode(ast, op_map, constants, &mut bytes)?;
     patch_checksum(&mut bytes)?;
-    write(&bytes, path).map_err(|_| ())?;
+    write(&bytes, path)?;
 
     Ok(())
 }
@@ -46,7 +47,7 @@ pub fn encode(
     op_map: &OpMap, 
     constants: &Constants,
     bytes: &mut Vec<u8>,
-) -> Result<(), ()> {
+) -> Result<(), EncodeErr> {
     for child in ast.children() {
         match child.ty() {
             MacroCall => encode(
@@ -59,12 +60,12 @@ pub fn encode(
                 let marker_kind = child.first();
 
                 let location = match marker_kind.ty() {
-                    NamedMark | AnonMark => marker_kind.leaf().value().as_u16().unwrap(),
+                    NamedMark | AnonMark => marker_kind.leaf().value().as_num().unwrap(),
                     Label => continue,
                     _ => bug!("Invalid Marker type."),
                 };
 
-                let diff = (location as usize) - bytes.len();
+                let diff = location - bytes.len();
                 let mut fill = vec![255u8; diff];
 
                 bytes.append(&mut fill);
@@ -152,9 +153,9 @@ fn encode_instruction(
 }
 
 /// Patches header checksum into the rom.
-fn patch_checksum(bytes: &mut [u8]) -> Result<(), ()> {
+fn patch_checksum(bytes: &mut [u8]) -> Result<(), EncodeErr> {
     if bytes.len() < 0x014E {
-        return Err(());
+        return Err(EncodeErr::BadHeader);
     }
 
     let mut x = 0u8;
@@ -168,9 +169,9 @@ fn patch_checksum(bytes: &mut [u8]) -> Result<(), ()> {
     Ok(())
 }
 
-fn write(bytes: &[u8], path: &str) -> Result<(), std::io::Error> {
-    let mut file = File::create(path)?;
-    file.write_all(bytes)?;
+fn write(bytes: &[u8], path: &str) -> Result<(), EncodeErr> {
+    let mut file = File::create(path).map_err(|_| EncodeErr::CreateFailed)?;
+    file.write_all(bytes).map_err(|_| EncodeErr::WriteFailed)?;
 
     Ok(())
 }

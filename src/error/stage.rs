@@ -43,3 +43,4 @@ stage_err_vec!(ops, "Could not find instructions.");
 stage_err_vec!(validation, "Could not validate the token tree.");
 stage_err!(constants, "Could not collect constants.");
 stage_err_vec!(expressions, "Could not evaluate expressions in constants.");
+stage_err!(encode, "Could not encode output.");

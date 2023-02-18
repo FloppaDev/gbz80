@@ -13,17 +13,13 @@ use crate::{
     write::{ ops::OpMap, constants::Constants, encode },
 };
 
-#[cfg(test)]
-use crate::tests;
-
 use std::time;
 
-pub fn run() -> Result<(), ()> {
+pub fn run(args: Option<Vec<String>>) -> Result<(), ()> {
     let start = time::Instant::now();
 
     // Command line arguments.
-    #[cfg(test)] let args = tests::args();
-    #[cfg(not(test))] let args = std::env::args().collect::<Vec<_>>();
+    let args = args.or_else(|| Some(std::env::args().collect::<Vec<_>>())).unwrap();
     let clargs = clargs::parse(&args).map_err(stage::clargs)?;
 
     // Get source file.
@@ -58,7 +54,7 @@ pub fn run() -> Result<(), ()> {
     #[cfg(debug_assertions)] constants.debug();
 
     // Write output.
-    encode::build(&clargs.output(), &ast_ref, &op_map, &constants)?;
+    encode::build(&clargs.output(), &ast_ref, &op_map, &constants).map_err(stage::encode)?;
 
     // Print success.
     let ms = start.elapsed().as_millis();

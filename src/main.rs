@@ -24,7 +24,7 @@ mod write;
 mod tests;
 
 fn main() {
-    match program::run() {
+    match program::run(None) {
         Ok(_) => std::process::exit(0),
         Err(_) => std::process::exit(1)
     }

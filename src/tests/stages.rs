@@ -1,10 +1,25 @@
 
 use crate::{
     parse::{ split::Split, lex::TokenType, prepare::{ self, ParsedToken }, source::Source },
-    token::{ Value, ast::{ Ast, macros::Macros, } },
+    token::{ Value, ast::{ macros::Macros, Ast }, read::TokenRef, validation },
+    write::{ ops::OpMap, constants::Constants, encode },
+    program::clargs,
+    error::stage,
 };
 
 use super::{ rand_file, rand_word, urand, };
+
+#[test]
+#[ignore]
+fn endless() {
+    loop {
+        split();
+        parse1();
+        parse2();
+        ast();
+        shuffle();
+    }
+}
 
 #[test]
 fn split() {
@@ -84,4 +99,56 @@ fn ast() {
         let source = Source::from_content(String::new()); 
         let _ = Ast::new(tokens, &mut macros, &source);
     }
+}
+
+/// Start from a correct source and shuffle the words.
+#[test]
+fn shuffle() {
+    for _ in 0..1000 {
+        let _ = _shuffle();
+    }
+}
+
+fn _shuffle() -> Result<(), ()> {
+    let args = vec![
+        String::new(),
+        String::from("asm/hello/hello.gb.asm"),
+        String::from("-o"),
+        String::from("/dev/null"),
+    ];
+
+    let clargs = clargs::parse(&args).map_err(stage::clargs)?;
+
+    let source = Source::new(clargs.path).map_err(stage::source)?;
+    let split = Split::new(source.main(), &clargs.symbols).map_err(stage::split)?;
+    let words = split.words();
+    
+    let mut shuffled = String::new();
+
+    for i in 0..100 {
+        let word = words[i % words.len()].0;
+        shuffled.push_str(word);
+        shuffled.push(' ');
+
+        if urand(5) == 0 {
+            shuffled.push('\n');
+        }
+    }
+
+    let source = Source::from_content(shuffled);
+    let split = Split::new(source.main(), &clargs.symbols).map_err(stage::split)?;
+
+    let parsed_tokens = prepare::parse(&split).map_err(stage::parse)?;
+    let mut macros = Macros::new();
+    let mut ast = Ast::new(parsed_tokens, &mut macros, &source).map_err(stage::ast)?;
+    macros.expand(&mut ast).map_err(stage::macros)?;
+    let ast_ref = TokenRef::new(&ast);
+    validation::run(&ast_ref).map_err(stage::validation)?;
+    let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
+    let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
+    let updates = constants.eval().map_err(stage::expressions)?;
+    constants.update(updates);
+    encode::build(&clargs.output(), &ast_ref, &op_map, &constants).map_err(stage::encode)?;
+
+    Ok(())
 }

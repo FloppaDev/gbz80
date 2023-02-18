@@ -42,6 +42,10 @@ pub fn build<'a>(ast: &mut Ast<'a>, scope: usize) -> Result<(), AsmErr<'a, AstMs
         return Ok(());
     }
 
+    if ast.tokens[scope].children.is_empty() {
+        return Err(err!(AstMsg, EmptyExpr, (&ast.tokens[scope]).into()));
+    }
+
     // Iterate recursively through parens.
     for i in 0..ast.tokens[scope].children.len() {
         let child = ast.tokens[scope].children[i];

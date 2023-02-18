@@ -33,6 +33,7 @@ impl<'a> Value<'a> {
     }
 
     /// Returns the contained `u16` value.
+    #[allow(dead_code)]
     pub const fn as_u16(&self) -> Result<u16, ()> {
         if let Value::U16(v) = *self { Ok(v) }else{ Err(()) }
     }

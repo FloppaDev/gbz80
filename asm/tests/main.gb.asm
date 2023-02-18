@@ -95,4 +95,4 @@ FOO ;insert FOO here.
 
 ;&99999 ;OK. it fails as expected.
 
-set 1
+set 1 a
