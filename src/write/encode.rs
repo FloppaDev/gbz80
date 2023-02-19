@@ -1,4 +1,6 @@
 
+//TODO fix: using a label on a instruction that takes one byte makes the other byte spill?
+
 use crate::{
     write::{ ops::OpMap, constants::Constants },
     token::read::TokenRef,
@@ -136,6 +138,7 @@ fn encode_instruction(
 
                     Identifier => {
                         let ident = arg_x.value().as_str().unwrap();
+                        //TODO handle constant not found error.
                         let const_expr = constants.get(ident).unwrap();
                         let mut b = const_expr.as_value().unwrap().as_bytes().unwrap();
                         arg_bytes.append(&mut b);

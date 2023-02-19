@@ -41,6 +41,7 @@ Some alternative mnemonics from the bottom of the page are used and replace all 
 - `gen`: Code generation for the lexer.
   - `gen/instructions`: Generates the instructions list.
   - `gen/lex`: Generates syntax rules.
+  - `gen/image`: Image conversion tool.
 - `sh`    Scripts and tools
 - `src`   Source code and tests for the assembler.
 
