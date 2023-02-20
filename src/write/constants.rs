@@ -2,7 +2,15 @@
 use crate::{
     parse::{ lex::TokenType::* },
     token::{ Value, read::TokenRef, expr::eval::{ExprResult, ExprValue } },
-    error::{ ITERATION_LIMIT, asm::{ AsmErr, ConstantsMsg::{self, *}, ExprMsg } },
+    error::{ 
+        ITERATION_LIMIT, 
+        asm::{ 
+            AsmErr, 
+            ConstantsMsg::{self, *}, 
+            ExprMsg, 
+            ConstantsValidationMsg::{self, *} 
+        },
+    },
     write::ops::OpMap,
 };
 
@@ -285,6 +293,42 @@ impl<'a> Constants<'a> {
             Value::U16(_) => 2,    
             Value::Str(v) => v.len(),    
             _ => bug!("Unhandled literal type."),
+        }
+    }
+
+    /// Validates all the constants.
+    pub fn validate(
+        &self, 
+        ast_ref: &TokenRef<'a>
+    ) -> Result<(), Vec<AsmErr<'a, ConstantsValidationMsg>>> {
+        assert_eq!(ast_ref.ty(), Root);
+
+        let mut errors = vec![];
+        // Check for undeclared identifiers.
+        self.validate_walk(ast_ref, &mut errors);
+
+        if errors.is_empty() {
+            Ok(())
+        }else {
+            Err(errors)
+        }
+    }
+
+    fn validate_walk(
+        &self, 
+        scope: &TokenRef<'a>, 
+        errors: &mut Vec<AsmErr<'a, ConstantsValidationMsg>>
+    ) {
+        for child in scope.children() {
+            if child.ty() == Identifier {
+                let ident = child.value().as_str().unwrap();
+
+                if self.get(ident).is_none() {
+                    errors.push(err!(ConstantsValidationMsg, IdentNotFound, child.into())); 
+                }
+            }
+
+            self.validate_walk(child, errors);
         }
     }
 

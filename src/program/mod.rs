@@ -9,7 +9,7 @@ pub mod fmt;
 use crate::{
     error::stage, 
     parse::{ source::Source, split::Split, prepare },
-    token::{ ast::{ macros::Macros, Ast }, read::TokenRef, validation },
+    token::{ ast::{ macros::Macros, Ast }, read::TokenRef },
     write::{ ops::OpMap, constants::Constants, encode },
 };
 
@@ -42,7 +42,7 @@ pub fn run(args: Option<Vec<String>>) -> Result<(), ()> {
     let ast_ref = TokenRef::new(&ast);
 
     // Validate the `Ast`.
-    validation::run(&ast_ref).map_err(stage::validation)?;
+    ast_ref.validate().map_err(stage::ast_validation)?;
 
     // Identify intructions.
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
@@ -53,8 +53,12 @@ pub fn run(args: Option<Vec<String>>) -> Result<(), ()> {
     constants.update(updates);
     #[cfg(debug_assertions)] constants.debug();
 
+    constants.validate(&ast_ref).map_err(stage::constants_validation)?;
+
     // Write output.
     encode::build(&clargs.output(), &ast_ref, &op_map, &constants).map_err(stage::encode)?;
+
+    //TODO always log constants.
 
     // Print success.
     let ms = start.elapsed().as_millis();

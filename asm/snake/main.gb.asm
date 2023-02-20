@@ -247,7 +247,7 @@
 
 	ld bc FontTiles
 	ld de FontTilesLen
-    #dw _VRAM + $100
+    #dw _numbers_start _VRAM + $100
 	ld hl _numbers_start ;numbers start at $8100 (tile 10)
 	call MemCopy
 
@@ -719,4 +719,4 @@
 #import "tiles.gb.asm"
 #import "maps.gb.asm"
 
-&FFFF:
+&FFFF: &ff

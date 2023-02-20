@@ -174,13 +174,13 @@ impl AsmMsg for MacroMsg {
 
 /// Error variants when validating the Ast.
 #[derive(Debug, Copy, Clone)]
-pub enum ValidationMsg {
+pub enum AstValidationMsg {
     BadParent,
 }
 
-impl AsmMsg for ValidationMsg {
+impl AsmMsg for AstValidationMsg {
     fn msg(&self) -> &'static str {
-        use ValidationMsg::*;
+        use AstValidationMsg::*;
 
         match self {
             BadParent => "Parent of the token is of an unexpected type",
@@ -244,6 +244,23 @@ impl AsmMsg for ExprMsg {
             ConstantNotFound => "The constant does not exist",
             CircularDependency => "Infinite loop of dependencies",
             NegativeResult => "The result of an expression cannot be negative",
+        }
+    }
+}
+
+/// Error variants when validating the constants.
+#[derive(Debug, Copy, Clone)]
+pub enum ConstantsValidationMsg {
+    IdentNotFound,
+    //TODO? make sure that all constants have a readable value.
+}
+
+impl AsmMsg for ConstantsValidationMsg {
+    fn msg(&self) -> &'static str {
+        use ConstantsValidationMsg::*;
+
+        match self {
+            IdentNotFound => "Use of undeclared identifier",
         }
     }
 }

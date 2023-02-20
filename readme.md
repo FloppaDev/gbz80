@@ -16,7 +16,8 @@ cargo build --release
 ## Usage
 
 ```
-gbz80 ./asm/hello/hello.gb.asm -o ./hello.gb
+gbz80 ./asm/shork/shork.gb.asm -o ./build/shork.gb
+gbz80 ./asm/hello/hello.gb.asm -o ./build/hello.gb
 ```
 `-o [FILE]` Set the output destination (required).  
 `-D [SYMBOLS]` Define symbols for conditional compilation.
@@ -53,14 +54,9 @@ cargo doc --open
 ```
 Or run in debug mode, it will show the result of every step in the process:
 ```
-cargo r ./asm/hello/hello.gb.asm -o ./hello.gb
+cargo r ./asm/shork/shork.gb.asm -o ./build/shork.gb
+cargo r ./asm/hello/hello.gb.asm -o ./build/hello.gb
 ```
-
-## Unimplemented
-
-- Memory banks
-- Multiple source files
-
 ## Sources
 
 - Assembly tutorials:   
@@ -69,8 +65,8 @@ cargo r ./asm/hello/hello.gb.asm -o ./hello.gb
     - https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html  
 - Cpu manual:  
     - http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf  
-- Memory banks in roms:  
-    - https://www.reddit.com/r/EmuDev/comments/dyqz7f/gb_file_mbc_formatting_for_game_boy_emulation/
+- BGB (emulator):
+    - https://bgb.bircd.org/#downloads
 - ROM analyzer:
     - https://www.romhacking.net/utilities/1343/
 - Xxd (hex viewer):

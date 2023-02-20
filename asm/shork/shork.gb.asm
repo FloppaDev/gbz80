@@ -1,29 +1,28 @@
 
 ;http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 
-#dw VRAM &8000      ;Vram start
-#dw SCY &ff42       ;Scroll Y
-#dw LY &ff44        ;Line Y
-#dw BGP &ff47       ;Background & Palette
+#dw VRAM &8000                  ;Vram start
+#dw SCY &ff42                   ;Scroll Y
+#dw LY &ff44                    ;Line Y
+#dw BGP &ff47                   ;Background & Palette
 
-#dw LCDC &ff40              ;LCD Control
-#db LCDC_ON %1000_0000      ;LCD On
-#db LCDC_BGON %0000_0001    ;Background On
-#db LCDCF_BG8800  %00000000 ;BG & Window Tile Data Select
-#db LCDCF_BG8000  %00010000 ;BG & Window Tile Data Select
-#db LCDCF_BG9800  %00000000 ;BG Tile Map Display Select
-#db LCDCF_BG9C00  %00001000 ;BG Tile Map Display Select
+#dw LCDC            &ff40       ;LCD Control
+#db LCDC_ON         %10000000   ;LCD On
+#db LCDC_BGON       %00000001   ;Background On
+#db LCDCF_BG8000    %00010000   ;BG & Window Tile Data Select
+#db LCDCF_BG9800    %00000000   ;BG Tile Map Display Select
 
-#db PALETTE NOT %11_10_01_00 
+#db PALETTE %00_01_10_11 
 #dw SHORK_LEN ShorkEnd - Shork
 #db SHORK_W 10
 #db SHORK_H 10
 
 #db DISPLAY_ON LCDC_ON OR LCDC_BGON OR LCDCF_BG9800 OR LCDCF_BG8000
-;TODO Fix Bad Identifier Error with "#dw DISPLAY_ON LCDC_ON; ..."
-#dw TILE_DATA &8000
+#dw TILE_DATA VRAM
 #dw TILE_IDS &9800
 #dw TILE_IDS_LEN &9bff - TILE_IDS
+
+ld TEST1
 
 ;Interrupts
 &0040: reti     ;v-blank
@@ -164,5 +163,4 @@ ld hl TILE_IDS
     #include "shork.bin"
 :ShorkEnd
 
-;TODO fix header ROM/RAM values mismatch
-&7fff:
+&8000:

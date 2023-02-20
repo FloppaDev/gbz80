@@ -111,6 +111,16 @@ impl<'a> Split<'a> {
                 }
 
                 if ch == ';' {
+                    if has_word {
+                        line.get(word_start..c_i).map_or_else(|| {
+                            errors.push(SplitErr::new(
+                                SplitErrType::BadWord, line, l_i + 1));
+                        }, |word| {
+                            splitter.push(word, l_i);
+                            has_word = false;
+                        });
+                    }
+
                     break;
                 }
 

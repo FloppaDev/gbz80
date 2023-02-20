@@ -8,9 +8,6 @@ pub mod expr;
 /// Tools to make reading the token tree easier.
 pub mod read;
 
-/// Ensures that tokens fit in their intended hierarchy.
-pub mod validation;
-
 use crate::{
     parse::{ lex::TokenType, prepare::ParsedToken },
     write::encode,

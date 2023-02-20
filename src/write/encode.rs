@@ -138,7 +138,6 @@ fn encode_instruction(
 
                     Identifier => {
                         let ident = arg_x.value().as_str().unwrap();
-                        //TODO handle constant not found error.
                         let const_expr = constants.get(ident).unwrap();
                         let mut b = const_expr.as_value().unwrap().as_bytes().unwrap();
                         arg_bytes.append(&mut b);
@@ -155,9 +154,9 @@ fn encode_instruction(
     bytes.append(&mut op_bytes);
 }
 
-/// Patches header checksum into the rom.
+/// Patches header and ROM checksums into the binary.
 fn patch_checksum(bytes: &mut [u8]) -> Result<(), EncodeErr> {
-    if bytes.len() < 0x014E {
+    if bytes.len() < 0x014F {
         return Err(EncodeErr::BadHeader);
     }
 
@@ -168,6 +167,16 @@ fn patch_checksum(bytes: &mut [u8]) -> Result<(), EncodeErr> {
     }
 
     bytes[0x014D] = x;
+
+    let mut rom_sum = 0u16;
+
+    for byte in &*bytes {
+        rom_sum = rom_sum.wrapping_add(*byte as u16);
+    }
+
+    let rom_sum_bytes = rom_sum.to_be_bytes();
+    bytes[0x014E] = rom_sum_bytes[0];
+    bytes[0x014F] = rom_sum_bytes[1];
 
     Ok(())
 }

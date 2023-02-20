@@ -4,7 +4,7 @@
 use crate::{
     parse::lex::TokenType,
     token::{ Token, Value, ast::Ast },
-    error::ITERATION_LIMIT,
+    error::{ ITERATION_LIMIT, asm::{ AsmErr, AstValidationMsg::{self, *} } },
 };
 
 use std::hash::{Hash, Hasher};
@@ -124,6 +124,30 @@ impl<'a> TokenRef<'a> {
     /// Finds the first child of specified type.
     pub fn try_first_of(&self, ty: TokenType) -> Option<&Self> {
         self.children.iter().find(|&child| child.ty() == ty)
+    }
+
+    /// Validates the hierarchy of tokens, starting from `Root`.
+    pub fn validate(&self) -> Result<(), Vec<AsmErr<'a, AstValidationMsg>>> {
+        assert_eq!(self.ty(), TokenType::Root);
+
+        let mut errors = vec![];
+        self.validate_walk(&mut errors);
+
+        if errors.is_empty() {
+            Ok(())
+        }else {
+            Err(errors)
+        }
+    }
+
+    fn validate_walk(&self, errors: &mut Vec<AsmErr<'a, AstValidationMsg>>) {
+        for child in self.children() {
+            if !child.ty().validate(self.ty()) {
+                errors.push(err!(AstValidationMsg, BadParent, child.into())); 
+            }
+
+            child.validate_walk(errors);
+        }
     }
 
 }
