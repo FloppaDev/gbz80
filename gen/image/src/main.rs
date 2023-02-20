@@ -1,4 +1,6 @@
 
+#![allow(clippy::many_single_char_names)]
+
 /*
     ........
     .oo..oo.  - encoding of a tile (8x8 pixels):
@@ -40,9 +42,8 @@ fn main() {
     let mut in_bytes = Vec::new();
     reader.read_to_end(&mut in_bytes).expect("Coul not read input file.");
 
-    if in_bytes[0] != 0x50 || in_bytes[1] != 0x35 {
-        panic!("Format not supported, PGM (PPM P5) required.");
-    }
+    assert!(in_bytes[0] == 0x50 && in_bytes[1] == 0x35,
+        "Format not supported, PGM (PPM P5) required.");
 
     let mut b = 2;
     let mut info = [0, 0, 0];
@@ -67,9 +68,7 @@ fn main() {
             break;
         }
 
-        if b >= in_bytes.len() - 1 {
-            panic!("Invalid PPM header.");
-        }
+        assert!(b < in_bytes.len(), "Invalid PPM header.");
     }
 
     let mut palette = vec![];
@@ -82,7 +81,7 @@ fn main() {
     }
 
     assert!(palette.len() <= 4, "Color palette is limited to 4 colors.");
-    palette.sort();
+    palette.sort_unstable();
 
     let [w, h, _] = info;
     let mut out_bytes = vec![0; (w * h) / 4];
@@ -95,25 +94,24 @@ fn main() {
 
             // For each row in the tile
             for ry in 0..8 {
-                // Byte indices to write
-                let byb = ti * 16 + ry * 2;
-                let bya = byb + 1;
+                // Output indices
+                let ob = ti * 16 + ry * 2;
+                let oa = ob + 1;
 
                 // For each pixel in the tile
                 for rx in 0..8 {
                     // Source value
                     let si = ty * w * 8 + tx * 8 + ry * w + rx;
-                    println!("{ti}:{si}");
                     let src = in_bytes[b + si];
 
                     // Index of the color in the palette
                     let pi = palette.iter().position(|pv| *pv == src).unwrap() as u8;
-                    let pa = ((pi & 2) >> 1) << 7 - rx;
-                    let pb = (pi & 1) << 7 - rx;
+                    let pa = ((pi & 2) >> 1) << (7 - rx);
+                    let pb = (pi & 1) << (7 - rx);
 
                     // Write pixel
-                    out_bytes[bya] |= pa;
-                    out_bytes[byb] |= pb;
+                    out_bytes[oa] |= pa;
+                    out_bytes[ob] |= pb;
                 }
             }
         }

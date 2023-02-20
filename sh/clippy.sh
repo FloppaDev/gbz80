@@ -30,4 +30,7 @@ cargo clippy -- $lints
 cd gen/lex
 cargo clippy -- $lints
 cd ../..
+cd gen/image
+cargo clippy -- $lints
+cd ../..
 

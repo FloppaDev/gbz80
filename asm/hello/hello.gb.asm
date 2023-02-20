@@ -32,7 +32,7 @@
     0 0             ;Manufacturer code
     0               ;Super gameboy flag (&00 or &03)
     8               ;Cartridge type
-    1               ;Rom size (0=32k, 1=64k, 2=128k ...)
+    0               ;Rom size (0=32k, 1=64k, 2=128k ...)
     3               ;Cart Ram size (0, 1=2k, 2=8k, 3=32k)
     1               ;Destination (0=JPN, 1=EU/US)
     &33             ;Old licencee code, must be &33 for SGB
@@ -125,7 +125,7 @@
     call PrintChar
     jp PrintString
 
-:Message "Hello World 323!" 255
+:Message "Hello World!" 255
     
 :PrintChar
     push hl
@@ -234,4 +234,4 @@
         #include "Font96.FNT"       ;Font bitmap,
 :BitmapFontEnd
 
-&FFFF:
+&7FFF:

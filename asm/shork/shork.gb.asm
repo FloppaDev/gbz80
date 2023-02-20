@@ -145,7 +145,6 @@ ld hl TILE_IDS
 
     ;Start next line;
     push de
-    ;TODO 22 was not accepted as a word with "ld de 22"
     ld de 0022
     add hl de
     pop de
@@ -165,4 +164,5 @@ ld hl TILE_IDS
     #include "shork.bin"
 :ShorkEnd
 
+;TODO fix header ROM/RAM values mismatch
 &7fff:
