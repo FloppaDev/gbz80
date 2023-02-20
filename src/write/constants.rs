@@ -82,7 +82,7 @@ impl<'a> Constants<'a> {
 
     pub fn new(
         ast: &'a TokenRef<'a>,
-        op_map: &OpMap<'a>,
+        op_map: &OpMap,
     ) -> Result<Self, AsmErr<'a, ConstantsMsg>> {
         let mut fail_safe = ITERATION_LIMIT;
         let mut result = Self{ 
@@ -205,7 +205,7 @@ impl<'a> Constants<'a> {
     /// Increases the current location by the size in bytes of a token.
     fn set_location(
         &mut self,
-        op_map: &OpMap<'a>,
+        op_map: &OpMap,
         root: &'a TokenRef<'a>,
         location: &mut usize,
     ) -> Result<(), AsmErr<'a, ConstantsMsg>> {
@@ -335,8 +335,15 @@ impl<'a> Constants<'a> {
     #[cfg(debug_assertions)]
     pub fn debug(&self) {
         title("Constant values");
+        self.display();
+    }
 
+    pub fn display(&self) {
         for (key, value) in &self.const_exprs {
+            if key.starts_with('_') {
+                continue;
+            }
+
             let value_str;
             let ty_str;
 
@@ -362,9 +369,11 @@ impl<'a> Constants<'a> {
 
             let len = 48usize.saturating_sub(key.len());
             let bar = "─".repeat(len);
-            let hex = value_str.parse::<usize>().unwrap();
+            let hex_str = format!("{:X}", value_str.parse::<usize>().unwrap());
+            let len2 = 5usize.saturating_sub(hex_str.len());
+            let bar2 = "─".repeat(len2);
 
-            println!("{ty_str} {key} {bar} 0x{hex:X} {value_str}");
+            println!("{ty_str} {key} {bar} 0x{hex_str} {bar2} {value_str}");
         }
     }
 

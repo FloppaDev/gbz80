@@ -1,7 +1,7 @@
 
 use crate::{
     parse::{ split::Split, lex::TokenType, prepare::{ self, ParsedToken }, source::Source },
-    token::{ Value, ast::{ macros::Macros, Ast }, read::TokenRef, validation },
+    token::{ Value, ast::{ macros::Macros, Ast }, read::TokenRef },
     write::{ ops::OpMap, constants::Constants, encode },
     program::clargs,
     error::stage,
@@ -143,11 +143,12 @@ fn _shuffle() -> Result<(), ()> {
     let mut ast = Ast::new(parsed_tokens, &mut macros, &source).map_err(stage::ast)?;
     macros.expand(&mut ast).map_err(stage::macros)?;
     let ast_ref = TokenRef::new(&ast);
-    validation::run(&ast_ref).map_err(stage::validation)?;
+    ast_ref.validate().map_err(stage::ast_validation)?;
     let op_map = OpMap::new(&ast_ref).map_err(stage::ops)?;
     let mut constants = Constants::new(&ast_ref, &op_map).map_err(stage::constants)?;
     let updates = constants.eval().map_err(stage::expressions)?;
     constants.update(updates);
+    constants.validate(&ast_ref).map_err(stage::constants_validation)?;
     encode::build(&clargs.output(), &ast_ref, &op_map, &constants).map_err(stage::encode)?;
 
     Ok(())

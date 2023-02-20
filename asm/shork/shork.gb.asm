@@ -1,28 +1,25 @@
 
 ;http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 
-#dw VRAM &8000                  ;Vram start
-#dw SCY &ff42                   ;Scroll Y
-#dw LY &ff44                    ;Line Y
-#dw BGP &ff47                   ;Background & Palette
-
+#dw VRAM            &8000       ;Vram start
+#dw SCY             &ff42       ;Scroll Y
+#dw LY              &ff44       ;Line Y
+#dw BGP             &ff47       ;Background & Palette
 #dw LCDC            &ff40       ;LCD Control
 #db LCDC_ON         %10000000   ;LCD On
 #db LCDC_BGON       %00000001   ;Background On
 #db LCDCF_BG8000    %00010000   ;BG & Window Tile Data Select
 #db LCDCF_BG9800    %00000000   ;BG Tile Map Display Select
 
-#db PALETTE %00_01_10_11 
-#dw SHORK_LEN ShorkEnd - Shork
-#db SHORK_W 10
-#db SHORK_H 10
+#db PALETTE         %00_01_10_11 
+#dw SHORK_LEN       ShorkEnd - Shork
+#db SHORK_W         10
+#db SHORK_H         10
 
-#db DISPLAY_ON LCDC_ON OR LCDC_BGON OR LCDCF_BG9800 OR LCDCF_BG8000
-#dw TILE_DATA VRAM
-#dw TILE_IDS &9800
-#dw TILE_IDS_LEN &9bff - TILE_IDS
-
-ld TEST1
+#db DISPLAY_ON      LCDC_ON OR LCDC_BGON OR LCDCF_BG9800 OR LCDCF_BG8000
+#dw TILE_DATA       VRAM
+#dw TILE_IDS        &9800
+#dw TILE_IDS_LEN    &9bff - TILE_IDS
 
 ;Interrupts
 &0040: reti     ;v-blank
@@ -70,22 +67,11 @@ ld TEST1
     ld hl LCDC
     res 7 (hl)
 
-ld de Shork
-ld hl TILE_DATA
-ld bc SHORK_LEN
+;Load tiles into VRAM
+:CopyTiles 
+    memcopy. Shork TILE_DATA SHORK_LEN
 
-:CopyTiles
-    ld a (de)
-    ldi (hl) a
-    inc de
-
-    ;Loop until all tiles are copied
-    dec bc
-    ld a b
-    or c
-    jp NZ CopyTiles
-
-;Set the color palette for the tiles.
+;Set the color palette for the tiles
 :SetPalette
     ld a PALETTE
     ld hl BGP
@@ -158,6 +144,33 @@ ld hl TILE_IDS
     di 
     halt
     nop
+
+#macro memcopy. .src .dest .len
+    ld bc .src
+    ld hl .dest
+    ld de .len
+
+    call MemCopy
+#macro
+
+;(bc = src, hl = dest, de = len)
+:MemCopy
+    ld (bc)
+    ldi (hl) a
+
+    dec de
+    ld d
+    or e
+    ret Z
+
+    inc bc
+
+    ;automatic offsets for jr are not implemented. 
+    ;in the meantime it can be done with jp or like this:
+    :_jr_mem_copy
+    #db _jr_mem_copy_value 255 XOR (_jr_mem_copy - MemCopy) + 1
+
+    jr _jr_mem_copy_value
 
 :Shork
     #include "shork.bin"

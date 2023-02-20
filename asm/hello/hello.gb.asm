@@ -60,12 +60,7 @@
     ld a (&FF44)            ;Loop until we are in VBlank
     cp 145                  ;Is display on scan line 145 yet?
 
-    ;gbz80: jr with labels is not implemented. in the meantime it can be done like this:
-    :jr_stop_lcd_wait
-    #db _jr_stop_lcd_wait_value 255 XOR (jr_stop_lcd_wait - StopLCD_wait) + 1
-    ;-----------------------------------------------------------------------------------
-
-    jr NZ _jr_stop_lcd_wait_value ;no? keep waiting!
+    jp NZ StopLCD_wait ;no? keep waiting!
     
     ld hl &FF40             ;LCDC - LCD Control (R/W)
     res 7 (hl)              ;Turn off the screen

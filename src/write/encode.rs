@@ -1,6 +1,4 @@
 
-//TODO fix: using a label on a instruction that takes one byte makes the other byte spill?
-
 use crate::{
     write::{ ops::OpMap, constants::Constants },
     token::read::TokenRef,
@@ -52,9 +50,7 @@ pub fn encode(
 ) -> Result<(), EncodeErr> {
     for child in ast.children() {
         match child.ty() {
-            MacroCall => encode(
-                child.first_of(MacroBody), op_map, constants, bytes)?,
-
+            MacroCall => encode(child.first_of(MacroBody), op_map, constants, bytes)?,
             Instruction => encode_instruction(child, op_map, constants, bytes),
 
             // Fill empty space to reach markers.
@@ -140,6 +136,13 @@ fn encode_instruction(
                         let ident = arg_x.value().as_str().unwrap();
                         let const_expr = constants.get(ident).unwrap();
                         let mut b = const_expr.as_value().unwrap().as_bytes().unwrap();
+
+                        // Crop the value if the instruction expects a single byte.
+                        let remaining = (opcode.len as usize) - op_bytes.len();
+                        if remaining < b.len() {
+                            b.pop();
+                        }
+
                         arg_bytes.append(&mut b);
                     }
 

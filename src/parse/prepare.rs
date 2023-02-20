@@ -280,7 +280,7 @@ fn identify(word: &str) -> Result<Vec<(TokenType, CheckedStr)>, ParseMsg> {
         let mut result = vec![];
 
         // In macro calls, the identifier can come with a repeat count.
-        // e.g. '16ident.'
+        // e.g. '16ident.' (TODO not implemented)
         let mut dec_i = 0;
         for (i, ident_c) in macro_ident.chars().rev().enumerate() {
             if text::is_char_num(ident_c) {

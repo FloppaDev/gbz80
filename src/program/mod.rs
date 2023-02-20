@@ -35,6 +35,7 @@ pub fn run(args: Option<Vec<String>>) -> Result<(), ()> {
     // Build the token tree.
     let mut macros = Macros::new();
     let mut ast = Ast::new(parsed_tokens, &mut macros, &source).map_err(stage::ast)?;
+    //#[cfg(debug_assertions)] ast.debug();
     macros.expand(&mut ast).map_err(stage::macros)?;
     #[cfg(debug_assertions)] ast.debug();
 
@@ -58,9 +59,8 @@ pub fn run(args: Option<Vec<String>>) -> Result<(), ()> {
     // Write output.
     encode::build(&clargs.output(), &ast_ref, &op_map, &constants).map_err(stage::encode)?;
 
-    //TODO always log constants.
-
     // Print success.
+    #[cfg(not(debug_assertions))] constants.display();
     let ms = start.elapsed().as_millis();
     let success = fmt::strip()
         .bold(&format!("\n({ms}ms) "))

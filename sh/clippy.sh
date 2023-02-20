@@ -11,6 +11,8 @@ lints="\
     -Aclippy::cast-sign-loss\
     -Aclippy::cast-possible-truncation\
     -Aclippy::cast-precision-loss\
+    -Aclippy::cast_possible_wrap\
+    -Aclippy::cast-lossless\
     -Aclippy::enum-glob-use\
     -Aclippy::too_many_lines\
     -Aclippy::too_many_arguments\
@@ -21,7 +23,6 @@ lints="\
     -Aclippy::match_wildcard_for_single_variants\
     -Aclippy::module_name_repetitions\
     -Aclippy::needless_range_loop\
-    -Aclippy::cast_possible_wrap\
     -Aclippy::type_complexity\
 "
 

@@ -103,13 +103,13 @@ impl<'a, 'b> Macros {
                 continue;
             }
 
-            let decl_index = *decl_index.unwrap();
+            Self::expand_call(ast, *decl_index.unwrap(), *macro_call, &mut errors); 
+        }
 
-            // Disconnect the declaration from its parent.
-            let decl_parent = ast.tokens[decl_index].parent;
-            ast.tokens[decl_parent].children.retain(|c| *c != decl_index);
-
-            Self::expand_call(ast, decl_index, *macro_call, &mut errors); 
+        // Disconnect declarations from their parents to remove them from the `Ast`.
+        for macro_decl in &self.decls {
+            let decl_parent = ast.tokens[*macro_decl].parent;
+            ast.tokens[decl_parent].children.retain(|c| *c != *macro_decl);
         }
 
         if errors.is_empty() {
@@ -131,8 +131,7 @@ impl<'a, 'b> Macros {
         ast.tokens[macro_call].children.push(call_body_index);
 
         let decl = &ast.tokens[macro_decl];
-        let decl_children = &decl.children;
-        let decl_args = decl_children.get(1..decl_children.len()-1).unwrap();
+        let decl_args = decl.children.get(1..decl.children.len()-1).unwrap();
         let decl_body_index = decl.children.last().unwrap();
 
         let call = &ast.tokens[macro_call];

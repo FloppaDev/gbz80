@@ -7,8 +7,6 @@ use crate::{
     error::{ ITERATION_LIMIT, asm::{ AsmErr, AstValidationMsg::{self, *} } },
 };
 
-use std::hash::{Hash, Hasher};
-
 /// Read-only reference to a token.
 /// Includes the AST for navigating the hierarchy.
 #[derive(Debug)]
@@ -26,12 +24,6 @@ impl<'a> PartialEq for TokenRef<'a> {
 }
 
 impl<'a> Eq for TokenRef<'a> {}
-
-impl<'a> Hash for TokenRef<'a> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.index().hash(state);
-    }
-}
 
 impl<'a> TokenRef<'a> {
 

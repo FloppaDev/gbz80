@@ -10,11 +10,11 @@ use Constant::*;
 
 use std::collections::HashMap;
 
-pub struct OpMap<'a>(HashMap<&'a TokenRef<'a>, OpCode>);
+pub struct OpMap(HashMap<usize, OpCode>);
 
-impl<'a> OpMap<'a> {
+impl OpMap {
 
-    pub fn new(ast: &'a TokenRef<'a>) -> Result<Self, Vec<AsmErr<'a, OpMsg>>> {
+    pub fn new<'a>(ast: &'a TokenRef<'a>) -> Result<Self, Vec<AsmErr<'a, OpMsg>>> {
         let mut map = HashMap::new(); 
         let mut errors = vec![];
 
@@ -27,14 +27,14 @@ impl<'a> OpMap<'a> {
         }
     }
 
-    pub fn get(&self, token: &TokenRef<'a>) -> &OpCode {
+    pub fn get<'a>(&self, token: &'a TokenRef<'a>) -> &OpCode {
         let Self(map) = self; 
-        map.get(token).unwrap()
+        map.get(&token.index()).unwrap()
     }
 
-    fn walk(
+    fn walk<'a>(
         ast: &'a TokenRef<'a>,
-        map: &mut HashMap<&TokenRef<'a>, OpCode>, 
+        map: &mut HashMap<usize, OpCode>, 
         errors: &mut Vec<AsmErr<'a, OpMsg>>,
     ) {
         for token in ast.children() {
@@ -55,7 +55,10 @@ impl<'a> OpMap<'a> {
                         continue;
                     }
 
-                    map.insert(token, opcode.unwrap());
+                    if map.insert(token.index(), opcode.unwrap()).is_some() {
+                        //TODO fix: this happens when using multiple macros.
+                        bug!("OpMap entry was written twice");
+                    }
                 }
 
                 _ => {}

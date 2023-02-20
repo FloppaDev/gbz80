@@ -252,7 +252,6 @@ impl AsmMsg for ExprMsg {
 #[derive(Debug, Copy, Clone)]
 pub enum ConstantsValidationMsg {
     IdentNotFound,
-    //TODO? make sure that all constants have a readable value.
 }
 
 impl AsmMsg for ConstantsValidationMsg {
