@@ -1,5 +1,8 @@
 # gbz80
 
+![hello](/doc/hello.png)
+![shork](/doc/shork.png)
+
 This is my attempt at making an assembler for the Gameboy, in Rust.
 It takes an assembly file as input and outputs a binary that an emulator can run.  
   
